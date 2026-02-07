@@ -1,0 +1,14 @@
+[gd_scene load_steps=6 format=3 uid="uid://b37a421b2fuwh"]
+
+[ext_resource type="Script" uid="uid://cobyt5khfr2oo" path="res://scripts/audio/UISoundManager.cs" id="1_pqda5"]
+[ext_resource type="AudioStream" uid="uid://cy2weq5eplapk" path="res://assets/resources/music/sfx/move.wav" id="2_ap3pb"]
+[ext_resource type="AudioStream" uid="uid://bqaofhhitlpx5" path="res://assets/resources/music/sfx/confirm.wav" id="3_kd4jj"]
+[ext_resource type="AudioStream" uid="uid://crc751c2rnvt1" path="res://assets/resources/music/sfx/cancel.wav" id="4_udw3y"]
+[ext_resource type="AudioStream" uid="uid://b85y2jc6n0u8j" path="res://assets/resources/music/sfx/move_2.wav" id="5_db18s"]
+
+[node name="UISoundManager" type="Node3D"]
+script = ExtResource("1_pqda5")
+NavigationSound = ExtResource("2_ap3pb")
+ConfirmSound = ExtResource("3_kd4jj")
+CancelSound = ExtResource("4_udw3y")
+PageFlipSound = ExtResource("5_db18s")

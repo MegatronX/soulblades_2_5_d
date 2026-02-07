@@ -1,0 +1,39 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=11 format=3 uid="uid://djr07cuyi6m66"]
+
+[ext_resource type="Script" uid="uid://d1q4ymghq0rd0" path="res://scripts/ui/turn_order/ActionComponentData.cs" id="1_yir32"]
+[ext_resource type="Script" uid="uid://e03g772dil5b" path="res://scripts/ui/turn_order/TimedHitSettings.cs" id="2_j724x"]
+[ext_resource type="Script" uid="uid://dotmxv788lodq" path="res://scripts/ui/turn_order/AttackData.cs" id="2_ldam1"]
+[ext_resource type="Script" uid="uid://bkkaa3e6fr6uv" path="res://scripts/battle/VisualActionSettings.cs" id="2_muwky"]
+[ext_resource type="Script" uid="uid://cafwy50bbnioc" path="res://scripts/cameras/CameraShakeEffect.cs" id="3_24e10"]
+[ext_resource type="PackedScene" uid="uid://bcolovnx877as" path="res://assets/scenes/actions/BasicAttack.tscn" id="3_j724x"]
+
+[sub_resource type="Resource" id="Resource_acwmb"]
+script = ExtResource("3_24e10")
+Intensity = 0.25
+metadata/_custom_type_script = "uid://cafwy50bbnioc"
+
+[sub_resource type="Resource" id="Resource_jfdwa"]
+script = ExtResource("3_24e10")
+metadata/_custom_type_script = "uid://cafwy50bbnioc"
+
+[sub_resource type="Resource" id="Resource_24e10"]
+script = ExtResource("2_j724x")
+PerfectCameraEffect = SubResource("Resource_jfdwa")
+GreatCameraEffect = SubResource("Resource_acwmb")
+metadata/_custom_type_script = "uid://e03g772dil5b"
+
+[sub_resource type="Resource" id="Resource_j724x"]
+script = ExtResource("2_muwky")
+WindupAnimation = "Attack"
+CloseDistance = true
+ApproachStrategy = 2
+ImpactVfx = ExtResource("3_j724x")
+metadata/_custom_type_script = "uid://bkkaa3e6fr6uv"
+
+[resource]
+script = ExtResource("2_ldam1")
+AllowedTargeting = 15
+TimedHitSettings = Array[ExtResource("2_j724x")]([SubResource("Resource_24e10")])
+VisualSettings = SubResource("Resource_j724x")
+CommandName = "Attack"
+metadata/_custom_type_script = "uid://dotmxv788lodq"

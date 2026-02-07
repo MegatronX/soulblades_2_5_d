@@ -1,0 +1,27 @@
+[gd_scene load_steps=5 format=3 uid="uid://dluqww05spa8o"]
+
+[ext_resource type="Script" uid="uid://ds87vehxgrran" path="res://scripts/gameplay/EncounterManager.cs" id="2_jm4f0"]
+[ext_resource type="Resource" uid="uid://qakj03uoo3aa" path="res://assets/resources/encounters/TestMapEncounters.tres" id="3_rcgrn"]
+[ext_resource type="PackedScene" uid="uid://cg40606sv55" path="res://assets/resources/characters/ceira/ceira.tscn" id="4_rcgrn"]
+[ext_resource type="Script" uid="uid://dpia6b67jsjaq" path="res://scripts/gameplay/BattleStarterTestScript.cs" id="4_v1are"]
+
+[node name="Node3D" type="Node3D"]
+
+[node name="Node" type="Node" parent="."]
+script = ExtResource("2_jm4f0")
+_battleScenePath = "uid://ccd7ai2lpxylm"
+
+[node name="EncounterLauncher" type="Node" parent="."]
+script = ExtResource("2_jm4f0")
+_mapData = ExtResource("3_rcgrn")
+_battleScenePath = "uid://ccd7ai2lpxylm"
+
+[node name="BattleForcer" type="Node" parent="." node_paths=PackedStringArray("manager", "PlayersToRegister")]
+script = ExtResource("4_v1are")
+manager = NodePath("../EncounterLauncher")
+WaitSeconds = 0.7
+PlayersToRegister = [NodePath("../Ceira_0"), NodePath("../Ceira_1")]
+
+[node name="Ceira_0" parent="." instance=ExtResource("4_rcgrn")]
+
+[node name="Ceira_1" parent="." instance=ExtResource("4_rcgrn")]

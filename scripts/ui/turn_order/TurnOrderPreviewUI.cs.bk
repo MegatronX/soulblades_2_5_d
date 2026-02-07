@@ -1,0 +1,239 @@
+using Godot;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+/// <summary>
+/// Manages the UI for displaying and previewing the turn order with high-quality animations.
+/// This class is designed to be robust, handling additions, removals, and re-ordering of combatants smoothly.
+/// </summary>
+public partial class TurnOrderPreviewUI : Control
+{
+    /// <summary>
+    /// Defines the layout direction for the turn order cards.
+    /// </summary>
+    public enum LayoutOrientation
+    {
+        Horizontal,
+        Vertical
+    }
+
+    [ExportGroup("Configuration")]
+    [Export] private PackedScene _cardScene;
+    [Export] private LayoutOrientation _orientation = LayoutOrientation.Vertical;
+    [Export] private float _cardSpacing = 110f;
+
+    private TurnManager _turnManager;
+    private readonly List<TurnOrderCard> _cards = new();
+    private List<TurnManager.TurnData> _currentTurnOrder;
+    private bool _isAnimating = false;
+
+    /// <summary>
+    /// Initializes the UI with the TurnManager and performs the initial display.
+    /// </summary>
+    public void Initialize(TurnManager turnManager)
+    {
+        _turnManager = turnManager;
+
+        // Connect to global events to react to game state changes.
+        var eventBus = GetNode<GlobalEventBus>(GlobalEventBus.Path);
+        eventBus.ActionPreviewRequested += OnActionPreviewRequested;
+        eventBus.ActionPreviewCancelled += OnActionPreviewCancelled;
+        eventBus.TurnCommitted += OnTurnCommitted;
+        eventBus.CombatantsChanged += OnCombatantsChanged;
+
+        // Initial population of the turn order.
+        _currentTurnOrder = _turnManager.GenerateTurnOrder(10);
+        _ = AnimateToOrder(_currentTurnOrder, isInitialLoad: true);
+    }
+
+    /// <summary>
+    /// Applies a visual highlight to the cards of specified combatants.
+    /// </summary>
+    /// <param name="charactersToHighlight">A list of combatant nodes to highlight.</param>
+    public void HighlightCharacters(IEnumerable<Node> charactersToHighlight)
+    {
+        var highlightSet = new HashSet<Node>(charactersToHighlight);
+        foreach (var card in _cards)
+        {
+            bool shouldHighlight = highlightSet.Contains(card.Data.Combatant);
+            // This assumes the TurnOrderCard has a method to handle its highlight state.
+            card.SetHighlight(shouldHighlight);
+        }
+    }
+
+    // --- Event Handlers ---
+
+    private void OnActionPreviewRequested(TurnManager.ActionPreview actionPreview, TurnManager.TurnData actingCombatant)
+    {
+        if (_turnManager == null) return;
+        var previewTurnOrder = _turnManager.PreviewAction(10, actingCombatant, actionPreview);
+        _ = AnimateToOrder(previewTurnOrder);
+    }
+
+    private void OnActionPreviewCancelled()
+    {
+        _ = AnimateToOrder(_currentTurnOrder);
+    }
+
+    private void OnTurnCommitted()
+    {
+        var newOrder = _turnManager.GenerateTurnOrder(10);
+        var oldOrder = _currentTurnOrder; // Keep a reference to the old order
+
+        _currentTurnOrder = newOrder; // Now update the current state
+        // Pass both old and new orders to the animation method
+        _ = AnimateToOrder(_currentTurnOrder, oldOrder);
+    }
+
+    private void OnCombatantsChanged()
+    {
+        var newOrder = _turnManager.GenerateTurnOrder(10);
+        // A combatant change should trigger a general re-sort, not the special "commit" animation.
+        _currentTurnOrder = newOrder;
+        _ = AnimateToOrder(_currentTurnOrder);
+    }
+
+
+    // --- Core Animation Logic ---
+
+    private async Task AnimateToOrder(List<TurnManager.TurnData> newOrder, List<TurnManager.TurnData> oldOrder = null, bool isInitialLoad = false)
+    {
+        if (_isAnimating) return;
+        _isAnimating = true;
+
+        bool isCommitAnimation = IsShiftedList(oldOrder, newOrder);
+
+        // --- Step 1: Handle the "pop off" animation for a committed turn ---
+        if (isCommitAnimation)
+        {
+            // Find the card that corresponds to the character who just took their turn.
+            var combatantToPop = oldOrder.First().Combatant;
+            var cardToPop = _cards.FirstOrDefault(c => c.Data?.Combatant == combatantToPop);
+
+            if (cardToPop != null)
+            {
+                // Animate it out and remove it from our tracked list.
+                // This is key: we are now short one card, which we'll add back in Step 2.
+                _cards.Remove(cardToPop);
+                AnimateCardPop(cardToPop);
+            }
+        }
+
+        // --- Step 2: Synchronize the card list size with the new order ---
+        // This ensures we always have the correct number of card nodes.
+        // Add new cards (e.g., after a commit or if a unit was summoned).
+        while (_cards.Count < newOrder.Count)
+        {
+            var newCard = _cardScene.Instantiate<TurnOrderCard>();
+            // Position it off-screen or at the bottom, ready to animate in.
+            newCard.Position = GetTargetPosition(newOrder.Count);
+            newCard.Modulate = Colors.Transparent;
+            AddChild(newCard);
+            _cards.Add(newCard);
+        }
+        // Remove excess cards (e.g., if a unit was defeated).
+        while (_cards.Count > newOrder.Count)
+        {
+            var cardToRemove = _cards.Last();
+            _cards.Remove(cardToRemove);
+            AnimateCardFadeOut(cardToRemove);
+        }
+        
+        // --- Step 3: Update card data and create the animation tween ---
+        // At this point, _cards.Count is guaranteed to equal newOrder.Count.
+        var moveTween = CreateTween().SetParallel(true);
+        for (int i = 0; i < newOrder.Count; i++)
+        {
+            var card = _cards[i];
+            var turnData = newOrder[i];
+
+            // If the card's data doesn't match, it's either a new card or needs updating.
+            // This prevents re-assigning data to cards that are just sliding up.
+            if (card.Data?.Combatant != turnData.Combatant)
+            {
+                card.SetData(turnData);
+            }
+
+            card.SetData(turnData);
+            Vector2 targetPosition = GetTargetPosition(i);
+
+            if (isInitialLoad)
+            {
+                card.Position = targetPosition + (_orientation == LayoutOrientation.Vertical ? new Vector2(50, 0) : new Vector2(0, 50));
+                card.Modulate = Colors.Transparent;
+            }
+
+            moveTween.TweenProperty(card, "position", targetPosition, 0.4f)
+                     .SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.InOut);
+            moveTween.TweenProperty(card, "modulate", Colors.White, 0.3f);
+        }
+
+        // If it's the first load, wait a frame to ensure cards are ready before starting the main tween.
+        if (isInitialLoad)
+        {
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+        }
+
+        await ToSignal(moveTween, Tween.SignalName.Finished);
+
+        _isAnimating = false;
+    }
+
+    // --- Animation Helpers ---
+
+    private void AnimateCardPop(TurnOrderCard card)
+    {
+        var tween = CreateTween();
+        tween.SetParallel(true);
+        tween.TweenProperty(card, "scale", card.Scale * 1.2f, 0.2f).SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        tween.TweenProperty(card, "modulate:a", 0f, 0.25f).SetDelay(0.05);
+        // Move the card to the top of the visual stack so it animates over others.
+        card.MoveToFront();
+        // This card is now "dead" and should be removed from the scene once faded.
+        tween.Finished += card.QueueFree;
+    }
+
+    private void AnimateCardFadeOut(TurnOrderCard card)
+    {
+        var tween = CreateTween();
+        tween.TweenProperty(card, "modulate:a", 0f, 0.3f);
+        tween.Finished += card.QueueFree;
+    }
+
+    // --- Utility Methods ---
+
+    private Vector2 GetTargetPosition(int index)
+    {
+        return _orientation == LayoutOrientation.Vertical
+            ? new Vector2(0, index * _cardSpacing)
+            : new Vector2(index * _cardSpacing, 0);
+    }
+
+    /// <summary>
+    /// Checks if the new list is the same as the old list, just shifted up by one.
+    /// This is the condition for our special "commit" animation.
+    /// </summary>
+    private bool IsShiftedList(List<TurnManager.TurnData> oldOrder, List<TurnManager.TurnData> newOrder)
+    {
+        // A commit animation requires a valid old order to compare against.
+        if (oldOrder == null || oldOrder.Count < 2 || newOrder == null || newOrder.Count < 1)
+        {
+            return false;
+        }
+
+        // Check if the tail of the old list matches the head of the new list.
+        // We only need to check if the second element of the old list is now the first element of the new list.
+        return ReferenceEquals(oldOrder[1].Combatant, newOrder[0].Combatant);
+    }
+}
+
+public static class TweenExtensions
+{
+    public static Task ToTask(this Tween tween)
+    {
+        var tcs = new TaskCompletionSource<bool>();
+        tween.Finished += () => tcs.SetResult(true);
+        return tcs.Task;
+    }
+}

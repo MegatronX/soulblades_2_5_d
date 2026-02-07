@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="CharacterPresentationData" load_steps=3 format=3 uid="uid://b5p8ntkm4qay0"]
+
+[ext_resource type="Script" uid="uid://c21yiabdj7ekm" path="res://scripts/CharacterPresentationData.cs" id="1_5hotl"]
+[ext_resource type="Texture2D" uid="uid://8fuorwbgytm1" path="res://assets/characters/goblin/goblin_potrait.png" id="1_fd8xy"]
+
+[resource]
+script = ExtResource("1_5hotl")
+DisplayName = "Goblin"
+TurnQueueIcon = ExtResource("1_fd8xy")
+metadata/_custom_type_script = "uid://c21yiabdj7ekm"

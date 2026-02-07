@@ -1,0 +1,28 @@
+[gd_scene load_steps=6 format=3 uid="uid://7vqyqph1fwuk"]
+
+[ext_resource type="Script" uid="uid://dwg0n4dpelc36" path="res://scripts/BaseCharacter.cs" id="1_83kkr"]
+[ext_resource type="Script" uid="uid://bxhpv5xnsqdfo" path="res://scripts/gameplay/stats/StatsComponent.cs" id="1_l6jhb"]
+[ext_resource type="Script" uid="uid://kcr0u6u3redi" path="res://scripts/gameplay/abilities/AbilityManager.cs" id="2_tgknm"]
+[ext_resource type="Script" uid="uid://cyhllgnrd3oca" path="res://scripts/gameplay/statuseffects/StatusEffectManager.cs" id="3_66aru"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4uub8"]
+height = 1.3137207
+
+[node name="CharacterBody3D" type="CharacterBody3D"]
+script = ExtResource("1_83kkr")
+
+[node name="Sprite3D" type="Sprite3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_4uub8")
+
+[node name="StatsComponent" type="Node" parent="."]
+script = ExtResource("1_l6jhb")
+
+[node name="AbilityManager" type="Node" parent="."]
+script = ExtResource("2_tgknm")
+
+[node name="StatusEffectManager" type="Node" parent="."]
+script = ExtResource("3_66aru")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]

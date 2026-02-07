@@ -1,0 +1,38 @@
+[gd_scene load_steps=9 format=3 uid="uid://dkur01slivlbc"]
+
+[ext_resource type="PackedScene" uid="uid://7vqyqph1fwuk" path="res://assets/resources/characters/CharacterTemplate.tscn" id="1_wn02e"]
+[ext_resource type="Resource" uid="uid://b5p8ntkm4qay0" path="res://assets/resources/characters/goblin_lv5/goblin_presentation.tres" id="2_n82mv"]
+[ext_resource type="Texture2D" uid="uid://dbhplww1x7ujd" path="res://assets/characters/goblin/goblin.png" id="2_rtj3q"]
+[ext_resource type="Resource" uid="uid://cxrpoifeb8517" path="res://assets/resources/characters/goblin_lv5/Goblin_Lv5_Stats.tres" id="2_wn02e"]
+[ext_resource type="Script" uid="uid://debriqo3w14qa" path="res://scripts/ai/AIController.cs" id="5_ns5e8"]
+[ext_resource type="Resource" uid="uid://djr07cuyi6m66" path="res://assets/resources/actions/Attack.tres" id="6_i2b2t"]
+[ext_resource type="Script" uid="uid://cgg187nfrj2fj" path="res://scripts/ai/DummyAIStrategy.cs" id="7_lohu5"]
+
+[sub_resource type="Resource" id="Resource_5xemb"]
+script = ExtResource("7_lohu5")
+ActionToUse = ExtResource("6_i2b2t")
+metadata/_custom_type_script = "uid://cgg187nfrj2fj"
+
+[node name="CharacterBody3D" node_paths=PackedStringArray("AnimationPlayer") instance=ExtResource("1_wn02e")]
+PresentationData = ExtResource("2_n82mv")
+AnimationPlayer = NodePath("AnimationPlayer")
+
+[node name="Sprite3D" parent="." index="0"]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)
+offset = Vector2(0, 512)
+flip_h = true
+pixel_size = 0.0025
+shaded = true
+alpha_cut = 1
+texture = ExtResource("2_rtj3q")
+
+[node name="CollisionShape3D" parent="." index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6808436, 0)
+
+[node name="StatsComponent" parent="." index="2"]
+_baseStatsResource = ExtResource("2_wn02e")
+
+[node name="AIController" type="Node" parent="." index="6"]
+script = ExtResource("5_ns5e8")
+Strategy = SubResource("Resource_5xemb")
+metadata/_custom_type_script = "uid://debriqo3w14qa"

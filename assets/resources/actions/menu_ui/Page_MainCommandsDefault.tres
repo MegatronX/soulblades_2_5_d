@@ -1,0 +1,19 @@
+[gd_resource type="Resource" script_class="BattleCategory" load_steps=5 format=3 uid="uid://17yafsmyh48i"]
+
+[ext_resource type="Script" uid="uid://e81v4n2lmbrf" path="res://scripts/battle/BattleCommand.cs" id="1_37hvc"]
+[ext_resource type="Script" uid="uid://cvxdrgvt8vkxn" path="res://scripts/battle/BattleCategory.cs" id="2_yyqr6"]
+
+[sub_resource type="Resource" id="Resource_37hvc"]
+script = ExtResource("2_yyqr6")
+CommandName = "Magic"
+metadata/_custom_type_script = "uid://cvxdrgvt8vkxn"
+
+[sub_resource type="Resource" id="Resource_yyqr6"]
+script = ExtResource("2_yyqr6")
+CommandName = "Items"
+metadata/_custom_type_script = "uid://cvxdrgvt8vkxn"
+
+[resource]
+script = ExtResource("2_yyqr6")
+SubCommands = Array[ExtResource("1_37hvc")]([null, SubResource("Resource_37hvc"), null, SubResource("Resource_yyqr6")])
+metadata/_custom_type_script = "uid://cvxdrgvt8vkxn"

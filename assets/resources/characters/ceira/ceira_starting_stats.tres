@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BaseStats" load_steps=2 format=3 uid="uid://cf0sodp0rftil"]
+
+[ext_resource type="Script" uid="uid://kgbip05acvrl" path="res://scripts/gameplay/stats/BaseStats.cs" id="1_5mgpf"]
+
+[resource]
+script = ExtResource("1_5mgpf")
+HP = 111
+MP = 34
+Strength = 14
+Defense = 11
+Magic = 18
+MagicDefense = 15
+Speed = 15
+Evasion = 8
+MgEvasion = 8
+Accuracy = 150
+MgAccuracy = 150
+Luck = 22
+AP = 10
+metadata/_custom_type_script = "uid://kgbip05acvrl"

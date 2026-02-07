@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8j4is0a20f46"]
+
+[ext_resource type="Script" uid="uid://biyvf2wk750av" path="res://scripts/ui/ChatManager.cs" id="1_evg1w"]
+
+[node name="ChatOverlay" type="CanvasLayer"]
+script = ExtResource("1_evg1w")
+
+[node name="MessageLog" type="RichTextLabel" parent="."]
+offset_left = 10.0
+offset_top = 779.0
+offset_right = 767.0
+offset_bottom = 1029.0
+scroll_following = true
+
+[node name="MessageInput" type="LineEdit" parent="."]
+offset_left = 10.0
+offset_top = 1035.0
+offset_right = 771.0
+offset_bottom = 1066.0

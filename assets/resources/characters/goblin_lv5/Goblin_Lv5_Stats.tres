@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BaseStats" load_steps=2 format=3 uid="uid://cxrpoifeb8517"]
+
+[ext_resource type="Script" uid="uid://kgbip05acvrl" path="res://scripts/gameplay/stats/BaseStats.cs" id="1_epa4q"]
+
+[resource]
+script = ExtResource("1_epa4q")
+HP = 45
+MP = 5
+Strength = 11
+Defense = 8
+Magic = 2
+MagicDefense = 6
+Speed = 9
+Evasion = 2
+MgEvasion = 2
+Accuracy = 100
+MgAccuracy = 100
+Luck = 14

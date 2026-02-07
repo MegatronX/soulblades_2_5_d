@@ -1,0 +1,28 @@
+[gd_scene load_steps=2 format=3 uid="uid://dgcis6ky8n7d8"]
+
+[ext_resource type="Script" uid="uid://c0wa51xfbjbo" path="res://scripts/items/EquipmentSlotUI.cs" id="1_ac4c7"]
+
+[node name="EquipmentSlotUI" type="Control" node_paths=PackedStringArray("slotNameLabel", "itemButton")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ac4c7")
+slotNameLabel = NodePath("Label")
+itemButton = NodePath("Button")
+
+[node name="Button" type="Button" parent="."]
+layout_mode = 0
+offset_left = 148.0
+offset_right = 320.0
+offset_bottom = 35.0
+theme_override_font_sizes/font_size = 24
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 0
+offset_right = 76.0
+offset_bottom = 23.0
+theme_override_font_sizes/font_size = 24
+text = "SlotName"

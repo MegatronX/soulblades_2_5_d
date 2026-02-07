@@ -1,0 +1,52 @@
+[gd_scene load_steps=5 format=3 uid="uid://mdqpricp6r35"]
+
+[ext_resource type="Script" uid="uid://b02fbfxhxr5ay" path="res://scripts/ui/turn_order/TurnOrderPreviewUITest.cs" id="1_vg8wy"]
+[ext_resource type="PackedScene" uid="uid://cg40606sv55" path="res://assets/resources/characters/ceira/ceira.tscn" id="2_12gvo"]
+[ext_resource type="PackedScene" uid="uid://ddbhgeh1rfpoe" path="res://assets/scenes/battle/ui/TurnOrderPreviewUI.tscn" id="2_c6a2r"]
+[ext_resource type="PackedScene" uid="uid://dkur01slivlbc" path="res://assets/resources/characters/goblin_lv5/goblin_lv5.tscn" id="3_05wux"]
+
+[node name="TestPreviewUi" type="Node2D" node_paths=PackedStringArray("_turnOrderPreviewUI", "_commitTurnButton", "_previewSlowActionButton", "_previewHasteButton", "_cancelPreviewButton", "_summonUnitButton", "_defeatUnitButton")]
+script = ExtResource("1_vg8wy")
+_turnOrderPreviewUI = NodePath("TurnOrderPreviewUI")
+_commitTurnButton = NodePath("VBoxContainer/CommitTurnButton")
+_previewSlowActionButton = NodePath("VBoxContainer/PreviewSlowAction")
+_previewHasteButton = NodePath("VBoxContainer/PreviewHasteButton")
+_cancelPreviewButton = NodePath("VBoxContainer/CancelPreviewButton")
+_summonUnitButton = NodePath("VBoxContainer/SummonUnitButton")
+_defeatUnitButton = NodePath("VBoxContainer/DefeatUnitButton")
+_summonableCharacters = Array[PackedScene]([ExtResource("2_12gvo"), ExtResource("3_05wux")])
+
+[node name="TurnOrderPreviewUI" parent="." instance=ExtResource("2_c6a2r")]
+offset_left = 1699.0
+offset_top = 20.0
+offset_right = 1699.0
+offset_bottom = 20.0
+_cardSpacing = 65.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="CommitTurnButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Commit Turn"
+
+[node name="PreviewSlowAction" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Preview Slow Action"
+
+[node name="PreviewHasteButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Preview Haste Button"
+
+[node name="CancelPreviewButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Cancel Preview Button"
+
+[node name="SummonUnitButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Summon Unit"
+
+[node name="DefeatUnitButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "Defeat Unit"

@@ -1,0 +1,73 @@
+[gd_scene load_steps=7 format=3 uid="uid://ca8oq00t3um5j"]
+
+[ext_resource type="Texture2D" uid="uid://d2hs72wbue50s" path="res://assets/characters/ceira/ceira_new_1.png" id="1_434jp"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_noarx"]
+
+[sub_resource type="Animation" id="Animation_r3fl7"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite3D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [9]
+}
+
+[sub_resource type="Animation" id="Animation_a0tk4"]
+resource_name = "walk"
+loop_mode = 1
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite3D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0, 9]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_jka67"]
+_data = {
+&"RESET": SubResource("Animation_r3fl7"),
+&"walk": SubResource("Animation_a0tk4")
+}
+
+[sub_resource type="SceneReplicationConfig" id="SceneReplicationConfig_1o8ui"]
+properties/0/path = NodePath(".:position")
+properties/0/spawn = true
+properties/0/replication_mode = 1
+properties/1/path = NodePath(".:rotation")
+properties/1/spawn = true
+properties/1/replication_mode = 1
+
+[node name="CharacterBody3D" type="CharacterBody3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_noarx")
+
+[node name="Sprite3D" type="Sprite3D" parent="."]
+texture = ExtResource("1_434jp")
+hframes = 10
+frame = 9
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_jka67")
+}
+
+[node name="SpringArm3D" type="SpringArm3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="SpringArm3D"]
+
+[node name="MultiplayerSynchronizer" type="MultiplayerSynchronizer" parent="."]
+replication_config = SubResource("SceneReplicationConfig_1o8ui")

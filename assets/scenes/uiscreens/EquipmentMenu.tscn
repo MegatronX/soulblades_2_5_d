@@ -1,0 +1,111 @@
+[gd_scene load_steps=4 format=3 uid="uid://cy07qlhbpqekq"]
+
+[ext_resource type="Script" uid="uid://dvc1fjai31aae" path="res://scripts/items/EquipmentMenu.cs" id="1_t4b11"]
+[ext_resource type="PackedScene" uid="uid://dgcis6ky8n7d8" path="res://assets/scenes/uiscreens/EquipmentSlotUI.tscn" id="2_geg7i"]
+[ext_resource type="Script" uid="uid://l3bhkbqd5ne0" path="res://scripts/items/StatComparisonPanel.cs" id="3_4aq8w"]
+
+[node name="EquipmentMenu" type="Control" node_paths=PackedStringArray("_slotContainer", "_itemList", "_itemNameLabel", "_itemDescriptionLabel", "_statComparisonPanel")]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_t4b11")
+_slotContainer = NodePath("VBoxContainer/HBoxContainer/EquipmentSlotsPanel/Slots")
+_itemList = NodePath("PanelContainer/ItemListPanel/ItemList")
+_itemNameLabel = NodePath("ItemDetailPanel/ItemName")
+_itemDescriptionLabel = NodePath("ItemDetailPanel/ItemDescription")
+_statComparisonPanel = NodePath("CharacterPanel/StatPreviewPanel")
+EquipmentSlotUIScene = ExtResource("2_geg7i")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.23529412, 0.43529412, 0.80784315, 0.3882353)
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+offset_right = 981.0
+offset_bottom = 693.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="EquipmentSlotsPanel" type="PanelContainer" parent="VBoxContainer/HBoxContainer"]
+layout_mode = 2
+
+[node name="Slots" type="VBoxContainer" parent="VBoxContainer/HBoxContainer/EquipmentSlotsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 50
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 1077.0
+offset_top = 1.0
+offset_right = 1864.0
+offset_bottom = 300.0
+
+[node name="ItemListPanel" type="PanelContainer" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="ItemList" type="ItemList" parent="PanelContainer/ItemListPanel"]
+layout_mode = 2
+auto_width = true
+auto_height = true
+item_count = 2
+max_columns = 3
+same_column_width = true
+item_0/text = "Test"
+
+[node name="CharacterPanel" type="PanelContainer" parent="."]
+layout_mode = 0
+offset_left = 1055.0
+offset_top = 468.0
+offset_right = 1866.0
+offset_bottom = 899.0
+
+[node name="CharacterStatsPanelOld" type="PanelContainer" parent="CharacterPanel"]
+visible = false
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="CharacterPanel/CharacterStatsPanelOld"]
+layout_mode = 2
+
+[node name="StatPreviewPanel" type="PanelContainer" parent="CharacterPanel" node_paths=PackedStringArray("_statsContainer")]
+layout_mode = 2
+script = ExtResource("3_4aq8w")
+_statsContainer = NodePath("StatVBoxPanel")
+
+[node name="StatVBoxPanel" type="VBoxContainer" parent="CharacterPanel/StatPreviewPanel"]
+layout_mode = 2
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="ItemDetailPanel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.42900002
+anchor_top = 0.032
+anchor_right = 0.42900002
+anchor_bottom = 0.032
+offset_left = -686.68005
+offset_top = 473.44
+offset_right = 100.31995
+offset_bottom = 772.44
+
+[node name="ItemIcon" type="TextureRect" parent="ItemDetailPanel"]
+layout_mode = 2
+
+[node name="ItemName" type="Label" parent="ItemDetailPanel"]
+layout_mode = 2
+
+[node name="ItemDescription" type="RichTextLabel" parent="ItemDetailPanel"]
+layout_mode = 2

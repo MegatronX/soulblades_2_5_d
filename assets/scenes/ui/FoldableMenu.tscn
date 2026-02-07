@@ -1,0 +1,27 @@
+[gd_scene load_steps=2 format=3 uid="uid://cmlw6u6h04lm0"]
+
+[ext_resource type="Script" uid="uid://bv7gicyahtptp" path="res://scripts/battle/FoldableMenu.cs" id="1_1c5fb"]
+
+[node name="FoldableMenu" type="PanelContainer" node_paths=PackedStringArray("_listContainer", "_backgroundRect")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1c5fb")
+_listContainer = NodePath("Margins/CommandList")
+_backgroundRect = NodePath("Background")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 2
+expand_mode = 1
+
+[node name="Margins" type="MarginContainer" parent="."]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="CommandList" type="VBoxContainer" parent="Margins"]
+layout_mode = 2

@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://2qgo5jqmul4p"]
+
+[ext_resource type="Script" uid="uid://c5io1q7isn0b" path="res://scripts/GameManager.cs" id="1_5iip0"]
+[ext_resource type="Script" uid="uid://ca3oqtce62fs4" path="res://scripts/networking/NetworkPlayerManager.cs" id="2_ipbcn"]
+
+[node name="GameManagerScene" type="Node"]
+script = ExtResource("1_5iip0")
+
+[node name="NetworkPlayerManager" type="Node" parent="."]
+script = ExtResource("2_ipbcn")

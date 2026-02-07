@@ -1,0 +1,21 @@
+[gd_scene load_steps=7 format=3 uid="uid://dloy2xq33lywb"]
+
+[ext_resource type="Script" uid="uid://dq0uansmp4tyd" path="res://scripts/battle/ActionManager.cs" id="1_bau14"]
+[ext_resource type="Script" uid="uid://cvxdrgvt8vkxn" path="res://scripts/battle/BattleCategory.cs" id="2_q8ygv"]
+[ext_resource type="Script" uid="uid://e81v4n2lmbrf" path="res://scripts/battle/BattleCommand.cs" id="3_u56hm"]
+[ext_resource type="Resource" uid="uid://djr07cuyi6m66" path="res://assets/resources/actions/Attack.tres" id="4_u0kxi"]
+
+[sub_resource type="Resource" id="Resource_ksnoo"]
+script = ExtResource("2_q8ygv")
+CommandName = "Magic"
+metadata/_custom_type_script = "uid://cvxdrgvt8vkxn"
+
+[sub_resource type="Resource" id="Resource_cnq2t"]
+script = ExtResource("2_q8ygv")
+SubCommands = Array[ExtResource("3_u56hm")]([ExtResource("4_u0kxi"), SubResource("Resource_ksnoo"), null, null])
+metadata/_custom_type_script = "uid://cvxdrgvt8vkxn"
+
+[node name="ActionManager" type="Node"]
+script = ExtResource("1_bau14")
+RootPages = Array[ExtResource("2_q8ygv")]([SubResource("Resource_cnq2t")])
+metadata/_custom_type_script = "uid://dq0uansmp4tyd"

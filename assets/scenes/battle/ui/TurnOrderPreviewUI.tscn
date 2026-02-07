@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3 uid="uid://ddbhgeh1rfpoe"]
+
+[ext_resource type="Script" uid="uid://m2jxo8x3eayf" path="res://scripts/ui/turn_order/TurnOrderPreviewUI.cs" id="1_r4fbo"]
+[ext_resource type="PackedScene" uid="uid://cxjoniumvv72" path="res://assets/scenes/battle/ui/TurnOrderCard.tscn" id="2_o877t"]
+
+[node name="TurnOrderPreviewUI" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_r4fbo")
+_cardScene = ExtResource("2_o877t")
+_cardSpacing = 75.0

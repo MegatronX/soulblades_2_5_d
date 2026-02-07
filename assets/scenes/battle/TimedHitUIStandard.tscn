@@ -1,0 +1,36 @@
+[gd_scene load_steps=3 format=3 uid="uid://d06bioxtqsbb2"]
+
+[ext_resource type="Script" uid="uid://cpicalgnxfqu7" path="res://scripts/battle/TimedHitUI.cs" id="1_swhqg"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_18h0k"]
+bg_color = Color(0.6, 0.6, 0.6, 0)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(0.9764706, 1, 1, 1)
+corner_radius_top_left = 100
+corner_radius_top_right = 100
+corner_radius_bottom_right = 100
+corner_radius_bottom_left = 100
+
+[node name="TimedHitUiStandard" type="Control" node_paths=PackedStringArray("_staticRing", "_collapsingRing")]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_swhqg")
+_staticRing = NodePath("StaticRing")
+_collapsingRing = NodePath("CollapsingRing")
+
+[node name="StaticRing" type="Panel" parent="."]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_18h0k")
+
+[node name="CollapsingRing" type="Panel" parent="."]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_18h0k")

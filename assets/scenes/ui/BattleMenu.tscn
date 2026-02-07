@@ -1,0 +1,84 @@
+[gd_scene load_steps=10 format=3 uid="uid://cr7cfw6u5tii7"]
+
+[ext_resource type="Script" uid="uid://cwgwdos1s7qyr" path="res://scripts/battle/BattleMenuController.cs" id="1_s35sr"]
+[ext_resource type="Texture2D" uid="uid://x6prcgx5nb4p" path="res://assets/menu_images/indicators/indicator_active_placeholder.tres" id="2_lg4s1"]
+[ext_resource type="PackedScene" uid="uid://cmlw6u6h04lm0" path="res://assets/scenes/ui/FoldableMenu.tscn" id="2_uwbid"]
+[ext_resource type="Texture2D" uid="uid://dnc6s220kioqn" path="res://assets/resources/icons/Option.png" id="3_7h688"]
+[ext_resource type="Script" uid="uid://yitwfhn1hcog" path="res://scripts/battle/MenuTheme.cs" id="3_lg4s1"]
+[ext_resource type="Texture2D" uid="uid://2flhcp2ndlh" path="res://assets/resources/icons/magic_icon.png" id="3_s6x1c"]
+
+[sub_resource type="Gradient" id="Gradient_lg8cj"]
+colors = PackedColorArray(0.9389284, 0.18722513, 0.34769994, 1, 0.8425824, 0.17989147, 0.23500594, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_cxorm"]
+gradient = SubResource("Gradient_lg8cj")
+width = 32
+height = 32
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="Resource" id="Resource_s6x1c"]
+script = ExtResource("3_lg4s1")
+CommandIcons = Dictionary[String, Texture2D]({
+"Magic": ExtResource("3_s6x1c")
+})
+ButtonBackground = ExtResource("3_7h688")
+ButtonHeight = 40
+FontSize = 32
+metadata/_custom_type_script = "uid://yitwfhn1hcog"
+
+[node name="BattleMenu" type="Control" node_paths=PackedStringArray("_primaryMenu", "_subMenu", "_pageIndicatorContainer", "_pageLabel")]
+custom_minimum_size = Vector2(250, 225)
+layout_mode = 3
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 57.0
+offset_top = -278.0
+offset_right = 307.0
+offset_bottom = -78.0
+grow_vertical = 0
+script = ExtResource("1_s35sr")
+_primaryMenu = NodePath("PrimaryMenu")
+_subMenu = NodePath("SubMenu")
+_pageIndicatorContainer = NodePath("PageIndicators")
+_pageLabel = NodePath("PageIndicators/PageLabel")
+_pageIndicatorActive = ExtResource("2_lg4s1")
+_pageIndicatorInactive = SubResource("GradientTexture2D_cxorm")
+_defaultTheme = SubResource("Resource_s6x1c")
+
+[node name="PageIndicators" type="HBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -0.5
+offset_top = -11.5
+offset_right = 0.5
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 4
+alignment = 1
+
+[node name="PageLabel" type="Label" parent="PageIndicators"]
+layout_mode = 2
+
+[node name="PrimaryMenu" parent="." instance=ExtResource("2_uwbid")]
+layout_mode = 1
+offset_bottom = 25.0
+
+[node name="SubMenu" parent="." instance=ExtResource("2_uwbid")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 251.0
+offset_top = 1.0
+offset_right = 271.0
+offset_bottom = 21.0
+grow_horizontal = 1
+grow_vertical = 1

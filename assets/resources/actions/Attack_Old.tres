@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=3 format=3 uid="uid://ic4n2jfqy07e"]
+
+[ext_resource type="Script" uid="uid://d1q4ymghq0rd0" path="res://scripts/ui/turn_order/ActionComponentData.cs" id="1_yir32"]
+[ext_resource type="Script" uid="uid://dotmxv788lodq" path="res://scripts/ui/turn_order/AttackData.cs" id="2_ldam1"]
+
+[resource]
+script = ExtResource("2_ldam1")
+TickCost = 0.0
+AllowedTargeting = 143
+CommandName = "Attack"
+metadata/_custom_type_script = "uid://dotmxv788lodq"

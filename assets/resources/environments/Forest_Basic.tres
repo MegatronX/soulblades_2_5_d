@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BattleEnvironmentProfile" load_steps=4 format=3 uid="uid://c5hl7f5hm6o8g"]
+
+[ext_resource type="Script" uid="uid://jeqlv2mp8gn5" path="res://scripts/battle/BattleEnvironmentProfile.cs" id="1_3021c"]
+[ext_resource type="Texture2D" uid="uid://bt5jm88xpb70a" path="res://assets/objects/environment/ground_texture.png" id="1_h4g65"]
+[ext_resource type="PackedScene" uid="uid://dx3pbmugn2ql8" path="res://assets/scenes/props/Tree_0.tscn" id="1_v4nqi"]
+
+[resource]
+script = ExtResource("1_3021c")
+FloorColor = Color(1, 1, 1, 1)
+FloorTexture = ExtResource("1_h4g65")
+FloorTiling = Vector2(40, 40)
+DecorationProps = Array[PackedScene]([ExtResource("1_v4nqi")])
+metadata/_custom_type_script = "uid://jeqlv2mp8gn5"

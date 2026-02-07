@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="EnemyParty" load_steps=2 format=3 uid="uid://byr4gv5d6jbtc"]
+
+[ext_resource type="Script" uid="uid://c8pe6a3j6pv2d" path="res://scripts/gameplay/EnemyParty.cs" id="1_1tue2"]
+
+[resource]
+script = ExtResource("1_1tue2")
+Members = null

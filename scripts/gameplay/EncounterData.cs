@@ -1,0 +1,18 @@
+using Godot;
+
+/// <summary>
+/// A Resource that pairs an EnemyParty with its spawn probability weight.
+/// A higher weight makes the encounter more common relative to others on the same map.
+/// </summary>
+[GlobalClass]
+public partial class EncounterData : Resource
+{
+    [Export]
+    public EnemyParty Party { get; private set; }
+
+    [Export(PropertyHint.Range, "1,100,1")]
+    public int SpawnWeight { get; private set; } = 50;
+
+    [Export]
+    public BattleMusicData SpecificMusicTrack { get; private set; }
+}

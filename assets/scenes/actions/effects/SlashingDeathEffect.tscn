@@ -1,0 +1,24 @@
+[gd_scene load_steps=5 format=3 uid="uid://biatqa7wldm2t"]
+
+[ext_resource type="Script" uid="uid://dp6eckxesk2vv" path="res://scripts/animation/effects/SlashingDeathEffect.cs" id="1_m22cp"]
+[ext_resource type="Shader" uid="uid://60ceqmpqjt87" path="res://assets/shaders/slashing_death.gdshader" id="2_cobqc"]
+[ext_resource type="Texture2D" uid="uid://dbhplww1x7ujd" path="res://assets/characters/goblin/goblin.png" id="3_cobqc"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_upwvg"]
+render_priority = 0
+shader = ExtResource("2_cobqc")
+shader_parameter/texture_albedo = ExtResource("3_cobqc")
+shader_parameter/progress = 0.0
+shader_parameter/slice_angle = 45.0
+shader_parameter/separation_dist = 0.1
+shader_parameter/noise_scale = 20.0
+shader_parameter/shake_intensity = 0.03
+shader_parameter/burn_color = Color(1, 0.2, 0, 1)
+
+[node name="SlashingDeathEffect" type="Node3D" node_paths=PackedStringArray("_effectSprite")]
+script = ExtResource("1_m22cp")
+_effectSprite = NodePath("Sprite3D")
+
+[node name="Sprite3D" type="Sprite3D" parent="."]
+material_override = SubResource("ShaderMaterial_upwvg")
+texture = ExtResource("3_cobqc")

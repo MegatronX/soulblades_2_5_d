@@ -1,0 +1,63 @@
+[gd_scene load_steps=2 format=3 uid="uid://bexbwce0xcse4"]
+
+[ext_resource type="Script" uid="uid://c57bmw3wuliud" path="res://scripts/ui/menuing/PlayerManagementPanel.cs" id="1_olixa"]
+
+[node name="PlayerManagementPanel" type="PanelContainer" node_paths=PackedStringArray("_playerList", "_characterList", "_assignButton", "_unassignButton")]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_olixa")
+_playerList = NodePath("HBoxContainer/Players/PlayerList")
+_characterList = NodePath("HBoxContainer/Characters/CharacterList")
+_assignButton = NodePath("HBoxContainer2/Assign")
+_unassignButton = NodePath("HBoxContainer2/Unassign")
+
+[node name="HBoxContainer" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_stretch_ratio = 3.83
+
+[node name="Players" type="VBoxContainer" parent="HBoxContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="HBoxContainer/Players"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Players"
+
+[node name="PlayerList" type="ItemList" parent="HBoxContainer/Players"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 2
+
+[node name="Characters" type="VBoxContainer" parent="HBoxContainer"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Label" type="Label" parent="HBoxContainer/Characters"]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 32
+text = "Characters"
+
+[node name="CharacterList" type="ItemList" parent="HBoxContainer/Characters"]
+custom_minimum_size = Vector2(0, 200)
+layout_mode = 2
+size_flags_vertical = 2
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="."]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Assign" type="Button" parent="HBoxContainer2"]
+layout_mode = 2
+text = "Assign"
+
+[node name="Unassign" type="Button" parent="HBoxContainer2"]
+layout_mode = 2
+text = "Unassign"

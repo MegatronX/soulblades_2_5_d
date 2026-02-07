@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="EncounterData" load_steps=5 format=3 uid="uid://ddnxm2bglxfgw"]
+
+[ext_resource type="Script" uid="uid://blyxvpi846c28" path="res://scripts/gameplay/EncounterData.cs" id="1_4aas3"]
+[ext_resource type="PackedScene" uid="uid://cikngvbkfdkqo" path="res://assets/resources/characters/goblin_lv5/goblin_lv5_animated.tscn" id="1_vm23b"]
+[ext_resource type="Script" uid="uid://c8pe6a3j6pv2d" path="res://scripts/gameplay/EnemyParty.cs" id="2_xg8hx"]
+
+[sub_resource type="Resource" id="Resource_hyl0c"]
+script = ExtResource("2_xg8hx")
+Members = Array[PackedScene]([ExtResource("1_vm23b"), ExtResource("1_vm23b"), ExtResource("1_vm23b")])
+metadata/_custom_type_script = "uid://c8pe6a3j6pv2d"
+
+[resource]
+script = ExtResource("1_4aas3")
+Party = SubResource("Resource_hyl0c")
+SpawnWeight = 1

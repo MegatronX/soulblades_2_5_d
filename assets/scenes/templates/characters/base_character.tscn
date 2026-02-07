@@ -1,0 +1,93 @@
+[gd_scene load_steps=9 format=3 uid="uid://dvix1t2ogdikl"]
+
+[ext_resource type="Texture2D" uid="uid://d2hs72wbue50s" path="res://assets/characters/ceira/ceira_new_1.png" id="1_434jp"]
+[ext_resource type="Script" uid="uid://bpafmbotrcd8l" path="res://scripts/items/EquipmentManager.cs" id="2_0wvbp"]
+[ext_resource type="Script" uid="uid://debwbvlcvdvhb" path="res://scripts/items/EquipmentSlot.cs" id="3_0rkvc"]
+[ext_resource type="PackedScene" uid="uid://dloy2xq33lywb" path="res://assets/scenes/templates/characters/action_manager.tscn" id="4_hwddo"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_noarx"]
+
+[sub_resource type="Animation" id="Animation_r3fl7"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite3D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [9]
+}
+
+[sub_resource type="Animation" id="Animation_a0tk4"]
+resource_name = "walk"
+loop_mode = 1
+step = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite3D:frame")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 1),
+"transitions": PackedFloat32Array(1, 1),
+"update": 0,
+"values": [0, 9]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_jka67"]
+_data = {
+&"RESET": SubResource("Animation_r3fl7"),
+&"walk": SubResource("Animation_a0tk4")
+}
+
+[node name="CharacterBody3D" type="CharacterBody3D"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CapsuleShape3D_noarx")
+
+[node name="Sprite3D" type="Sprite3D" parent="."]
+billboard = 1
+shaded = true
+alpha_cut = 1
+texture_filter = 0
+texture = ExtResource("1_434jp")
+hframes = 10
+frame = 9
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {
+&"": SubResource("AnimationLibrary_jka67")
+}
+
+[node name="SpringArm3D" type="SpringArm3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="SpringArm3D"]
+
+[node name="EquipmentManager" type="Node" parent="."]
+script = ExtResource("2_0wvbp")
+
+[node name="Weapon" type="Node" parent="EquipmentManager"]
+script = ExtResource("3_0rkvc")
+metadata/_custom_type_script = "uid://debwbvlcvdvhb"
+
+[node name="Offhand" type="Node" parent="EquipmentManager"]
+script = ExtResource("3_0rkvc")
+SlotType = 1
+metadata/_custom_type_script = "uid://debwbvlcvdvhb"
+
+[node name="HeadArmor" type="Node" parent="EquipmentManager"]
+script = ExtResource("3_0rkvc")
+SlotType = 2
+metadata/_custom_type_script = "uid://debwbvlcvdvhb"
+
+[node name="BodyArmor" type="Node" parent="EquipmentManager"]
+script = ExtResource("3_0rkvc")
+SlotType = 3
+metadata/_custom_type_script = "uid://debwbvlcvdvhb"
+
+[node name="ActionManager" parent="." instance=ExtResource("4_hwddo")]
