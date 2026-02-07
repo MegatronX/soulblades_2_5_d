@@ -15,4 +15,13 @@ public partial class EncounterData : Resource
 
     [Export]
     public BattleMusicData SpecificMusicTrack { get; private set; }
+
+    [Export]
+    public BattleMusicData PostBattleMusicTrack { get; private set; }
+
+    [Export]
+    public bool AllowRetry { get; private set; } = true;
+
+    [Export]
+    public bool IsScriptedLoss { get; private set; } = false;
 }

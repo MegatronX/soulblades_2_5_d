@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://cikngvbkfdkqo"]
+[gd_scene load_steps=13 format=3 uid="uid://cikngvbkfdkqo"]
 
 [ext_resource type="PackedScene" uid="uid://7vqyqph1fwuk" path="res://assets/resources/characters/CharacterTemplate.tscn" id="1_vuhmq"]
 [ext_resource type="Resource" uid="uid://b5p8ntkm4qay0" path="res://assets/resources/characters/goblin_lv5/goblin_presentation.tres" id="2_lho6q"]
@@ -7,6 +7,7 @@
 [ext_resource type="Script" uid="uid://debriqo3w14qa" path="res://scripts/ai/AIController.cs" id="5_ch2u2"]
 [ext_resource type="Resource" uid="uid://djr07cuyi6m66" path="res://assets/resources/actions/Attack.tres" id="6_o0410"]
 [ext_resource type="Script" uid="uid://cgg187nfrj2fj" path="res://scripts/ai/DummyAIStrategy.cs" id="7_opp7s"]
+[ext_resource type="Script" uid="uid://bq4qrkjr0uov" path="res://scripts/gameplay/EnemyProperties.cs" id="8_o0410"]
 
 [sub_resource type="Animation" id="Animation_vuhmq"]
 resource_name = "Idle"
@@ -82,3 +83,9 @@ autoplay = "Idle"
 script = ExtResource("5_ch2u2")
 Strategy = SubResource("Resource_fb44t")
 metadata/_custom_type_script = "uid://debriqo3w14qa"
+
+[node name="EnemyProperties" type="Node" parent="." index="7"]
+script = ExtResource("8_o0410")
+ExperienceReward = 15
+APExperienceReward = 1
+MoneyReward = 25

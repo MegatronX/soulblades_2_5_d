@@ -91,7 +91,7 @@ public partial class AIController : Node
 
         if (decision != null && decision.IsValid)
         {
-            _battleController.CommitAction(turnData, decision.Action, decision.Targets);
+            await _battleController.CommitAction(turnData, decision.Action, decision.Targets);
         }
         else
         {

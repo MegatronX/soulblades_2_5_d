@@ -13,6 +13,9 @@ public partial class MapEncounterData : Resource
     [Export]
     public Godot.Collections.Array<BattleMusicData> BattleMusicTracks { get; private set; } = new();
 
+    [Export]
+    public Godot.Collections.Array<BattleMusicData> PostBattleMusicTracks { get; private set; } = new();
+
     [Export(PropertyHint.Range, "0,100,1")]
     public int EncounterRatePercent { get; private set; } = 10; // e.g., a 10% chance per step/second.
 

@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="LevelProgression" load_steps=2 format=3 uid="uid://do1pmcipim73i"]
+
+[ext_resource type="Script" uid="uid://1cnrkcj5i4l2" path="res://scripts/gameplay/levels/LevelProgression.cs" id="1_8k146"]
+
+[resource]
+script = ExtResource("1_8k146")
+ExpTable = Array[int]([0, 3, 7, 14, 28, 56, 112, 224, 448, 896, 1792, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
+metadata/_custom_type_script = "uid://1cnrkcj5i4l2"

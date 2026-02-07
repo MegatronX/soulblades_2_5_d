@@ -71,6 +71,11 @@ public partial class StatsComponent : Node
         return _finalValues.GetValueOrDefault(statType, 0);
     }
 
+    public int GetBaseStatValue(StatType statType)
+    {
+        return _characterBaseStats.GetValueOrDefault(statType, 0);
+    }
+
     public int GetStatValueWithoutModifiersFromSource(StatType statType, object source)
     {
         if (_isDirty)

@@ -84,4 +84,10 @@ public partial class GlobalEventBus : Node
     /// </summary>
     [Signal]
     public delegate void AIShoutedEventHandler(string message);
+
+    /// <summary>
+    /// Emitted when the player chooses to quit from a Game Over screen.
+    /// </summary>
+    [Signal]
+    public delegate void BattleQuitRequestedEventHandler();
 }

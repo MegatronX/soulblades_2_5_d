@@ -20,14 +20,15 @@ public partial class GameManager : Node
     public List<Node> PlayerParty { get; } = new();
 
     // Temporary storage for the upcoming battle's data.
-    public List<Godot.Collections.Array<PackedScene>> PendingEnemyParties { get; private set; }
-    public Godot.Collections.Array<PackedScene> PendingAllyParty { get; private set; }
-    public ulong? PendingBattleSeed { get; private set; }
-    public BattleFormation PendingFormation { get; private set; }
-    public BattleEnvironmentProfile PendingEnvironmentProfile { get; private set; }
-    public BattleMusicData PendingBattleMusic { get; private set; }
+    public BattleConfig PendingBattleConfig { get; private set; }
+
+    public int PartyMoney { get; private set; } = 0;
+    public int PartyExperience { get; private set; } = 0;
 
     private NetworkPlayerManager _networkPlayerManager;
+    private NodeCollectionSnapshot _partySnapshot;
+    private Godot.Collections.Dictionary _returnSceneState;
+    private bool _applyReturnStateOnNextSceneChange;
 
     public override void _Ready()
     {
@@ -49,6 +50,8 @@ public partial class GameManager : Node
         {
             SetTimeScale(_prePauseTimeScale);
         }
+
+        GetTree().SceneChanged += OnSceneChanged;
     }
 
     private double _prePauseTimeScale = 1.0;
@@ -187,15 +190,36 @@ public partial class GameManager : Node
     /// <param name="formation">The formation of the battle (e.g., surprise attack).</param>
     /// <param name="seed">An optional seed for the battle.</param>
     /// <param name="music">The music track to play during the battle.</param>
-    public void InitiateBattle(List<Godot.Collections.Array<PackedScene>> enemyParties, Godot.Collections.Array<PackedScene> allyParty, string battleScenePath, BattleFormation formation, BattleEnvironmentProfile envProfile = null, ulong? seed = null, BattleMusicData music = null)
+    public void InitiateBattle(List<Godot.Collections.Array<PackedScene>> enemyParties, Godot.Collections.Array<PackedScene> allyParty, string battleScenePath, BattleFormation formation, BattleEnvironmentProfile envProfile = null, ulong? seed = null, BattleMusicData music = null, BattleMusicData postBattleMusic = null, bool allowRetry = true, bool isScriptedLoss = false)
     {
+        CapturePartySnapshot();
+        CaptureReturnSceneState();
+
         // Store the data that the BattleController will need.
-        PendingEnemyParties = enemyParties;
-        PendingAllyParty = allyParty;
-        PendingBattleSeed = seed;
-        PendingFormation = formation;
-        PendingEnvironmentProfile = envProfile;
-        PendingBattleMusic = music;
+        var enemyPartiesArray = new Godot.Collections.Array<Godot.Collections.Array<PackedScene>>();
+        if (enemyParties != null)
+        {
+            foreach (var party in enemyParties)
+            {
+                enemyPartiesArray.Add(party);
+            }
+        }
+
+        PendingBattleConfig = new BattleConfig
+        {
+            EnemyParties = enemyPartiesArray,
+            AllyParty = allyParty,
+            Formation = formation,
+            EnvironmentProfile = envProfile,
+            BattleMusic = music,
+            PostBattleMusic = postBattleMusic,
+            BattleScenePath = battleScenePath,
+            ReturnScenePath = GetTree().CurrentScene?.SceneFilePath,
+            AllowRetry = allowRetry,
+            IsScriptedLoss = isScriptedLoss,
+            HasSeed = seed.HasValue,
+            Seed = seed ?? 0
+        };
 
         foreach (var player in PlayerParty)
         {
@@ -206,5 +230,101 @@ public partial class GameManager : Node
 
         // Change to the battle scene.
         GetTree().ChangeSceneToFile(battleScenePath);
+    }
+
+    public BattleConfig GetOrCreatePendingBattleConfig()
+    {
+        if (PendingBattleConfig == null)
+        {
+            PendingBattleConfig = new BattleConfig();
+        }
+        return PendingBattleConfig;
+    }
+
+    public void AddPartyMoney(int amount)
+    {
+        if (amount <= 0) return;
+        PartyMoney += amount;
+    }
+
+    public void AddPartyExperience(int amount)
+    {
+        if (amount <= 0) return;
+        PartyExperience += amount;
+    }
+
+    public void ReturnFromBattle(BattleController.BattleState result, BattleRewards rewards, bool wasScriptedLoss)
+    {
+        // Persist party by moving them under the GameManager before leaving the battle scene.
+        foreach (var player in PlayerParty)
+        {
+            player.GetParent()?.RemoveChild(player);
+            AddChild(player);
+        }
+
+        var returnPath = PendingBattleConfig?.ReturnScenePath;
+        if (!string.IsNullOrEmpty(returnPath))
+        {
+            _applyReturnStateOnNextSceneChange = true;
+            GetTree().ChangeSceneToFile(returnPath);
+        }
+    }
+
+    public void RestartBattleFromSnapshot()
+    {
+        if (_partySnapshot == null)
+        {
+            GD.PrintErr("Cannot restart battle: no party snapshot available.");
+            return;
+        }
+        if (PendingBattleConfig == null || string.IsNullOrEmpty(PendingBattleConfig.BattleScenePath))
+        {
+            GD.PrintErr("Cannot restart battle: missing pending battle config or battle scene path.");
+            return;
+        }
+
+        RestorePartyFromSnapshot();
+        GetTree().ChangeSceneToFile(PendingBattleConfig.BattleScenePath);
+    }
+
+    private void CapturePartySnapshot()
+    {
+        _partySnapshot = new NodeCollectionSnapshot(PlayerParty);
+    }
+
+    private void RestorePartyFromSnapshot()
+    {
+        foreach (var player in PlayerParty)
+        {
+            player.QueueFree();
+        }
+        PlayerParty.Clear();
+
+        var restored = _partySnapshot.InstantiateAll();
+        foreach (var player in restored)
+        {
+            AddChild(player);
+            PlayerParty.Add(player);
+        }
+    }
+
+    private void CaptureReturnSceneState()
+    {
+        var provider = GetTree().CurrentScene as IBattleReturnStateProvider;
+        _returnSceneState = provider?.CaptureBattleReturnState();
+    }
+
+    private void OnSceneChanged()
+    {
+        if (!_applyReturnStateOnNextSceneChange) return;
+        _applyReturnStateOnNextSceneChange = false;
+
+        if (_returnSceneState == null) return;
+        var newScene = GetTree().CurrentScene;
+        if (newScene is IBattleReturnStateProvider provider)
+        {
+            provider.RestoreBattleReturnState(_returnSceneState);
+        }
+        _returnSceneState = null;
     }
 }

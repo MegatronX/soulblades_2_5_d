@@ -81,13 +81,15 @@ public partial class ActionManager : Node
         return RootPages[pageIndex]?.Theme;
     }
 
-    public void LearnAction(ActionData action)
+    public bool LearnAction(ActionData action)
     {
         if (!LearnedActions.Contains(action))
         {
             LearnedActions.Add(action);
             EmitSignal(SignalName.ActionLearned, action);
+            return true;
         }
+        return false;
     }
 
     public void ForgetAction(ActionData action)

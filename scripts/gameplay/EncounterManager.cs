@@ -50,7 +50,7 @@ public partial class EncounterManager : Node
             // Wrap the single party in a list for the new method signature.
             var enemyParties = new System.Collections.Generic.List<Godot.Collections.Array<PackedScene>> { encounter.Party.Members };
             
-            // Determine music track
+            // Determine battle music track
             BattleMusicData music = encounter.SpecificMusicTrack;
             if (music == null && _mapData.BattleMusicTracks.Count > 0)
             {
@@ -69,8 +69,37 @@ public partial class EncounterManager : Node
                 }
             }
 
+            // Determine post-battle music track
+            BattleMusicData postBattleMusic = encounter.PostBattleMusicTrack;
+            if (postBattleMusic == null && _mapData.PostBattleMusicTracks.Count > 0)
+            {
+                int totalWeight = _mapData.PostBattleMusicTracks.Sum(t => t.Weight);
+                int roll = _rng.RandRangeInt(0, totalWeight - 1);
+
+                foreach (var track in _mapData.PostBattleMusicTracks)
+                {
+                    if (roll < track.Weight)
+                    {
+                        postBattleMusic = track;
+                        break;
+                    }
+                    roll -= track.Weight;
+                }
+            }
+
             // For a standard random encounter, we have no allies and a normal formation.
-            gameManager.InitiateBattle(enemyParties, null, _battleScenePath, BattleFormation.Normal, _mapData?.EnvironmentProfile, null, music);
+            gameManager.InitiateBattle(
+                enemyParties,
+                null,
+                _battleScenePath,
+                BattleFormation.Normal,
+                _mapData?.EnvironmentProfile,
+                null,
+                music,
+                postBattleMusic,
+                encounter.AllowRetry,
+                encounter.IsScriptedLoss
+            );
         }
     }
 

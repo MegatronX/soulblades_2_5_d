@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="MapEncounterData" load_steps=12 format=3 uid="uid://qakj03uoo3aa"]
+[gd_resource type="Resource" script_class="MapEncounterData" load_steps=14 format=3 uid="uid://qakj03uoo3aa"]
 
 [ext_resource type="Resource" uid="uid://c5hl7f5hm6o8g" path="res://assets/resources/environments/Forest_Basic.tres" id="1_2thaw"]
 [ext_resource type="Script" uid="uid://b852tmrdccomi" path="res://scripts/gameplay/BattleMusicData.cs" id="1_4hsgb"]
@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://cikngvbkfdkqo" path="res://assets/resources/characters/goblin_lv5/goblin_lv5_animated.tscn" id="5_jytxg"]
 [ext_resource type="Script" uid="uid://c8pe6a3j6pv2d" path="res://scripts/gameplay/EnemyParty.cs" id="6_wct8s"]
 [ext_resource type="Script" uid="uid://blyxvpi846c28" path="res://scripts/gameplay/EncounterData.cs" id="7_w4uh2"]
+[ext_resource type="AudioStream" uid="uid://b7jjpejq5pdee" path="res://assets/resources/music/battle/Last Strike, Bright Sky.mp3" id="8_wct8s"]
 
 [sub_resource type="Resource" id="Resource_puu1f"]
 script = ExtResource("1_4hsgb")
@@ -25,9 +26,15 @@ script = ExtResource("7_w4uh2")
 Party = SubResource("Resource_mn0nd")
 metadata/_custom_type_script = "uid://blyxvpi846c28"
 
+[sub_resource type="Resource" id="Resource_w4uh2"]
+script = ExtResource("1_4hsgb")
+Stream = ExtResource("8_wct8s")
+metadata/_custom_type_script = "uid://b852tmrdccomi"
+
 [resource]
 script = ExtResource("1_hsgw2")
 PossibleEncounters = Array[Object]([ExtResource("1_kydo6"), SubResource("Resource_8gxiw")])
 BattleMusicTracks = Array[ExtResource("1_4hsgb")]([SubResource("Resource_puu1f")])
+PostBattleMusicTracks = Array[ExtResource("1_4hsgb")]([SubResource("Resource_w4uh2")])
 EncounterRatePercent = 100
 EnvironmentProfile = ExtResource("1_2thaw")

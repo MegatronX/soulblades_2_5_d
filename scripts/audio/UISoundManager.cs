@@ -28,8 +28,12 @@ public partial class UISoundManager : Node
     [Export] public AudioStream PageFlipSound { get; set; }
     [Export] public AudioStream InvalidSound { get; set; }
 
+    [Export] public bool PrewarmOnReady { get; set; } = true;
+    [Export] public float PrewarmVolumeDb { get; set; } = -80.0f;
+
     private List<AudioStreamPlayer> _playerPool = new();
     private const int InitialPoolSize = 8;
+    private AudioStreamPlayer _prewarmPlayer;
 
     public override void _Ready()
     {
@@ -39,6 +43,15 @@ public partial class UISoundManager : Node
         for (int i = 0; i < InitialPoolSize; i++)
         {
             AddPlayerToPool();
+        }
+
+        if (PrewarmOnReady)
+        {
+            _prewarmPlayer = new AudioStreamPlayer();
+            _prewarmPlayer.Bus = SoundBus;
+            _prewarmPlayer.VolumeDb = PrewarmVolumeDb;
+            AddChild(_prewarmPlayer);
+            CallDeferred(nameof(PrewarmConfiguredSounds));
         }
     }
 
@@ -104,6 +117,42 @@ public partial class UISoundManager : Node
             player.Bus = SoundBus;
             player.PitchScale = 1.0f; // Reset pitch in case it was modified
             player.Play();
+        }
+    }
+
+    private async void PrewarmConfiguredSounds()
+    {
+        var streams = new HashSet<AudioStream>();
+
+        if (CurrentTheme != null)
+        {
+            AddStream(streams, CurrentTheme.NavigationSound);
+            AddStream(streams, CurrentTheme.ConfirmSound);
+            AddStream(streams, CurrentTheme.CancelSound);
+            AddStream(streams, CurrentTheme.PageFlipSound);
+            AddStream(streams, CurrentTheme.InvalidSound);
+        }
+
+        AddStream(streams, NavigationSound);
+        AddStream(streams, ConfirmSound);
+        AddStream(streams, CancelSound);
+        AddStream(streams, PageFlipSound);
+        AddStream(streams, InvalidSound);
+
+        foreach (var stream in streams)
+        {
+            _prewarmPlayer.Stream = stream;
+            _prewarmPlayer.Play();
+            await ToSignal(GetTree(), SceneTree.SignalName.ProcessFrame);
+            _prewarmPlayer.Stop();
+        }
+    }
+
+    private static void AddStream(HashSet<AudioStream> streams, AudioStream stream)
+    {
+        if (stream != null)
+        {
+            streams.Add(stream);
         }
     }
 }

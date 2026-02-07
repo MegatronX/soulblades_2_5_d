@@ -8,6 +8,8 @@ using System.Linq;
 /// </summary>
 public partial class AbilityManager : Node
 {
+    public const string NodeName = "AbilityManager";
+
     private readonly List<Ability> _knownAbilities = new();
     private readonly List<Ability> _equippedAbilities = new();
 
@@ -17,7 +19,11 @@ public partial class AbilityManager : Node
     [Signal]
     public delegate void EquippedAbilitiesChangedEventHandler();
 
+    [Signal]
+    public delegate void ApExperienceChangedEventHandler(int newValue);
+
     private Node _owner;
+    private int _currentApExperience = 0;
 
     public override void _Ready()
     {
@@ -29,6 +35,15 @@ public partial class AbilityManager : Node
         return _equippedAbilities.Sum(ability => ability.ApCost);
     }
 
+    public int GetCurrentApExperience() => _currentApExperience;
+
+    public void AddApExperience(int amount)
+    {
+        if (amount <= 0) return;
+        _currentApExperience += amount;
+        EmitSignal(SignalName.ApExperienceChanged, _currentApExperience);
+    }
+
     // Public methods for the UI to get data
     public IReadOnlyList<Ability> GetKnownAbilities() => _knownAbilities;
     public IReadOnlyList<Ability> GetEquippedAbilities() => _equippedAbilities;
@@ -37,13 +52,15 @@ public partial class AbilityManager : Node
     /// Adds an ability to the character's list of known abilities.
     /// This would be called when learning an ability from equipment.
     /// </summary>
-    public void LearnAbility(Ability ability)
+    public bool LearnAbility(Ability ability)
     {
         if (!_knownAbilities.Contains(ability))
         {
             _knownAbilities.Add(ability);
             EmitSignal(SignalName.KnownAbilitiesChanged);
+            return true;
         }
+        return false;
     }
 
     /// <summary>

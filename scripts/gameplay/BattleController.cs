@@ -1,7 +1,7 @@
 using Godot;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
+using System.Threading.Tasks;
 
 /// <summary>
 /// Orchestrates a turn-based battle, managing combatants, the turn order, and the overall battle state.
@@ -31,6 +31,18 @@ public partial class BattleController : Node
 
     private TurnManager _turnManager;
     private IRandomNumberGenerator _rng;
+    private BattleContext _context;
+    private BattleRoster _roster;
+    private BattleTurnFlow _turnFlow;
+    private BattleNetworkGateway _networkGateway;
+    private GlobalEventBus _eventBus;
+    private BattleRewardsResolver _rewardsResolver = new BattleRewardsResolver();
+    private BattleRewardsApplier _rewardsApplier = new BattleRewardsApplier();
+    private BattleResultsOverlay _resultsOverlay;
+    private readonly List<EnemyRewardSnapshot> _defeatedEnemyRewards = new();
+    private readonly HashSet<ulong> _rewardedEnemyIds = new();
+    private Node _lastKillingBlowActor;
+    private bool _isResolvingBattleEnd;
 
     [Export]
     private TurnOrderPreviewUI _turnOrderPreviewUI;
@@ -136,6 +148,10 @@ public partial class BattleController : Node
             AddChild(debugOverlay);
         }
 
+        _eventBus = GetNodeOrNull<GlobalEventBus>(GlobalEventBus.Path);
+        _resultsOverlay = new BattleResultsOverlay();
+        AddChild(_resultsOverlay);
+
         // The BattleController is now responsible for setting up the battle
         // using the data prepared in the GameManager.
         CallDeferred(nameof(SetupBattleFromGameManager));
@@ -144,91 +160,35 @@ public partial class BattleController : Node
     private void SetupBattleFromGameManager()
     {
         var gameManager = GetNode<GameManager>(GameManager.Path);
-
-        // Spawn the enemy party from the PackedScenes stored in the GameManager.
-        var allEnemyCombatants = new List<Node>();
-        if (gameManager.PendingEnemyParties != null)
-        {
-            foreach (var enemyParty in gameManager.PendingEnemyParties)
-            {
-                foreach (var enemyScene in enemyParty)
-                {
-                    var enemyInstance = enemyScene.Instantiate();
-                    _enemyTeamContainer.AddChild(enemyInstance);
-                    allEnemyCombatants.Add(enemyInstance);
-                }
-            }
-        }
-
-        // Spawn the ally party.
-        var allyCombatants = new List<Node>();
-        if (gameManager.PendingAllyParty != null)
-        {
-            foreach (var allyScene in gameManager.PendingAllyParty)
-            {
-                var allyInstance = allyScene.Instantiate();
-                _allyTeamContainer.AddChild(allyInstance);
-                allyCombatants.Add(allyInstance);
-            }
-        }
-
-        // Take the persistent player party from the GameManager and place them in the battle scene.
-        foreach (var player in gameManager.PlayerParty)
-        {
-            player.GetParent()?.RemoveChild(player);
-            _playerTeamContainer.AddChild(player);
-        }
-        var playerParty = gameManager.PlayerParty;
-
-        // Use the assigned settings, or create a default one if missing to prevent crashes.
         if (_placementSettings == null) _placementSettings = new BattlePlacementSettings();
-        _placementSettings.ApplyFormationPositions(playerParty, allEnemyCombatants, allyCombatants, gameManager.PendingFormation);
+        gameManager.GetOrCreatePendingBattleConfig();
 
-        // Apply Environment Profile if one was passed
-        if (gameManager.PendingEnvironmentProfile != null)
-        {
-            // Try to find the generator in the scene root
-            var sceneRoot = GetTree().CurrentScene;
-            BattleArenaGenerator arenaGenerator = null;
-            
-            foreach (var child in sceneRoot.GetChildren())
-            {
-                if (child is BattleArenaGenerator gen)
-                {
-                    arenaGenerator = gen;
-                    break;
-                }
-            }
+        var bootstrapper = new BattleBootstrapper(_playerTeamContainer, _enemyTeamContainer, _allyTeamContainer, _placementSettings);
+        _context = bootstrapper.BuildContextFromGameManager(gameManager);
 
-            if (arenaGenerator != null)
-            {
-                arenaGenerator.ApplyProfile(gameManager.PendingEnvironmentProfile);
-            }
-        }
-
-        StartBattle(playerParty, allEnemyCombatants, allyCombatants, gameManager.PendingFormation, gameManager.PendingBattleSeed);
+        StartBattle(_context);
     }
 
     /// <summary>
     /// Initializes and starts the battle.
     /// </summary>
-    public void StartBattle(IEnumerable<Node> playerCombatants, IEnumerable<Node> enemyCombatants, IEnumerable<Node> allyCombatants, BattleFormation formation, ulong? seed = null)
+    public void StartBattle(BattleContext context)
     {
         if (CurrentState != BattleState.NotStarted || !Multiplayer.IsServer()) return;
 
         _rng = new GodotRandomNumberGenerator();
 
         // Disable free movement for all combatants during battle.
-        DisableMovement(playerCombatants);
-        DisableMovement(enemyCombatants);
-        DisableMovement(allyCombatants);
+        DisableMovement(context.PlayerParty);
+        DisableMovement(context.EnemyCombatants);
+        DisableMovement(context.AllyCombatants);
 
-        if (seed.HasValue)
+        if (context.Config.HasSeed)
         {
-            _rng.SetSeed(seed.Value);
+            _rng.SetSeed(context.Config.Seed);
         }
         
-        var allCombatants = playerCombatants.Concat(enemyCombatants).Concat(allyCombatants).ToList();
+        var allCombatants = context.PlayerParty.Concat(context.EnemyCombatants).Concat(context.AllyCombatants).ToList();
         _actionDirector.Initialize(allCombatants);
         _actionDirector.SetRNG(_rng);
 
@@ -237,44 +197,42 @@ public partial class BattleController : Node
             _chargeSystem.Initialize(_actionDirector.TimedHitManager);
         }
 
-        foreach (var combatant in playerCombatants)
-        {
-            EnsureBattleUnit(combatant);
-            // If player has advantage, they start with a higher counter.
-            float initialCounter = formation == BattleFormation.PlayerAdvantage ? 
-            _rng.RandRangeFloat(_advantageMinCounterStart, _advantageMaxCounterStart) : _rng.RandRangeFloat(_minCounterStart, _normalMaxCounterStart);
-            _turnManager.AddCombatant(combatant, initialCounter);
-            ConnectCombatantSignals(combatant);
-        }
+        _roster = new BattleRoster(_playerTeamContainer, _enemyTeamContainer, _allyTeamContainer, _turnManager, _actionDirector);
+        _roster.CombatantDefeated += OnCombatantDefeated;
 
-        foreach (var combatant in enemyCombatants)
-        {
-            EnsureBattleUnit(combatant);
-            // If enemy has advantage, they start with a higher counter.
-            float initialCounter = formation == BattleFormation.EnemyAdvantage ? 
-            _rng.RandRangeFloat(_advantageMinCounterStart, _advantageMaxCounterStart) : _rng.RandRangeFloat(_minCounterStart, _normalMaxCounterStart);
-            _turnManager.AddCombatant(combatant, initialCounter);
-            ConnectCombatantSignals(combatant);
-        }
+        _turnFlow = new BattleTurnFlow(_turnManager, _actionDirector, BattleCamera, _eventBus);
+        _turnFlow.TurnStarted += (turn) => EmitSignal(SignalName.TurnStarted, turn);
+        _networkGateway = new BattleNetworkGateway(this, () => _turnFlow.ActiveTurn);
 
-        foreach (var combatant in allyCombatants)
-        {
-            EnsureBattleUnit(combatant);
-            float initialCounter = _rng.RandRangeFloat(_minCounterStart, _normalMaxCounterStart);
-            _turnManager.AddCombatant(combatant, initialCounter);
-            ConnectCombatantSignals(combatant);
-        }
+        _roster.RegisterCombatants(
+            context.PlayerParty,
+            () => context.Config.Formation == BattleFormation.PlayerAdvantage
+                ? _rng.RandRangeFloat(_advantageMinCounterStart, _advantageMaxCounterStart)
+                : _rng.RandRangeFloat(_minCounterStart, _normalMaxCounterStart)
+        );
+
+        _roster.RegisterCombatants(
+            context.EnemyCombatants,
+            () => context.Config.Formation == BattleFormation.EnemyAdvantage
+                ? _rng.RandRangeFloat(_advantageMinCounterStart, _advantageMaxCounterStart)
+                : _rng.RandRangeFloat(_minCounterStart, _normalMaxCounterStart)
+        );
+
+        _roster.RegisterCombatants(
+            context.AllyCombatants,
+            () => _rng.RandRangeFloat(_minCounterStart, _normalMaxCounterStart)
+        );
 
         // Apply initial status effects based on formation
-        if (formation == BattleFormation.EnemyAdvantage)
+        if (context.Config.Formation == BattleFormation.EnemyAdvantage)
         {
             // Apply "Back Turned" status to player party
-            // foreach (var player in playerCombatants) { ... }
+            // foreach (var player in context.PlayerParty) { ... }
         }
-        else if (formation == BattleFormation.PlayerAdvantage)
+        else if (context.Config.Formation == BattleFormation.PlayerAdvantage)
         {
             // Apply "Back Turned" status to enemy party
-            // foreach (var enemy in enemyCombatants) { ... }
+            // foreach (var enemy in context.EnemyCombatants) { ... }
         }
 
         // Now that the TurnManager is populated, initialize the UI.
@@ -288,29 +246,10 @@ public partial class BattleController : Node
         ProcessNextTurn();
     }
 
-    private void EnsureBattleUnit(Node combatant)
-    {
-        if (combatant.GetNodeOrNull<BattleUnit>(BattleUnit.NodeName) == null)
-        {
-            var unit = new BattleUnit();
-            unit.Name = BattleUnit.NodeName;
-            combatant.AddChild(unit);
-        }
-    }
-
-    private void ConnectCombatantSignals(Node combatant)
-    {
-        var stats = combatant.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
-        if (stats != null)
-        {
-            stats.HealthDepleted += () => OnCombatantHealthDepleted(combatant);
-        }
-    }
-
     /// <summary>
     /// Called by the active combatant when they have chosen an action to perform.
     /// </summary>
-    public async void CommitAction(TurnManager.TurnData actor, ActionData action, List<Node> targets)
+    public async Task CommitAction(TurnManager.TurnData actor, ActionData action, List<Node> targets)
     {
         if (!Multiplayer.IsServer() || CurrentState != BattleState.InProgress) return;
 
@@ -334,29 +273,22 @@ public partial class BattleController : Node
             }
         }
 
-        var context = new ActionContext(action, actor.Combatant, targets);
-
-        // Process via ActionDirector
-        await _actionDirector.ProcessAction(context);
-
-        // 2. Commit the turn to the TurnManager with the action's cost.
-        _turnManager.CommitTurn(actor, action.TickCost, _actionDirector);
-
-        // 3. Announce that the turn has been committed. The UI will react to this.
-        var eventBus = GetNode<GlobalEventBus>(GlobalEventBus.Path);
-        eventBus.EmitSignal(GlobalEventBus.SignalName.TurnCommitted);
-
-        // 4. Proceed to the next turn.
-        ProcessNextTurn();
+        await _turnFlow.CommitAction(actor, action, targets);
     }
 
-    private void OnCombatantHealthDepleted(Node combatant)
+    private void OnCombatantDefeated(Node combatant)
     {
         GD.Print($"Combatant {combatant.Name} has been defeated!");
 
         // 1. Visuals
         // Get context from ActionDirector to see what killed them
         var killingContext = _actionDirector.CurrentContext;
+        if (killingContext?.Initiator != null)
+        {
+            _lastKillingBlowActor = killingContext.Initiator;
+        }
+
+        CaptureEnemyRewardsIfNeeded(combatant);
         
         // Try to find BattleAnimator in scene if not directly linked (fallback)
         var animator = GetNodeOrNull<BattleAnimator>("BattleAnimator") ?? 
@@ -364,29 +296,8 @@ public partial class BattleController : Node
         
         animator?.PlayDeathEffect(combatant, killingContext);
 
-        // 2. Logic
-        
-        // Mark as untargetable/dead logic here if needed, though StatsComponent.IsDead handles the state.
-        // We might want to disable collision or remove from targeting lists.
-        if (combatant is CollisionObject3D col)
-        {
-            col.CollisionLayer = 0; // Disable collision
-        }
-
-        // 3. Turn Management
-        var battleUnit = combatant.GetNodeOrNull<BattleUnit>(BattleUnit.NodeName);
-        bool persist = battleUnit?.PersistAfterDeath ?? false;
-
-        if (!persist)
-        {
-            var turnData = _turnManager.GetCombatants().FirstOrDefault(t => t.Combatant == combatant);
-            if (turnData != null)
-            {
-                _turnManager.RemoveCombatant(turnData);
-            }
-            _actionDirector.RemoveCombatant(combatant);
-            combatant.QueueFree();
-        }
+        // 2. Logic + turn management
+        _roster.HandleCombatantDefeated(combatant);
 
         // 4. Triggers
         EmitSignal(SignalName.CombatantDefeated, combatant);
@@ -402,34 +313,7 @@ public partial class BattleController : Node
     public void ReviveCombatant(Node combatant, int healAmount)
     {
         if (CurrentState != BattleState.InProgress) return;
-
-        var stats = combatant.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
-        if (stats == null || stats.CurrentHP > 0) return;
-
-        // Policy Check: Only revive Players or Persistent Enemies.
-        // Non-persistent enemies are considered permanently removed from the battle.
-        bool isPlayer = IsPlayerSide(combatant);
-        var battleUnit = combatant.GetNodeOrNull<BattleUnit>(BattleUnit.NodeName);
-        bool persist = battleUnit?.PersistAfterDeath ?? false;
-
-        if (!isPlayer && !persist)
-        {
-            GD.Print($"Revival failed: {combatant.Name} is permanently defeated.");
-            return;
-        }
-
-        GD.Print($"Reviving {combatant.Name}...");
-
-        // 1. Restore HP
-        stats.ModifyCurrentHP(healAmount);
-
-        // 2. Restore Collision/Targetability
-        if (combatant is CollisionObject3D col) col.CollisionLayer = 1;
-
-        // 3. Restore to Turn Manager if missing
-        // (Players who don't persist are removed on death, so we must add them back)
-        var turnData = _turnManager.GetCombatants().FirstOrDefault(t => t.Combatant == combatant);
-        if (turnData == null) _turnManager.AddCombatant(combatant, 0);
+        _roster.ReviveCombatant(combatant, healAmount);
     }
 
     private void CheckWinConditions()
@@ -440,17 +324,17 @@ public partial class BattleController : Node
         // Check Players & Allies
         foreach (Node p in _playerTeamContainer.GetChildren())
         {
-            if (IsCombatantAlive(p)) playersAlive = true;
+            if (_roster.IsCombatantAlive(p)) playersAlive = true;
         }
         foreach (Node a in _allyTeamContainer.GetChildren())
         {
-            if (IsCombatantAlive(a)) playersAlive = true;
+            if (_roster.IsCombatantAlive(a)) playersAlive = true;
         }
 
         // Check Enemies
         foreach (Node e in _enemyTeamContainer.GetChildren())
         {
-            if (IsCombatantAlive(e)) enemiesAlive = true;
+            if (_roster.IsCombatantAlive(e)) enemiesAlive = true;
         }
 
         if (!enemiesAlive)
@@ -463,16 +347,6 @@ public partial class BattleController : Node
         }
     }
 
-    private bool IsCombatantAlive(Node combatant)
-    {
-        var battleUnit = combatant.GetNodeOrNull<BattleUnit>(BattleUnit.NodeName);
-        if (battleUnit != null) return !battleUnit.IsDead;
-
-        // Fallback to direct stats check if BattleUnit is missing
-        var stats = combatant.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
-        return stats != null && stats.CurrentHP > 0;
-    }
-
     private void EndBattle(BattleState result)
     {
         if (CurrentState == BattleState.Victory || CurrentState == BattleState.Defeat) return;
@@ -481,7 +355,116 @@ public partial class BattleController : Node
         GD.Print($"Battle Ended: {result}");
         EmitSignal(SignalName.BattleEnded, (int)result);
 
-        // TODO: Show Results Screen, Distribute XP, etc.
+        _ = HandleBattleEndAsync(result);
+    }
+
+    private async Task HandleBattleEndAsync(BattleState result)
+    {
+        if (_isResolvingBattleEnd) return;
+        _isResolvingBattleEnd = true;
+
+        var config = _context?.Config;
+        bool allowRetry = config?.AllowRetry ?? true;
+        bool isScriptedLoss = config?.IsScriptedLoss ?? false;
+
+        if (result == BattleState.Victory)
+        {
+            await PlayVictoryCinematicAsync();
+
+            var rewards = _rewardsResolver.ResolveRewards(_defeatedEnemyRewards, _rng);
+            if (_resultsOverlay != null)
+            {
+                var gameManager = GetNodeOrNull<GameManager>(GameManager.Path);
+                var inventory = GetNodeOrNull<InventoryManager>("/root/InventoryManager");
+                _resultsOverlay.ShowVictory(rewards, () => _rewardsApplier.Apply(rewards, _context.PlayerParty, inventory, gameManager), _context.PlayerParty);
+                await _resultsOverlay.WaitForContinueAsync();
+                await _resultsOverlay.FadeOutAsync();
+            }
+
+            ReturnToCaller(result, rewards, false);
+        }
+        else if (result == BattleState.Defeat)
+        {
+            if (isScriptedLoss)
+            {
+                ReturnToCaller(result, null, true);
+                return;
+            }
+
+            if (_resultsOverlay != null)
+            {
+                _resultsOverlay.ShowDefeat(allowRetry);
+                var choice = await _resultsOverlay.WaitForDefeatChoiceAsync();
+                await _resultsOverlay.FadeOutAsync();
+
+                if (choice == BattleResultsOverlay.DefeatChoice.Retry && allowRetry)
+                {
+                    RetryBattle();
+                    return;
+                }
+            }
+
+            _eventBus?.EmitSignal(GlobalEventBus.SignalName.BattleQuitRequested);
+        }
+    }
+
+    private async Task PlayVictoryCinematicAsync()
+    {
+        if (BattleCamera == null) return;
+
+        var focus = _lastKillingBlowActor as Node3D;
+        if (focus == null && _context?.PlayerParty != null)
+        {
+            focus = _context.PlayerParty.OfType<Node3D>().FirstOrDefault();
+        }
+
+        if (focus != null)
+        {
+            BattleCamera.FocusOnTarget(focus);
+        }
+
+        BattleCamera.TriggerSweep(12.0f, 1.2f);
+        await ToSignal(GetTree().CreateTimer(1.2f), SceneTreeTimer.SignalName.Timeout);
+        BattleCamera.ResetToDefault();
+    }
+
+    private void ReturnToCaller(BattleState result, BattleRewards rewards, bool wasScriptedLoss)
+    {
+        var gameManager = GetNodeOrNull<GameManager>(GameManager.Path);
+        gameManager?.ReturnFromBattle(result, rewards, wasScriptedLoss);
+    }
+
+    private void RetryBattle()
+    {
+        var gameManager = GetNodeOrNull<GameManager>(GameManager.Path);
+        gameManager?.RestartBattleFromSnapshot();
+    }
+
+    private void CaptureEnemyRewardsIfNeeded(Node combatant)
+    {
+        if (_roster == null || combatant == null) return;
+        if (_roster.IsPlayerSide(combatant)) return;
+
+        ulong id = combatant.GetInstanceId();
+        if (_rewardedEnemyIds.Contains(id)) return;
+
+        var props = combatant.GetNodeOrNull<EnemyProperties>(EnemyProperties.NodeName);
+        if (props == null)
+        {
+            foreach (var child in combatant.GetChildren())
+            {
+                if (child is EnemyProperties ep)
+                {
+                    props = ep;
+                    break;
+                }
+            }
+        }
+
+        if (props == null) return;
+
+        _defeatedEnemyRewards.Add(EnemyRewardSnapshot.From(props));
+        _rewardedEnemyIds.Add(id);
     }
 
     /// <summary>
@@ -489,64 +472,18 @@ public partial class BattleController : Node
     /// </summary>
     public void SummonCombatant(PackedScene characterScene, bool isPlayerSide)
     {
-        if (characterScene == null) return;
-
-        var instance = characterScene.Instantiate();
-        Node container = isPlayerSide ? _allyTeamContainer : _enemyTeamContainer;
-        
-        container.AddChild(instance);
-        
-        // Initialize logic
-        EnsureBattleUnit(instance);
-        _actionDirector.RegisterCombatant(instance); // Assuming ActionDirector has a method to add runtime combatants
-        ConnectCombatantSignals(instance);
-
-        // Add to Turn Manager (start with 0 counter or inherit?)
-        _turnManager.AddCombatant(instance, 0);
-
-        // Visual entry
-        if (instance is Node3D node3d)
-        {
-            // Optional: Play summon VFX
-        }
-        
-        GD.Print($"Summoned {instance.Name} to {(isPlayerSide ? "Player" : "Enemy")} side.");
+        _roster.SummonCombatant(characterScene, isPlayerSide);
     }
 
     private void ProcessNextTurn()
     {
-        var nextTurn = _turnManager.GetNextTurn();
-        if (nextTurn == null)
+        if (!_turnFlow.ProcessNextTurn())
         {
-            GD.PrintErr("Battle ended because no combatants could take a turn.");
             CurrentState = BattleState.Defeat; // Or some error state
-            return;
         }
-
-        // Check if the combatant is Stopped/Blocked
-        if (nextTurn.IsBlocked)
-        {
-            GD.Print($"{nextTurn.Combatant.Name} is stopped! Skipping turn.");
-            // Commit the turn immediately with 0 extra cost.
-            // This triggers OnTurnEnd, which ticks down the Stop effect.
-            _turnManager.CommitTurn(nextTurn, 0, _actionDirector);
-            return; // CommitTurn calls ProcessNextTurn, so we return here to avoid recursion issues or double processing.
-        }
-
-        // Announce whose turn it is.
-        EmitSignal(SignalName.TurnStarted, nextTurn);
-
-        if (BattleCamera != null && nextTurn.Combatant is Node3D combatant3D)
-        {
-            BattleCamera.FocusOnTarget(combatant3D);
-        }
-
-        // If the active combatant is AI, trigger its logic.
-        // If it's a human player, the server will now wait for an RPC from that player's client.
-        // We will implement this player input logic next.
     }
 
-        /// <summary>
+    /// <summary>
     /// RPC called by the client when they select an action from the menu.
     /// </summary>
     /// <param name="actionPath">The resource path of the selected ActionData/BattleCommand.</param>
@@ -555,41 +492,26 @@ public partial class BattleController : Node
     public void Server_PlayerCommitAction(string actionPath, string[] targetPaths)
     {
         if (!Multiplayer.IsServer()) return;
-
-        // 1. Validate it is actually a player's turn
-        var currentTurn = _turnManager.GetNextTurn();
-        if (currentTurn == null) return;
-
-        // Security Check: Ensure the RPC sender owns the active character
-        var senderId = Multiplayer.GetRemoteSenderId();
-        if (senderId == 0) senderId = 1; // Handle local call from host
-        if (currentTurn.Combatant.GetMultiplayerAuthority() != senderId)
+        if (!_networkGateway.TryBuildCommitRequest(actionPath, targetPaths, out var currentTurn, out var actionResource, out var targets))
         {
-            GD.PrintErr($"Player {senderId} tried to act, but it is {currentTurn.Combatant.Name}'s turn (Owner: {currentTurn.Combatant.GetMultiplayerAuthority()})");
             return;
         }
 
-        // 2. Load the action resource
-        var actionResource = GD.Load<ActionData>(actionPath);
-        if (actionResource == null)
+        if (targets.Count == 0)
         {
-            GD.PrintErr($"Server could not load action from path: {actionPath}");
-            return;
-        }
-
-        // 3. Resolve Targets
-        var targets = new List<Node>();
-        if (targetPaths != null)
-        {
-            foreach (var path in targetPaths)
+            if (_roster.IsPlayerSide(currentTurn.Combatant))
             {
-                var node = GetNodeOrNull(path);
-                if (node != null) targets.Add(node);
+                if (_enemyTeamContainer.GetChildCount() > 0)
+                    targets.Add(_enemyTeamContainer.GetChild(0));
+            }
+            else
+            {
+                if (_playerTeamContainer.GetChildCount() > 0)
+                    targets.Add(_playerTeamContainer.GetChild(0));
             }
         }
 
-        // 4. Commit
-        CommitAction(currentTurn, actionResource, targets);
+        _ = CommitAction(currentTurn, actionResource, targets);
     }
 
     private void DisableMovement(IEnumerable<Node> combatants)
@@ -608,27 +530,16 @@ public partial class BattleController : Node
 
     public IEnumerable<Node> GetOpponents(Node character)
     {
-        if (IsPlayerSide(character))
-        {
-            return _enemyTeamContainer.GetChildren().Cast<Node>();
-        }
-        // If enemy, opponents are players + allies
-        return _playerTeamContainer.GetChildren().Cast<Node>().Concat(_allyTeamContainer.GetChildren().Cast<Node>());
+        return _roster != null ? _roster.GetOpponents(character) : Enumerable.Empty<Node>();
     }
 
     public IEnumerable<Node> GetAllies(Node character)
     {
-        if (IsPlayerSide(character))
-        {
-            return _playerTeamContainer.GetChildren().Cast<Node>().Concat(_allyTeamContainer.GetChildren().Cast<Node>());
-        }
-        // If enemy, allies are other enemies
-        return _enemyTeamContainer.GetChildren().Cast<Node>();
+        return _roster != null ? _roster.GetAllies(character) : Enumerable.Empty<Node>();
     }
 
     public bool IsPlayerSide(Node character)
     {
-        var parent = character.GetParent();
-        return parent == _playerTeamContainer || parent == _allyTeamContainer;
+        return _roster != null && _roster.IsPlayerSide(character);
     }
 }
