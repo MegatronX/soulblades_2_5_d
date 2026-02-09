@@ -190,7 +190,7 @@ public partial class GameManager : Node
     /// <param name="formation">The formation of the battle (e.g., surprise attack).</param>
     /// <param name="seed">An optional seed for the battle.</param>
     /// <param name="music">The music track to play during the battle.</param>
-    public void InitiateBattle(List<Godot.Collections.Array<PackedScene>> enemyParties, Godot.Collections.Array<PackedScene> allyParty, string battleScenePath, BattleFormation formation, BattleEnvironmentProfile envProfile = null, ulong? seed = null, BattleMusicData music = null, BattleMusicData postBattleMusic = null, bool allowRetry = true, bool isScriptedLoss = false)
+    public void InitiateBattle(List<Godot.Collections.Array<PackedScene>> enemyParties, Godot.Collections.Array<PackedScene> allyParty, string battleScenePath, BattleFormation formation, BattleEnvironmentProfile envProfile = null, ulong? seed = null, BattleMusicData music = null, BattleMusicData postBattleMusic = null, bool allowRetry = true, bool isScriptedLoss = false, bool splitExperienceAcrossParty = true, bool splitApAcrossParty = true, float killingBlowExpBonusPercent = 5f)
     {
         CapturePartySnapshot();
         CaptureReturnSceneState();
@@ -217,6 +217,9 @@ public partial class GameManager : Node
             ReturnScenePath = GetTree().CurrentScene?.SceneFilePath,
             AllowRetry = allowRetry,
             IsScriptedLoss = isScriptedLoss,
+            SplitExperienceAcrossParty = splitExperienceAcrossParty,
+            SplitApAcrossParty = splitApAcrossParty,
+            KillingBlowExpBonusPercent = killingBlowExpBonusPercent,
             HasSeed = seed.HasValue,
             Seed = seed ?? 0
         };

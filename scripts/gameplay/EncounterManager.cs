@@ -98,7 +98,10 @@ public partial class EncounterManager : Node
                 music,
                 postBattleMusic,
                 encounter.AllowRetry,
-                encounter.IsScriptedLoss
+                encounter.IsScriptedLoss,
+                encounter.SplitExperienceAcrossParty,
+                encounter.SplitApAcrossParty,
+                encounter.KillingBlowExpBonusPercent
             );
         }
     }

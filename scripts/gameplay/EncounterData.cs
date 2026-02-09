@@ -24,4 +24,13 @@ public partial class EncounterData : Resource
 
     [Export]
     public bool IsScriptedLoss { get; private set; } = false;
+
+    [Export]
+    public bool SplitExperienceAcrossParty { get; private set; } = true;
+
+    [Export]
+    public bool SplitApAcrossParty { get; private set; } = true;
+
+    [Export(PropertyHint.Range, "0,100,0.1")]
+    public float KillingBlowExpBonusPercent { get; private set; } = 5f;
 }

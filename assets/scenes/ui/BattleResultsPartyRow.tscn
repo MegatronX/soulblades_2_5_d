@@ -1,7 +1,36 @@
-[gd_scene load_steps=3 format=3 uid="uid://bop37h1jistmo"]
+[gd_scene load_steps=7 format=3 uid="uid://bop37h1jistmo"]
 
 [ext_resource type="Script" uid="uid://dpc2usyyi10ac" path="res://scripts/ui/battle/BattleResultsPartyRow.cs" id="1_wnomm"]
+[ext_resource type="Script" uid="uid://qa7bxutehu3w" path="res://scripts/ui/battle/BannerEffectConfig.cs" id="2_5cihu"]
 [ext_resource type="Texture2D" uid="uid://cr3ri35tkyt7f" path="res://assets/characters/ceira/ceira_profile_happy_eyes_closed_transparent.png" id="2_aut6o"]
+[ext_resource type="Texture2D" uid="uid://c1bw84pdybhfm" path="res://assets/ui/sparkles/sparkle_star.svg" id="2_w6p7n"]
+
+[sub_resource type="Resource" id="Resource_w6p7n"]
+script = ExtResource("2_5cihu")
+BannerSparkleTexture = ExtResource("2_w6p7n")
+BannerSparkleCount = 5
+BannerSparkleSizeMin = Vector2(8, 8)
+BannerSparkleSizeMax = Vector2(16, 16)
+BannerSparkleStartScale = 0.5
+metadata/_custom_type_script = "uid://qa7bxutehu3w"
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_banner"]
+content_margin_left = 12.0
+content_margin_top = 6.0
+content_margin_right = 12.0
+content_margin_bottom = 6.0
+bg_color = Color(0.08, 0.08, 0.12, 0.88)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(1, 0.9, 0.5, 0.9)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+shadow_color = Color(1, 0.8, 0.2, 0.55)
+shadow_size = 10
 
 [node name="BattleResultsPartyRow" type="Control"]
 custom_minimum_size = Vector2(0, 110)
@@ -10,13 +39,17 @@ anchors_preset = 0
 size_flags_horizontal = 3
 size_flags_vertical = 3
 script = ExtResource("1_wnomm")
-_nameLabelPath = NodePath("PanelContainer/Row/Info/TopLine/NameLabel")
-_levelLabelPath = NodePath("PanelContainer/Row/Info/TopLine/LevelLabel")
-_expLabelPath = NodePath("PanelContainer/Row/Info/ExpLine/ExpLabel")
-_expBarPath = NodePath("PanelContainer/Row/Info/ExpLine/ExpBar")
+_nameLabelPath = NodePath("PanelContainer/Row/InfoMargin/Info/TopLine/NameLabel")
+_levelLabelPath = NodePath("PanelContainer/Row/InfoMargin/Info/TopLine/LevelLabel")
+_expLabelPath = NodePath("PanelContainer/Row/InfoMargin/Info/ExpLine/ExpLabel")
+_expGainLabelPath = NodePath("PanelContainer/Row/InfoMargin/Info/ExpGainLabel")
+_expBarPath = NodePath("PanelContainer/Row/InfoMargin/Info/ExpLine/ExpBar")
 _portraitRectPath = NodePath("PanelContainer/Row/MarginContainer/PortraitRect")
-_bannerContainerPath = NodePath("PanelContainer/Row/Info/PanelContainer")
-_bannerLabelPath = NodePath("PanelContainer/Row/Info/PanelContainer/BannerLabel")
+_bannerContainerPath = NodePath("PanelContainer/Row/InfoMargin/Info/PanelContainer")
+_bannerLabelPath = NodePath("PanelContainer/Row/InfoMargin/Info/PanelContainer/BannerLabel")
+_bannerAudioPath = NodePath("BannerSound")
+_bannerSparkleLayerPath = NodePath("BannerSparkleLayer")
+_bannerEffects = SubResource("Resource_w6p7n")
 
 [node name="PanelContainer" type="PanelContainer" parent="."]
 clip_contents = true
@@ -49,53 +82,81 @@ texture = ExtResource("2_aut6o")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Info" type="VBoxContainer" parent="PanelContainer/Row"]
+[node name="InfoMargin" type="MarginContainer" parent="PanelContainer/Row"]
+clip_contents = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 size_flags_stretch_ratio = 0.8
+theme_override_constants/margin_right = 24
+
+[node name="Info" type="VBoxContainer" parent="PanelContainer/Row/InfoMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_constants/separation = 6
 
-[node name="TopLine" type="HBoxContainer" parent="PanelContainer/Row/Info"]
+[node name="TopLine" type="HBoxContainer" parent="PanelContainer/Row/InfoMargin/Info"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="NameLabel" type="Label" parent="PanelContainer/Row/Info/TopLine"]
+[node name="NameLabel" type="Label" parent="PanelContainer/Row/InfoMargin/Info/TopLine"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 40
 text = "Ceira"
 
-[node name="LevelLabel" type="Label" parent="PanelContainer/Row/Info/TopLine"]
+[node name="LevelLabel" type="Label" parent="PanelContainer/Row/InfoMargin/Info/TopLine"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 30
 text = "Lv. 5"
 horizontal_alignment = 1
 
-[node name="ExpLine" type="HBoxContainer" parent="PanelContainer/Row/Info"]
+[node name="ExpLine" type="HBoxContainer" parent="PanelContainer/Row/InfoMargin/Info"]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
 
-[node name="ExpBar" type="ProgressBar" parent="PanelContainer/Row/Info/ExpLine"]
+[node name="ExpBar" type="ProgressBar" parent="PanelContainer/Row/InfoMargin/Info/ExpLine"]
 custom_minimum_size = Vector2(140, 16)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_font_sizes/font_size = 32
 
-[node name="ExpLabel" type="Label" parent="PanelContainer/Row/Info/ExpLine"]
+[node name="ExpLabel" type="Label" parent="PanelContainer/Row/InfoMargin/Info/ExpLine"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
 
-[node name="PanelContainer" type="PanelContainer" parent="PanelContainer/Row/Info"]
+[node name="ExpGainLabel" type="Label" parent="PanelContainer/Row/InfoMargin/Info"]
 layout_mode = 2
-size_flags_horizontal = 3
-custom_minimum_size = Vector2(0, 34)
+theme_override_font_sizes/font_size = 22
+text = "EXP +0"
+horizontal_alignment = 2
 
-[node name="BannerLabel" type="RichTextLabel" parent="PanelContainer/Row/Info/PanelContainer"]
+[node name="PanelContainer" type="PanelContainer" parent="PanelContainer/Row/InfoMargin/Info"]
+clip_contents = true
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
-theme_override_font_sizes/normal_font_size = 24
 size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxFlat_banner")
+
+[node name="BannerLabel" type="RichTextLabel" parent="PanelContainer/Row/InfoMargin/Info/PanelContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/default_color = Color(1, 0.95, 0.85, 1)
+theme_override_font_sizes/normal_font_size = 28
 fit_content = true
 scroll_active = false
+
+[node name="BannerSparkleLayer" type="Control" parent="."]
+z_index = 5
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="BannerSound" type="AudioStreamPlayer" parent="."]

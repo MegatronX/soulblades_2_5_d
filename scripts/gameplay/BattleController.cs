@@ -386,7 +386,7 @@ public partial class BattleController : Node
             {
                 var gameManager = GetNodeOrNull<GameManager>(GameManager.Path);
                 var inventory = GetNodeOrNull<InventoryManager>("/root/InventoryManager");
-                _resultsOverlay.ShowVictory(rewards, () => _rewardsApplier.Apply(rewards, _context.PlayerParty, inventory, gameManager), _context.PlayerParty);
+                _resultsOverlay.ShowVictory(rewards, () => _rewardsApplier.Apply(rewards, _context.PlayerParty, inventory, gameManager, _context?.Config, _lastKillingBlowActor), _context.PlayerParty);
                 await _resultsOverlay.WaitForContinueAsync();
                 await _resultsOverlay.FadeOutAsync();
             }

@@ -33,6 +33,15 @@ public partial class BattleConfig : Resource
     [Export]
     public bool IsScriptedLoss { get; set; } = false;
 
+    [Export]
+    public bool SplitExperienceAcrossParty { get; set; } = true;
+
+    [Export]
+    public bool SplitApAcrossParty { get; set; } = true;
+
+    [Export(PropertyHint.Range, "0,100,0.1")]
+    public float KillingBlowExpBonusPercent { get; set; } = 5f;
+
     public bool HasSeed { get; set; }
     public ulong Seed { get; set; }
 }

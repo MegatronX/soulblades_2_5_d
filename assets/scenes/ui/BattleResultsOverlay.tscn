@@ -33,6 +33,10 @@ _buttonContainerPath = NodePath("Root/Panel/VBox/ButtonContainer")
 _rewardsSummaryPanelPath = NodePath("Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsSummaryPanel")
 _rewardsItemsPanelPath = NodePath("Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsItemsPanel")
 _partyRowScene = ExtResource("2_crwqo")
+_rowRevealSeconds = 0.75
+_rowRevealStaggerSeconds = 0.35
+_rowSlideOvershootPixels = 2.0
+_rowSlideSettleSeconds = 0.2
 
 [node name="Root" type="Control" parent="."]
 layout_mode = 3
