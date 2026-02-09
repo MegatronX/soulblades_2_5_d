@@ -4,5 +4,6 @@
 
 [resource]
 script = ExtResource("1_8k146")
+ExpMode = 1
 ExpTable = Array[int]([0, 3, 7, 14, 28, 56, 112, 224, 448, 896, 1792, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
 metadata/_custom_type_script = "uid://1cnrkcj5i4l2"

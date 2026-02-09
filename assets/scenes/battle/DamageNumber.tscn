@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://drkk8htk5ra6" path="res://scripts/ui/battle/DamageNumber.cs" id="1_diiya"]
 
 [sub_resource type="LabelSettings" id="LabelSettings_diiya"]
-font_size = 24
-outline_size = 8
+font_size = 36
+outline_size = 12
 outline_color = Color(0, 0, 0, 1)
 
 [node name="DamageNumber" type="Control" node_paths=PackedStringArray("_label", "_iconsContainer")]

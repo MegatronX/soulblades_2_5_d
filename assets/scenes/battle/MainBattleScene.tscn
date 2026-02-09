@@ -1,9 +1,10 @@
-[gd_scene load_steps=36 format=3 uid="uid://ccd7ai2lpxylm"]
+[gd_scene load_steps=37 format=3 uid="uid://ccd7ai2lpxylm"]
 
 [ext_resource type="Script" uid="uid://duqljtammbdvq" path="res://scripts/mechanics/turns/TurnManager.cs" id="1_23ekb"]
 [ext_resource type="PackedScene" uid="uid://ddbhgeh1rfpoe" path="res://assets/scenes/battle/ui/TurnOrderPreviewUI.tscn" id="2_2uhgy"]
 [ext_resource type="Script" uid="uid://buly7my1o84kn" path="res://scripts/gameplay/Server.cs" id="3_f3le5"]
 [ext_resource type="Script" uid="uid://b5bt7ucfvbu1v" path="res://scripts/gameplay/BattleController.cs" id="4_w6hkx"]
+[ext_resource type="PackedScene" uid="uid://wj6x1o72r478" path="res://assets/scenes/ui/BattleResultsOverlay.tscn" id="5_2xjdu"]
 [ext_resource type="Script" uid="uid://cq41xkitsgjh5" path="res://scripts/gameplay/BattlePlacementSettings.cs" id="5_65ea0"]
 [ext_resource type="Script" uid="uid://cjx1r6bda7yhg" path="res://scripts/battle/BattleCamera.cs" id="6_65ea0"]
 [ext_resource type="Script" uid="uid://vf5ohe54jjcv" path="res://scripts/battle/ActionDirector.cs" id="6_tobbj"]
@@ -101,6 +102,7 @@ _enemyTeamContainer = NodePath("../EnemyTeamContainer")
 _allyTeamContainer = NodePath("../AllyTeamContainer")
 _turnOrderPreviewUIScene = ExtResource("2_2uhgy")
 _turnOrderPreviewUI = NodePath("../TurnOrderPreviewUI")
+_battleResultsOverlayScene = ExtResource("5_2xjdu")
 _actionDirector = NodePath("../ActionDirector")
 _chargeSystem = NodePath("../ChargeCounterSystem")
 _placementSettings = SubResource("Resource_utwf6")

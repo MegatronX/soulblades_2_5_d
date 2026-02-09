@@ -1,0 +1,101 @@
+[gd_scene load_steps=3 format=3 uid="uid://bop37h1jistmo"]
+
+[ext_resource type="Script" uid="uid://dpc2usyyi10ac" path="res://scripts/ui/battle/BattleResultsPartyRow.cs" id="1_wnomm"]
+[ext_resource type="Texture2D" uid="uid://cr3ri35tkyt7f" path="res://assets/characters/ceira/ceira_profile_happy_eyes_closed_transparent.png" id="2_aut6o"]
+
+[node name="BattleResultsPartyRow" type="Control"]
+custom_minimum_size = Vector2(0, 110)
+layout_mode = 3
+anchors_preset = 0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_wnomm")
+_nameLabelPath = NodePath("PanelContainer/Row/Info/TopLine/NameLabel")
+_levelLabelPath = NodePath("PanelContainer/Row/Info/TopLine/LevelLabel")
+_expLabelPath = NodePath("PanelContainer/Row/Info/ExpLine/ExpLabel")
+_expBarPath = NodePath("PanelContainer/Row/Info/ExpLine/ExpBar")
+_portraitRectPath = NodePath("PanelContainer/Row/MarginContainer/PortraitRect")
+_bannerContainerPath = NodePath("PanelContainer/Row/Info/PanelContainer")
+_bannerLabelPath = NodePath("PanelContainer/Row/Info/PanelContainer/BannerLabel")
+
+[node name="PanelContainer" type="PanelContainer" parent="."]
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Row" type="HBoxContainer" parent="PanelContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 16
+
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.2
+
+[node name="PortraitRect" type="TextureRect" parent="PanelContainer/Row/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+texture = ExtResource("2_aut6o")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Info" type="VBoxContainer" parent="PanelContainer/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.8
+theme_override_constants/separation = 6
+
+[node name="TopLine" type="HBoxContainer" parent="PanelContainer/Row/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="NameLabel" type="Label" parent="PanelContainer/Row/Info/TopLine"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 40
+text = "Ceira"
+
+[node name="LevelLabel" type="Label" parent="PanelContainer/Row/Info/TopLine"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 30
+text = "Lv. 5"
+horizontal_alignment = 1
+
+[node name="ExpLine" type="HBoxContainer" parent="PanelContainer/Row/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="ExpBar" type="ProgressBar" parent="PanelContainer/Row/Info/ExpLine"]
+custom_minimum_size = Vector2(140, 16)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 32
+
+[node name="ExpLabel" type="Label" parent="PanelContainer/Row/Info/ExpLine"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+
+[node name="PanelContainer" type="PanelContainer" parent="PanelContainer/Row/Info"]
+layout_mode = 2
+size_flags_horizontal = 3
+custom_minimum_size = Vector2(0, 34)
+
+[node name="BannerLabel" type="RichTextLabel" parent="PanelContainer/Row/Info/PanelContainer"]
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 24
+size_flags_horizontal = 3
+fit_content = true
+scroll_active = false

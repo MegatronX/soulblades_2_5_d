@@ -32,7 +32,7 @@ public partial class LevelProgression : Resource
 
         if (ExpMode == ExpRequirementMode.TableTotal && ExpTable.Count > 0)
         {
-            int index = Mathf.Clamp(level - 1, 0, ExpTable.Count - 1);
+            int index = Mathf.Clamp(level, 0, ExpTable.Count - 1);
             return ExpTable[index];
         }
 

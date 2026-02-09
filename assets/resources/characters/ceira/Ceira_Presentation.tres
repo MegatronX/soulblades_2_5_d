@@ -1,5 +1,6 @@
-[gd_resource type="Resource" script_class="CharacterPresentationData" load_steps=3 format=3 uid="uid://bw5ummbpi0fg3"]
+[gd_resource type="Resource" script_class="CharacterPresentationData" load_steps=4 format=3 uid="uid://bw5ummbpi0fg3"]
 
+[ext_resource type="Texture2D" uid="uid://cr3ri35tkyt7f" path="res://assets/characters/ceira/ceira_profile_happy_eyes_closed_transparent.png" id="1_3snwr"]
 [ext_resource type="Script" uid="uid://c21yiabdj7ekm" path="res://scripts/CharacterPresentationData.cs" id="1_d0bdb"]
 [ext_resource type="Texture2D" uid="uid://ddhasj8o8kte1" path="res://assets/characters/ceira/ceira_potrait_3.png" id="1_jqax3"]
 
@@ -7,4 +8,5 @@
 script = ExtResource("1_d0bdb")
 DisplayName = "Ceira"
 TurnQueueIcon = ExtResource("1_jqax3")
+PortraitImage = ExtResource("1_3snwr")
 metadata/_custom_type_script = "uid://c21yiabdj7ekm"

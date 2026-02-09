@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://cikngvbkfdkqo"]
+[gd_scene load_steps=15 format=3 uid="uid://cikngvbkfdkqo"]
 
 [ext_resource type="PackedScene" uid="uid://7vqyqph1fwuk" path="res://assets/resources/characters/CharacterTemplate.tscn" id="1_vuhmq"]
 [ext_resource type="Resource" uid="uid://b5p8ntkm4qay0" path="res://assets/resources/characters/goblin_lv5/goblin_presentation.tres" id="2_lho6q"]
@@ -8,6 +8,7 @@
 [ext_resource type="Resource" uid="uid://djr07cuyi6m66" path="res://assets/resources/actions/Attack.tres" id="6_o0410"]
 [ext_resource type="Script" uid="uid://cgg187nfrj2fj" path="res://scripts/ai/DummyAIStrategy.cs" id="7_opp7s"]
 [ext_resource type="Script" uid="uid://bq4qrkjr0uov" path="res://scripts/gameplay/EnemyProperties.cs" id="8_o0410"]
+[ext_resource type="Script" uid="uid://fmat5uasiwah" path="res://scripts/gameplay/LootEntry.cs" id="9_opp7s"]
 
 [sub_resource type="Animation" id="Animation_vuhmq"]
 resource_name = "Idle"
@@ -53,6 +54,11 @@ script = ExtResource("7_opp7s")
 ActionToUse = ExtResource("6_o0410")
 metadata/_custom_type_script = "uid://cgg187nfrj2fj"
 
+[sub_resource type="Resource" id="Resource_rh4j5"]
+script = ExtResource("9_opp7s")
+ChancePercent = 0.0
+metadata/_custom_type_script = "uid://fmat5uasiwah"
+
 [node name="CharacterBody3D" node_paths=PackedStringArray("AnimationPlayer") instance=ExtResource("1_vuhmq")]
 PresentationData = ExtResource("2_lho6q")
 AnimationPlayer = NodePath("AnimationPlayer")
@@ -86,6 +92,7 @@ metadata/_custom_type_script = "uid://debriqo3w14qa"
 
 [node name="EnemyProperties" type="Node" parent="." index="7"]
 script = ExtResource("8_o0410")
+DropTable = Array[ExtResource("9_opp7s")]([SubResource("Resource_rh4j5")])
 ExperienceReward = 15
 APExperienceReward = 1
 MoneyReward = 25

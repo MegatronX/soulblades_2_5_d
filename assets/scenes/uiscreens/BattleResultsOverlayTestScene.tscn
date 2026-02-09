@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3 uid="uid://b5t5mqpqcqxlr"]
+
+[ext_resource type="Script" uid="uid://c56b8ub0oqeai" path="res://scripts/ui/battle/BattleResultsOverlayTest.cs" id="1_0n2pa"]
+[ext_resource type="PackedScene" uid="uid://wj6x1o72r478" path="res://assets/scenes/ui/BattleResultsOverlay.tscn" id="2_yqbju"]
+[ext_resource type="PackedScene" uid="uid://cg40606sv55" path="res://assets/resources/characters/ceira/ceira.tscn" id="3_6obf2"]
+
+[node name="BattleResultsOverlayTestScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_0n2pa")
+_overlayScene = ExtResource("2_yqbju")
+_partyCharacterScenes = Array[PackedScene]([ExtResource("3_6obf2")])

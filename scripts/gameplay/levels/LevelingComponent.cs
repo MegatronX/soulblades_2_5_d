@@ -67,6 +67,22 @@ public partial class LevelingComponent : Node
 
         CurrentLevel = Mathf.Max(1, StartingLevel);
         CurrentExperience = Mathf.Max(0, StartingExperience);
+        if (Progression != null)
+        {
+            int requiredForLevel = Progression.GetTotalExpForLevel(CurrentLevel);
+            if (CurrentExperience < requiredForLevel)
+            {
+                CurrentExperience = requiredForLevel;
+            }
+        }
+        if (Progression != null)
+        {
+            int requiredForLevel = Progression.GetTotalExpForLevel(CurrentLevel);
+            if (CurrentExperience < requiredForLevel)
+            {
+                CurrentExperience = requiredForLevel;
+            }
+        }
 
         ApplyLevelStats();
         ApplyRewardsUpToLevel(CurrentLevel);

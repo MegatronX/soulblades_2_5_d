@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="SoulBlades_2_5_D"
-run/main_scene="uid://dluqww05spa8o"
+run/main_scene="uid://b5t5mqpqcqxlr"
 config/features=PackedStringArray("4.5", "C#", "Mobile")
 config/icon="res://icon.svg"
 
@@ -32,6 +32,9 @@ UiSoundManager="*res://assets/scenes/ui/UISoundManager.tscn"
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/stretch/scale_mode="integer"
 
 [dotnet]
 

@@ -36,16 +36,17 @@ public partial class BattleController : Node
     private BattleTurnFlow _turnFlow;
     private BattleNetworkGateway _networkGateway;
     private GlobalEventBus _eventBus;
-    private BattleRewardsResolver _rewardsResolver = new BattleRewardsResolver();
+    private BattleRewardTracker _rewardTracker = new BattleRewardTracker();
     private BattleRewardsApplier _rewardsApplier = new BattleRewardsApplier();
     private BattleResultsOverlay _resultsOverlay;
-    private readonly List<EnemyRewardSnapshot> _defeatedEnemyRewards = new();
-    private readonly HashSet<ulong> _rewardedEnemyIds = new();
     private Node _lastKillingBlowActor;
     private bool _isResolvingBattleEnd;
 
     [Export]
     private TurnOrderPreviewUI _turnOrderPreviewUI;
+
+    [Export(PropertyHint.File, "*.tscn")]
+    private PackedScene _battleResultsOverlayScene;
 
     [Export]
     private ActionDirector _actionDirector;
@@ -149,8 +150,17 @@ public partial class BattleController : Node
         }
 
         _eventBus = GetNodeOrNull<GlobalEventBus>(GlobalEventBus.Path);
-        _resultsOverlay = new BattleResultsOverlay();
-        AddChild(_resultsOverlay);
+        if (_battleResultsOverlayScene != null)
+        {
+            _resultsOverlay = _battleResultsOverlayScene.Instantiate<BattleResultsOverlay>();
+            AddChild(_resultsOverlay);
+        }
+        else
+        {
+            _resultsOverlay = new BattleResultsOverlay();
+            AddChild(_resultsOverlay);
+            GD.PrintErr("BattleResultsOverlay scene not assigned. Using code-only fallback.");
+        }
 
         // The BattleController is now responsible for setting up the battle
         // using the data prepared in the GameManager.
@@ -288,7 +298,7 @@ public partial class BattleController : Node
             _lastKillingBlowActor = killingContext.Initiator;
         }
 
-        CaptureEnemyRewardsIfNeeded(combatant);
+        _rewardTracker.RegisterDefeat(combatant, _roster != null ? _roster.IsPlayerSide : null);
         
         // Try to find BattleAnimator in scene if not directly linked (fallback)
         var animator = GetNodeOrNull<BattleAnimator>("BattleAnimator") ?? 
@@ -371,7 +381,7 @@ public partial class BattleController : Node
         {
             await PlayVictoryCinematicAsync();
 
-            var rewards = _rewardsResolver.ResolveRewards(_defeatedEnemyRewards, _rng);
+            var rewards = _rewardTracker.ResolveRewards(_rng);
             if (_resultsOverlay != null)
             {
                 var gameManager = GetNodeOrNull<GameManager>(GameManager.Path);
@@ -440,32 +450,7 @@ public partial class BattleController : Node
         gameManager?.RestartBattleFromSnapshot();
     }
 
-    private void CaptureEnemyRewardsIfNeeded(Node combatant)
-    {
-        if (_roster == null || combatant == null) return;
-        if (_roster.IsPlayerSide(combatant)) return;
-
-        ulong id = combatant.GetInstanceId();
-        if (_rewardedEnemyIds.Contains(id)) return;
-
-        var props = combatant.GetNodeOrNull<EnemyProperties>(EnemyProperties.NodeName);
-        if (props == null)
-        {
-            foreach (var child in combatant.GetChildren())
-            {
-                if (child is EnemyProperties ep)
-                {
-                    props = ep;
-                    break;
-                }
-            }
-        }
-
-        if (props == null) return;
-
-        _defeatedEnemyRewards.Add(EnemyRewardSnapshot.From(props));
-        _rewardedEnemyIds.Add(id);
-    }
+    
 
     /// <summary>
     /// Summons a new character into the battle.

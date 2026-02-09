@@ -1,0 +1,225 @@
+[gd_scene load_steps=4 format=3 uid="uid://wj6x1o72r478"]
+
+[ext_resource type="Script" uid="uid://1yngw2e3w7eu" path="res://scripts/ui/battle/BattleResultsOverlay.cs" id="1_osit1"]
+[ext_resource type="PackedScene" uid="uid://bop37h1jistmo" path="res://assets/scenes/ui/BattleResultsPartyRow.tscn" id="2_crwqo"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_4v4vb"]
+content_margin_left = 16.0
+content_margin_top = 12.0
+content_margin_right = 16.0
+content_margin_bottom = 12.0
+bg_color = Color(0, 0, 0, 0.55)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+
+[node name="BattleResultsOverlay" type="CanvasLayer"]
+script = ExtResource("1_osit1")
+_rootPath = NodePath("Root")
+_backdropPath = NodePath("Root/Backdrop")
+_titleLabelPath = NodePath("Root/Panel/VBox/TitleLabel")
+_summaryContainerPath = NodePath("Root/Panel/VBox/SummaryContainer")
+_rewardsLabelPath = NodePath("Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsSummaryPanel/RewardsSummaryMargin/RewardsSummaryLabel")
+_rewardsSummaryLabelPath = NodePath("Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsSummaryPanel/RewardsSummaryMargin/RewardsSummaryLabel")
+_rewardsItemsLabelPath = NodePath("Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsItemsPanel/RewardsItemsMargin/RewardsItemsLabel")
+_partyContainerPath = NodePath("Root/Panel/VBox/PartyContainer")
+_partyListContainerPath = NodePath("Root/Panel/VBox/PartyContainer/PartyListMargin/PartyListContainer")
+_eventsLabelPath = NodePath("Root/Panel/VBox/PartyContainer/EventsLabel")
+_continueButtonPath = NodePath("Root/Panel/VBox/ButtonContainer/ContinueRow/ContinueButton")
+_retryButtonPath = NodePath("Root/Panel/VBox/ButtonContainer/RetryRow/RetryButton")
+_quitButtonPath = NodePath("Root/Panel/VBox/ButtonContainer/QuitRow/QuitButton")
+_buttonContainerPath = NodePath("Root/Panel/VBox/ButtonContainer")
+_rewardsSummaryPanelPath = NodePath("Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsSummaryPanel")
+_rewardsItemsPanelPath = NodePath("Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsItemsPanel")
+_partyRowScene = ExtResource("2_crwqo")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Backdrop" type="ColorRect" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Panel" type="PanelContainer" parent="Root"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Root/Panel"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="Root/Panel/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 44
+horizontal_alignment = 1
+
+[node name="SummaryContainer" type="VBoxContainer" parent="Root/Panel/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RewardsRow" type="HBoxContainer" parent="Root/Panel/VBox/SummaryContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 12
+
+[node name="RewardsSpacerLeft" type="Control" parent="Root/Panel/VBox/SummaryContainer/RewardsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.2
+
+[node name="RewardsSummaryPanel" type="PanelContainer" parent="Root/Panel/VBox/SummaryContainer/RewardsRow"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.35
+theme_override_styles/panel = SubResource("StyleBoxFlat_4v4vb")
+
+[node name="RewardsSummaryMargin" type="MarginContainer" parent="Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsSummaryPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RewardsSummaryLabel" type="RichTextLabel" parent="Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsSummaryPanel/RewardsSummaryMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_font_sizes/normal_font_size = 24
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="RewardsItemsPanel" type="PanelContainer" parent="Root/Panel/VBox/SummaryContainer/RewardsRow"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.35
+theme_override_styles/panel = SubResource("StyleBoxFlat_4v4vb")
+
+[node name="RewardsItemsMargin" type="MarginContainer" parent="Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsItemsPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="RewardsItemsLabel" type="RichTextLabel" parent="Root/Panel/VBox/SummaryContainer/RewardsRow/RewardsItemsPanel/RewardsItemsMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_font_sizes/normal_font_size = 24
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="RewardsSpacerRight" type="Control" parent="Root/Panel/VBox/SummaryContainer/RewardsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.2
+
+[node name="PartyContainer" type="VBoxContainer" parent="Root/Panel/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="PartyListMargin" type="MarginContainer" parent="Root/Panel/VBox/PartyContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 12
+
+[node name="PartyListContainer" type="VBoxContainer" parent="Root/Panel/VBox/PartyContainer/PartyListMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="EventsLabel" type="RichTextLabel" parent="Root/Panel/VBox/PartyContainer"]
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 22
+
+[node name="ButtonContainer" type="VBoxContainer" parent="Root/Panel/VBox"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ContinueRow" type="HBoxContainer" parent="Root/Panel/VBox/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ContinueSpacerLeft" type="Control" parent="Root/Panel/VBox/ButtonContainer/ContinueRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.325
+
+[node name="ContinueButton" type="Button" parent="Root/Panel/VBox/ButtonContainer/ContinueRow"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.35
+theme_override_font_sizes/font_size = 28
+
+[node name="ContinueSpacerRight" type="Control" parent="Root/Panel/VBox/ButtonContainer/ContinueRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.325
+
+[node name="RetryRow" type="HBoxContainer" parent="Root/Panel/VBox/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RetrySpacerLeft" type="Control" parent="Root/Panel/VBox/ButtonContainer/RetryRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.325
+
+[node name="RetryButton" type="Button" parent="Root/Panel/VBox/ButtonContainer/RetryRow"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.35
+theme_override_font_sizes/font_size = 28
+
+[node name="RetrySpacerRight" type="Control" parent="Root/Panel/VBox/ButtonContainer/RetryRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.325
+
+[node name="QuitRow" type="HBoxContainer" parent="Root/Panel/VBox/ButtonContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="QuitSpacerLeft" type="Control" parent="Root/Panel/VBox/ButtonContainer/QuitRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.325
+
+[node name="QuitButton" type="Button" parent="Root/Panel/VBox/ButtonContainer/QuitRow"]
+custom_minimum_size = Vector2(0, 52)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.35
+theme_override_font_sizes/font_size = 28
+
+[node name="QuitSpacerRight" type="Control" parent="Root/Panel/VBox/ButtonContainer/QuitRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.325
