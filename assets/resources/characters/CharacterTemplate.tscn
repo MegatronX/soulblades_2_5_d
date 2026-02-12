@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3 uid="uid://7vqyqph1fwuk"]
+[gd_scene load_steps=7 format=3 uid="uid://7vqyqph1fwuk"]
 
 [ext_resource type="Script" uid="uid://dwg0n4dpelc36" path="res://scripts/BaseCharacter.cs" id="1_83kkr"]
 [ext_resource type="Script" uid="uid://bxhpv5xnsqdfo" path="res://scripts/gameplay/stats/StatsComponent.cs" id="1_l6jhb"]
 [ext_resource type="Script" uid="uid://kcr0u6u3redi" path="res://scripts/gameplay/abilities/AbilityManager.cs" id="2_tgknm"]
 [ext_resource type="Script" uid="uid://cyhllgnrd3oca" path="res://scripts/gameplay/statuseffects/StatusEffectManager.cs" id="3_66aru"]
+[ext_resource type="Script" uid="uid://dq0uansmp4tyd" path="res://scripts/battle/ActionManager.cs" id="5_ubmee"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_4uub8"]
 height = 1.3137207
@@ -26,3 +27,7 @@ script = ExtResource("2_tgknm")
 script = ExtResource("3_66aru")
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+
+[node name="ActionManager" type="Node" parent="."]
+script = ExtResource("5_ubmee")
+metadata/_custom_type_script = "uid://dq0uansmp4tyd"

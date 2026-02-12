@@ -28,6 +28,9 @@ public partial class BattleResultsOverlay
         public ProgressBar ExpBar;
         public BattleResultsPartyRow RowComponent;
         public Control Wrapper;
+        public Vector2 SlideBasePosition;
+        public float SlideDistance;
+        public bool SlidePrepared;
     }
 
     private void CapturePartyStart(IEnumerable<Node> partyMembers)
@@ -104,14 +107,7 @@ public partial class BattleResultsOverlay
             {
                 row.Root.Size = row.Wrapper.Size;
             }
-            var slideNode = GetRowSlideNode(row);
-            if (slideNode != null)
-            {
-                float slideDistance = _rowSlideFromOffscreen
-                    ? ((row.Wrapper?.Size.X ?? GetViewport().GetVisibleRect().Size.X) + _rowSlideOffscreenPadding)
-                    : _rowSlidePixels;
-                slideNode.Position = slideNode.Position + new Vector2(slideDistance, 0);
-            }
+            PrepareRowSlide(row);
         }
 
         var tasks = new List<Task>();
@@ -138,10 +134,13 @@ public partial class BattleResultsOverlay
         var slideNode = GetRowSlideNode(row);
         if (slideNode == null) return;
 
-        float slideDistance = _rowSlideFromOffscreen
-            ? ((row.Wrapper?.Size.X ?? GetViewport().GetVisibleRect().Size.X) + _rowSlideOffscreenPadding)
-            : _rowSlidePixels;
-        var basePos = slideNode.Position - new Vector2(slideDistance, 0);
+        if (!row.SlidePrepared)
+        {
+            PrepareRowSlide(row);
+        }
+
+        var basePos = row.SlideBasePosition;
+        var slideDistance = row.SlideDistance;
         slideNode.Position = basePos + new Vector2(slideDistance, 0);
 
         var tween = CreateTween();
@@ -163,6 +162,38 @@ public partial class BattleResultsOverlay
     private static Control GetRowSlideNode(PartyRow row)
     {
         return row?.Root;
+    }
+
+    private void PrepareRowSlide(PartyRow row)
+    {
+        if (row?.Root == null) return;
+
+        row.SlideBasePosition = row.Root.Position;
+        row.SlideDistance = GetRowSlideDistance(row);
+        row.SlidePrepared = true;
+
+        var slideNode = GetRowSlideNode(row);
+        if (slideNode != null)
+        {
+            slideNode.Position = row.SlideBasePosition + new Vector2(row.SlideDistance, 0);
+        }
+    }
+
+    private float GetRowSlideDistance(PartyRow row)
+    {
+        if (!_rowSlideFromOffscreen)
+        {
+            return _rowSlidePixels;
+        }
+
+        float viewportWidth = GetViewport()?.GetVisibleRect().Size.X ?? 0f;
+        float wrapperWidth = row?.Wrapper?.Size.X ?? 0f;
+        float width = Mathf.Max(viewportWidth, wrapperWidth);
+        if (width <= 0f)
+        {
+            width = _rowSlidePixels;
+        }
+        return width + _rowSlideOffscreenPadding;
     }
 
     private void BuildPartyRows(bool useEndValues)

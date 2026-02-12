@@ -38,6 +38,34 @@ public partial class BattleCamera : Camera3D
     
     // Cinematic Modifiers
     private float _sweepAngle = 0f;
+    private bool _sweepActive = false;
+    private bool _sweepLockFocus = true;
+    private Vector3 _sweepPivot = Vector3.Zero;
+    private Vector3 _sweepBaseOffset = Vector3.Zero;
+    private Vector3 _pushOffset = Vector3.Zero;
+    private Vector3 _panOffset = Vector3.Zero;
+    private Tween _pushTween;
+    private Tween _panTween;
+    private Tween _impactTween;
+    private Tween _speedRampTween;
+    private Tween _focusWidthTween;
+    private float _focusWidthOverride = -1f;
+    private CameraProfile.CameraShotOptions _activeActionShots = CameraProfile.CameraShotOptions.None;
+    private bool _actionSequenceStarted = false;
+
+    private static readonly CameraProfile.CameraShotOptions[] _shotFlags =
+    {
+        CameraProfile.CameraShotOptions.DutchAngle,
+        CameraProfile.CameraShotOptions.DollyZoom,
+        CameraProfile.CameraShotOptions.ParallaxSweep,
+        CameraProfile.CameraShotOptions.PushIn,
+        CameraProfile.CameraShotOptions.WhipPan,
+        CameraProfile.CameraShotOptions.OrbitArc,
+        CameraProfile.CameraShotOptions.ImpactSnap,
+        CameraProfile.CameraShotOptions.RackFocus,
+        CameraProfile.CameraShotOptions.SpeedRamp,
+        CameraProfile.CameraShotOptions.PreStrike
+    };
     
     // Shake State
     private Vector3 _actualPosition; // Position without shake
@@ -75,13 +103,18 @@ public partial class BattleCamera : Camera3D
         // Smoothly interpolate position
         Vector3 finalTargetPos = _targetPosition;
 
-        // Apply Parallax Sweep (Rotate the offset vector around the focus point)
-        if (Mathf.Abs(_sweepAngle) > 0.001f)
+        // Apply Parallax Sweep / Orbit Arc (Rotate the offset vector around a fixed pivot)
+        if (_sweepActive && Mathf.Abs(_sweepAngle) > 0.001f)
         {
-            Vector3 offset = finalTargetPos - _focusPoint;
-            offset = offset.Rotated(Vector3.Up, Mathf.DegToRad(_sweepAngle));
-            finalTargetPos = _focusPoint + offset;
+            Vector3 offset = _sweepBaseOffset.Rotated(Vector3.Up, Mathf.DegToRad(_sweepAngle));
+            finalTargetPos = _sweepPivot + offset;
+            if (_sweepLockFocus)
+            {
+                _focusPoint = _sweepPivot + LookAtOffset;
+            }
         }
+
+        finalTargetPos += _pushOffset + _panOffset;
 
         // Lerp the actual position (physics/tracking)
         _actualPosition = _actualPosition.Lerp(finalTargetPos, (float)delta * MoveSpeed);
@@ -134,7 +167,7 @@ public partial class BattleCamera : Camera3D
     /// <summary>
     /// Dynamically frames two subjects (e.g. attacker and target) based on the current profile.
     /// </summary>
-    public void FrameAction(Node3D subjectA, Node3D subjectB)
+    public void FrameAction(Node3D subjectA, Node3D subjectB, ActionCameraSettings actionSettings = null)
     {
         if (CurrentProfile == null || !CurrentProfile.EnableDynamicFraming) return;
 
@@ -154,8 +187,14 @@ public partial class BattleCamera : Camera3D
         _targetPosition = midPoint + actionOffset;
         _focusPoint = midPoint + LookAtOffset;
         
-        // Apply Dutch Angle if enabled in profile
-        if (CurrentProfile.AllowedShots.HasFlag(CameraProfile.CameraShotOptions.DutchAngle))
+        if (!_actionSequenceStarted)
+        {
+            BeginActionSequence(actionSettings);
+        }
+        var effectiveShots = _activeActionShots;
+
+        // Apply Dutch Angle if enabled in profile + action
+        if (effectiveShots.HasFlag(CameraProfile.CameraShotOptions.DutchAngle))
         {
             // Randomize direction for dramatic effect, but keep it consistent for the duration of the frame
             float sign = GD.Randf() > 0.5f ? 1.0f : -1.0f;
@@ -166,19 +205,64 @@ public partial class BattleCamera : Camera3D
             _targetRoll = 0f;
         }
         
-        // Apply Parallax Sweep if enabled
-        if (CurrentProfile.AllowedShots.HasFlag(CameraProfile.CameraShotOptions.ParallaxSweep))
+        // Apply Orbit Arc or Parallax Sweep if enabled
+        if (effectiveShots.HasFlag(CameraProfile.CameraShotOptions.OrbitArc))
         {
-            // Sweep 15 degrees over the duration of the action
             float sweepDir = GD.Randf() > 0.5f ? 1.0f : -1.0f;
-            TriggerSweep(15.0f * sweepDir, 2.0f); // Duration should ideally match action length
+            TriggerOrbitArc(CurrentProfile.OrbitArcAngle * sweepDir, CurrentProfile.OrbitArcSeconds);
         }
-        else { _sweepAngle = 0f; }
+        else if (effectiveShots.HasFlag(CameraProfile.CameraShotOptions.ParallaxSweep))
+        {
+            float sweepDir = GD.Randf() > 0.5f ? 1.0f : -1.0f;
+            TriggerSweep(CurrentProfile.ParallaxSweepAngle * sweepDir, CurrentProfile.ParallaxSweepSeconds);
+        }
+        else
+        {
+            _sweepActive = false;
+            _sweepAngle = 0f;
+        }
 
-        // Tween FOV for zoom effect
-        var tween = CreateTween();
-        tween.TweenProperty(this, "fov", CurrentProfile.ActionZoomFov, 0.5f)
-            .SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        bool preStrike = effectiveShots.HasFlag(CameraProfile.CameraShotOptions.PreStrike);
+        bool pushIn = effectiveShots.HasFlag(CameraProfile.CameraShotOptions.PushIn);
+        if (preStrike && pushIn)
+        {
+            TriggerPreStrikeAndPushIn();
+        }
+        else if (preStrike)
+        {
+            TriggerPreStrike();
+        }
+        else if (pushIn)
+        {
+            TriggerPushIn();
+        }
+
+        if (effectiveShots.HasFlag(CameraProfile.CameraShotOptions.WhipPan))
+        {
+            TriggerWhipPan();
+        }
+
+        if (effectiveShots.HasFlag(CameraProfile.CameraShotOptions.SpeedRamp))
+        {
+            TriggerSpeedRamp();
+        }
+
+        if (effectiveShots.HasFlag(CameraProfile.CameraShotOptions.RackFocus))
+        {
+            TriggerRackFocus();
+        }
+
+        // Tween FOV for zoom effect (or dolly zoom)
+        if (effectiveShots.HasFlag(CameraProfile.CameraShotOptions.DollyZoom))
+        {
+            TriggerDollyZoom(CurrentProfile.DollyZoomFov, CurrentProfile.DollyZoomSeconds);
+        }
+        else
+        {
+            var tween = CreateTween();
+            tween.TweenProperty(this, "fov", CurrentProfile.ActionZoomFov, 0.5f)
+                .SetTrans(Tween.TransitionType.Cubic).SetEase(Tween.EaseType.Out);
+        }
             
         // Temporarily increase speed for snap
         MoveSpeed = CurrentProfile.TransitionSpeed;
@@ -216,9 +300,164 @@ public partial class BattleCamera : Camera3D
 
     public void TriggerSweep(float angle, float duration)
     {
+        _sweepActive = true;
+        _sweepLockFocus = true;
+        _sweepPivot = _focusPoint;
+        _sweepBaseOffset = _targetPosition - _focusPoint;
         var tween = CreateTween();
         tween.TweenMethod(Callable.From<float>(a => _sweepAngle = a), 0f, angle, duration)
              .SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.InOut);
+        tween.TweenCallback(Callable.From(() =>
+        {
+            _sweepAngle = 0f;
+            _sweepActive = false;
+        }));
+    }
+
+    public void TriggerOrbitArc(float angle, float duration)
+    {
+        _sweepActive = true;
+        _sweepLockFocus = true;
+        _sweepPivot = _focusPoint;
+        _sweepBaseOffset = _targetPosition - _focusPoint;
+        var tween = CreateTween();
+        tween.TweenMethod(Callable.From<float>(a => _sweepAngle = a), 0f, angle, duration)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+        tween.TweenCallback(Callable.From(() =>
+        {
+            _sweepAngle = 0f;
+            _sweepActive = false;
+        }));
+    }
+
+    public void BeginActionSequence(ActionCameraSettings actionSettings = null)
+    {
+        _activeActionShots = SelectShots(GetEffectiveShots(actionSettings));
+        _actionSequenceStarted = true;
+    }
+
+    public void EndActionSequence()
+    {
+        _activeActionShots = CameraProfile.CameraShotOptions.None;
+        _actionSequenceStarted = false;
+    }
+
+    public bool IsShotActive(CameraProfile.CameraShotOptions shot)
+    {
+        return _activeActionShots.HasFlag(shot);
+    }
+
+    private void TriggerPushIn()
+    {
+        if (CurrentProfile.PushInDistance <= 0f) return;
+        _pushTween?.Kill();
+        var dir = (_focusPoint - _targetPosition).Normalized();
+        var offset = dir * CurrentProfile.PushInDistance;
+        _pushTween = CreateTween();
+        _pushTween.TweenMethod(Callable.From<Vector3>(v => _pushOffset = v), Vector3.Zero, offset, CurrentProfile.PushInSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        if (CurrentProfile.PushInHoldSeconds > 0f)
+        {
+            _pushTween.TweenInterval(CurrentProfile.PushInHoldSeconds);
+        }
+        _pushTween.TweenMethod(Callable.From<Vector3>(v => _pushOffset = v), offset, Vector3.Zero, CurrentProfile.PushInReturnSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+    }
+
+    private void TriggerPreStrike()
+    {
+        if (CurrentProfile.PreStrikeDistance <= 0f) return;
+        _pushTween?.Kill();
+        var dir = (_focusPoint - _targetPosition).Normalized();
+        var offset = -dir * CurrentProfile.PreStrikeDistance;
+        _pushTween = CreateTween();
+        _pushTween.TweenMethod(Callable.From<Vector3>(v => _pushOffset = v), Vector3.Zero, offset, CurrentProfile.PreStrikeSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        _pushTween.TweenMethod(Callable.From<Vector3>(v => _pushOffset = v), offset, Vector3.Zero, CurrentProfile.PreStrikeReturnSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+    }
+
+    private void TriggerPreStrikeAndPushIn()
+    {
+        if (CurrentProfile.PreStrikeDistance <= 0f && CurrentProfile.PushInDistance <= 0f) return;
+        _pushTween?.Kill();
+        var dir = (_focusPoint - _targetPosition).Normalized();
+        var backOffset = -dir * CurrentProfile.PreStrikeDistance;
+        var forwardOffset = dir * CurrentProfile.PushInDistance;
+        _pushTween = CreateTween();
+        if (CurrentProfile.PreStrikeDistance > 0f)
+        {
+            _pushTween.TweenMethod(Callable.From<Vector3>(v => _pushOffset = v), Vector3.Zero, backOffset, CurrentProfile.PreStrikeSeconds)
+                .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        }
+        if (CurrentProfile.PushInDistance > 0f)
+        {
+            _pushTween.TweenMethod(Callable.From<Vector3>(v => _pushOffset = v), backOffset, forwardOffset, CurrentProfile.PushInSeconds)
+                .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+            if (CurrentProfile.PushInHoldSeconds > 0f)
+            {
+                _pushTween.TweenInterval(CurrentProfile.PushInHoldSeconds);
+            }
+        }
+        _pushTween.TweenMethod(Callable.From<Vector3>(v => _pushOffset = v), forwardOffset, Vector3.Zero, CurrentProfile.PushInReturnSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+    }
+
+    private void TriggerWhipPan()
+    {
+        if (CurrentProfile.WhipPanDistance <= 0f) return;
+        _panTween?.Kill();
+        var right = GlobalTransform.Basis.X.Normalized();
+        float sign = GD.Randf() > 0.5f ? 1.0f : -1.0f;
+        var offset = right * (CurrentProfile.WhipPanDistance * sign);
+        _panTween = CreateTween();
+        _panTween.TweenMethod(Callable.From<Vector3>(v => _panOffset = v), Vector3.Zero, offset, CurrentProfile.WhipPanSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        _panTween.TweenMethod(Callable.From<Vector3>(v => _panOffset = v), offset, Vector3.Zero, CurrentProfile.WhipPanReturnSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+    }
+
+    public void TriggerImpactSnap()
+    {
+        if (CurrentProfile.ImpactSnapFov <= 0f) return;
+        _impactTween?.Kill();
+        float baseFov = Fov;
+        _impactTween = CreateTween();
+        if (CurrentProfile.ImpactSnapDelay > 0f)
+        {
+            _impactTween.TweenInterval(CurrentProfile.ImpactSnapDelay);
+        }
+        _impactTween.TweenProperty(this, "fov", CurrentProfile.ImpactSnapFov, CurrentProfile.ImpactSnapSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        _impactTween.TweenCallback(Callable.From(() => Shake(CurrentProfile.ImpactShakeIntensity)));
+        _impactTween.TweenProperty(this, "fov", baseFov, CurrentProfile.ImpactSnapReturnSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+    }
+
+    private void TriggerRackFocus()
+    {
+        if (CurrentProfile.RackFocusWidth <= 0f) return;
+        _focusWidthTween?.Kill();
+        float start = _focusWidthOverride > 0f ? _focusWidthOverride : FocusWidth;
+        _focusWidthTween = CreateTween();
+        _focusWidthTween.TweenMethod(Callable.From<float>(v => _focusWidthOverride = v), start, CurrentProfile.RackFocusWidth, CurrentProfile.RackFocusSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        _focusWidthTween.TweenMethod(Callable.From<float>(v => _focusWidthOverride = v), CurrentProfile.RackFocusWidth, FocusWidth, CurrentProfile.RackFocusReturnSeconds)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
+        _focusWidthTween.TweenCallback(Callable.From(() => _focusWidthOverride = -1f));
+    }
+
+    private void TriggerSpeedRamp()
+    {
+        if (CurrentProfile.SpeedRampMultiplier <= 0f) return;
+        _speedRampTween?.Kill();
+        float startSpeed = MoveSpeed;
+        float targetSpeed = _baseMoveSpeed * CurrentProfile.SpeedRampMultiplier;
+        _speedRampTween = CreateTween();
+        _speedRampTween.TweenProperty(this, "MoveSpeed", targetSpeed, CurrentProfile.SpeedRampSeconds * 0.4f)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        _speedRampTween.TweenProperty(this, "MoveSpeed", startSpeed, CurrentProfile.SpeedRampSeconds * 0.6f)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.InOut);
     }
 
     public void ResetToDefault()
@@ -226,6 +465,11 @@ public partial class BattleCamera : Camera3D
         MoveSpeed = _baseMoveSpeed; // Restore speed
         _targetRoll = 0f; // Reset tilt
         _sweepAngle = 0f; // Reset sweep
+        _sweepActive = false;
+        _pushOffset = Vector3.Zero;
+        _panOffset = Vector3.Zero;
+        _focusWidthOverride = -1f;
+        EndActionSequence();
         
         var tween = CreateTween();
         tween.TweenProperty(this, "fov", _baseFov, 1.0f)
@@ -316,10 +560,54 @@ public partial class BattleCamera : Camera3D
         if (attributes != null)
         {
             float dist = GlobalPosition.DistanceTo(_focusPoint);
-            attributes.DofBlurNearDistance = Mathf.Max(0.1f, dist - (FocusWidth / 2.0f));
-            attributes.DofBlurFarDistance = dist + (FocusWidth / 2.0f);
+            float width = _focusWidthOverride > 0f ? _focusWidthOverride : FocusWidth;
+            attributes.DofBlurNearDistance = Mathf.Max(0.1f, dist - (width / 2.0f));
+            attributes.DofBlurFarDistance = dist + (width / 2.0f);
             attributes.DofBlurFarEnabled = true;
             attributes.DofBlurNearEnabled = true;
         }
+    }
+
+    private CameraProfile.CameraShotOptions GetEffectiveShots(ActionCameraSettings actionSettings)
+    {
+        var profileShots = CurrentProfile?.AllowedShots ?? CameraProfile.CameraShotOptions.None;
+        if (actionSettings == null || actionSettings.AllowedShots == CameraProfile.CameraShotOptions.None)
+        {
+            return profileShots;
+        }
+        return profileShots & actionSettings.AllowedShots;
+    }
+
+    private CameraProfile.CameraShotOptions SelectShots(CameraProfile.CameraShotOptions effectiveShots)
+    {
+        if (CurrentProfile == null || !CurrentProfile.RandomizeShots)
+        {
+            return effectiveShots;
+        }
+
+        var available = new List<CameraProfile.CameraShotOptions>();
+        foreach (var flag in _shotFlags)
+        {
+            if (effectiveShots.HasFlag(flag))
+            {
+                available.Add(flag);
+            }
+        }
+
+        if (available.Count == 0) return CameraProfile.CameraShotOptions.None;
+
+        int max = CurrentProfile.MaxConcurrentShots;
+        if (max <= 0 || max > available.Count) max = available.Count;
+        if (max >= available.Count) return effectiveShots;
+
+        var selected = CameraProfile.CameraShotOptions.None;
+        for (int i = 0; i < max; i++)
+        {
+            int idx = GD.RandRange(0, available.Count - 1);
+            selected |= available[idx];
+            available.RemoveAt(idx);
+        }
+
+        return selected;
     }
 }

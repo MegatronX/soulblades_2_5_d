@@ -24,4 +24,5 @@ public partial class ItemData : Resource
 
     [Export]
     public Godot.Collections.Array<ItemComponentData> Components { get; private set; } = new();
+
 }

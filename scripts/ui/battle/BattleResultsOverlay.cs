@@ -36,6 +36,7 @@ public partial class BattleResultsOverlay : CanvasLayer
     [Export] private NodePath _rewardsSummaryPanelPath;
     [Export] private NodePath _rewardsItemsPanelPath;
     [Export] private PackedScene _partyRowScene;
+    [Export] private int _inputIndex = 0;
 
     [ExportGroup("Animation")]
     [Export] private float _introFadeSeconds = 0.3f;
@@ -79,6 +80,9 @@ public partial class BattleResultsOverlay : CanvasLayer
     private Control _rewardsSummaryPanel;
     private Control _rewardsItemsPanel;
     private Vector2 _panelBasePosition;
+    private string _confirmAction;
+    private string _leftAction;
+    private string _rightAction;
 
     private TaskCompletionSource<bool> _continueTcs;
     private TaskCompletionSource<DefeatChoice> _defeatTcs;
@@ -102,7 +106,28 @@ public partial class BattleResultsOverlay : CanvasLayer
         Layer = 200;
         CacheNodes();
         HookButtons();
+        CacheInputActions();
         HideOverlay();
+    }
+
+    public override void _Process(double delta)
+    {
+        if (!IsOverlayActive()) return;
+
+        if (Input.IsActionJustPressed(_confirmAction))
+        {
+            TriggerFocusedButton();
+            return;
+        }
+
+        if (Input.IsActionJustPressed(_leftAction))
+        {
+            FocusNextOption(-1);
+        }
+        else if (Input.IsActionJustPressed(_rightAction))
+        {
+            FocusNextOption(1);
+        }
     }
 
     public void ShowVictory(BattleRewards rewards, System.Action applyRewards, IEnumerable<Node> partyMembers)
@@ -236,6 +261,13 @@ public partial class BattleResultsOverlay : CanvasLayer
         if (_quitButton == null) GD.PrintErr("BattleResultsOverlay: QuitButton path not set or invalid.");
     }
 
+    private void CacheInputActions()
+    {
+        _confirmAction = GameInputs.GetActionName(GameInputAction.Confirm, _inputIndex);
+        _leftAction = GameInputs.GetActionName(GameInputAction.Left, _inputIndex);
+        _rightAction = GameInputs.GetActionName(GameInputAction.Right, _inputIndex);
+    }
+
     private void HookButtons()
     {
         _continueButton.Pressed += OnContinuePressed;
@@ -296,6 +328,66 @@ public partial class BattleResultsOverlay : CanvasLayer
             return;
         }
         _root.Hide();
+    }
+
+    private bool IsOverlayActive()
+    {
+        if (_root != null) return _root.Visible;
+        return Visible;
+    }
+
+    private void TriggerFocusedButton()
+    {
+        if (GetViewport().GuiGetFocusOwner() is Button focused)
+        {
+            focused.EmitSignal(Button.SignalName.Pressed);
+            return;
+        }
+
+        if (_continueButton?.Visible == true)
+        {
+            _continueButton.EmitSignal(Button.SignalName.Pressed);
+            return;
+        }
+
+        if (_retryButton?.Visible == true)
+        {
+            _retryButton.EmitSignal(Button.SignalName.Pressed);
+            return;
+        }
+
+        if (_quitButton?.Visible == true)
+        {
+            _quitButton.EmitSignal(Button.SignalName.Pressed);
+        }
+    }
+
+    private void FocusNextOption(int direction)
+    {
+        if (_continueButton?.Visible == true)
+        {
+            _continueButton.GrabFocus();
+            return;
+        }
+
+        var options = new List<Button>();
+        if (_retryButton?.Visible == true) options.Add(_retryButton);
+        if (_quitButton?.Visible == true) options.Add(_quitButton);
+
+        if (options.Count <= 1) return;
+
+        int currentIndex = options.FindIndex(btn => btn.HasFocus());
+        if (currentIndex < 0)
+        {
+            options[0].GrabFocus();
+            return;
+        }
+
+        int nextIndex = (currentIndex + direction) % options.Count;
+        if (nextIndex < 0) nextIndex += options.Count;
+
+        options[nextIndex].GrabFocus();
+        UISoundManager.Instance?.Play(UISoundType.Navigation);
     }
 
     private void ApplyPendingRewards()

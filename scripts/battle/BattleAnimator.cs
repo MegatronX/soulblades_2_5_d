@@ -47,7 +47,7 @@ public partial class BattleAnimator : Node
         if (character != null && character.AnimationPlayer != null)
         {
             // Simple hardcoded check for now, ideally data-driven
-            string animName = settings?.WindupAnimation ?? (context.SourceAction.Category == "Magic" ? "Cast" : "Prepare");
+            string animName = settings?.WindupAnimation ?? (context.SourceAction.Category == ActionCategory.Magic ? "Cast" : "Prepare");
             if (character.AnimationPlayer.HasAnimation(animName))
             {
                 character.AnimationPlayer.Play(animName);
@@ -78,6 +78,7 @@ public partial class BattleAnimator : Node
         bool moved = false;
         bool cameraFramed = false;
         var camera = GetViewport().GetCamera3D() as BattleCamera;
+        camera?.BeginActionSequence(settings?.CameraSettings);
 
         // 0. Close Distance (Melee)
         if (settings?.CloseDistance == true && character != null)
@@ -89,7 +90,7 @@ public partial class BattleAnimator : Node
                 // Trigger Dynamic Camera Framing
                 if (camera != null && targetContexts.Count > 0 && targetContexts[0].CurrentTarget is Node3D target3D)
                 {
-                    camera.FrameAction(character, target3D);
+                    camera.FrameAction(character, target3D, settings?.CameraSettings);
                     cameraFramed = true;
                 }
 
@@ -271,6 +272,7 @@ public partial class BattleAnimator : Node
         var visualSettings = context.SourceAction.VisualSettings;
         var camera = GetViewport().GetCamera3D() as BattleCamera;
         bool anyCrit = false;
+        bool impactSnapTriggered = false;
 
         foreach (var targetCtx in targetContexts)
         {
@@ -292,6 +294,11 @@ public partial class BattleAnimator : Node
                 // Stronger shake for crits
                 float intensity = result.IsCritical ? 1.0f : 0.2f;
                 camera.Shake(intensity);
+                if (!impactSnapTriggered && camera.IsShotActive(CameraProfile.CameraShotOptions.ImpactSnap))
+                {
+                    camera.TriggerImpactSnap();
+                    impactSnapTriggered = true;
+                }
             }
 
             if (result.IsCritical) anyCrit = true;
@@ -338,12 +345,20 @@ public partial class BattleAnimator : Node
 
     private void SpawnDamageNumber(Node target, ActionResult result, TimedHitRating rating)
     {
-        if (_damageNumberScene == null || !result.IsHit) return;
+        if (_damageNumberScene == null) return;
         
         var instance = _damageNumberScene.Instantiate<DamageNumber>();
         AddChild(instance);
-        
-        instance.Configure(target, result.TotalDamage, result.IsCritical, result.IsHeal, rating, result.DamageElements);
+
+        Vector3? fallback = result.HasTargetWorldPosition ? result.TargetWorldPosition : null;
+
+        if (!result.IsHit)
+        {
+            instance.ConfigureMiss(target, fallback);
+            return;
+        }
+
+        instance.Configure(target, result.TotalDamage, result.IsCritical, result.IsHeal, rating, result.DamageElements, fallback);
     }
 
     private void PlayTargetAnimation(Node target, ActionResult result, VisualActionSettings settings)

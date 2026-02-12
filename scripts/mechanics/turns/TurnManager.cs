@@ -225,9 +225,15 @@ public partial class TurnManager : Node
                 simActor.SimEffects[k].RemainingTurns--;
                 if (simActor.SimEffects[k].RemainingTurns <= 0)
                 {
-                    if (simActor.SimEffects[k].Data is StatModifierEffect statMod && statMod.Multiplier != 0)
+                    if (simActor.SimEffects[k].Data is StatModifierEffect statMod)
                     {
-                        simActor.SimStats.ApplyModifier(statMod.StatToModify, 0, 1.0f / statMod.Multiplier);
+                        foreach (var entry in statMod.StatMultipliers)
+                        {
+                            if (entry == null) continue;
+                            if (entry.Multiplier == 0) continue;
+                            float effective = entry.Multiplier <= 0f ? 1.0f : entry.Multiplier;
+                            simActor.SimStats.ApplyModifier(entry.Stat, 0, 1.0f / effective);
+                        }
                     }
                     simActor.SimEffects.RemoveAt(k);
                 }
@@ -318,10 +324,16 @@ public partial class TurnManager : Node
                 {
                     // If the expired effect was a StatModifierEffect, revert its changes in the simulation.
                     // This ensures that temporary speed boosts (Haste) or slows actually expire in the preview.
-                    if (next.SimEffects[k].Data is StatModifierEffect statMod && statMod.Multiplier != 0)
+                    if (next.SimEffects[k].Data is StatModifierEffect statMod)
                     {
-                        // Revert the multiplication: New = Old * (1 / Multiplier)
-                        next.SimStats.ApplyModifier(statMod.StatToModify, 0, 1.0f / statMod.Multiplier);
+                        foreach (var entry in statMod.StatMultipliers)
+                        {
+                            if (entry == null) continue;
+                            if (entry.Multiplier == 0) continue;
+                            float effective = entry.Multiplier <= 0f ? 1.0f : entry.Multiplier;
+                            // Revert the multiplication: New = Old * (1 / Multiplier)
+                            next.SimStats.ApplyModifier(entry.Stat, 0, 1.0f / effective);
+                        }
                     }
 
                     next.SimEffects.RemoveAt(k);

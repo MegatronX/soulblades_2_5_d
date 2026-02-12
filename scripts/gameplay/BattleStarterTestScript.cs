@@ -1,5 +1,6 @@
 using Godot;
 using System;
+using System.ComponentModel;
 
 public partial class BattleStarterTestScript : Node
 {
@@ -11,6 +12,9 @@ public partial class BattleStarterTestScript : Node
 
     [Export]
     public Godot.Collections.Array<Node> PlayersToRegister { get; set; } = new();
+
+    [Export]
+    public Godot.Collections.Dictionary<ItemData, int>  StartingItems{get; set;} = new();
 
 
     public override async void _Ready()
@@ -25,9 +29,22 @@ public partial class BattleStarterTestScript : Node
         var gameManager = GetNode<GameManager>(GameManager.Path);
         if (PlayersToRegister != null)
         {
+            var playerPartyRegistered = gameManager.PlayerParty;
             foreach (var player in PlayersToRegister)
             {
-                gameManager.AddPlayerCharacter(player);
+                if (!gameManager.HasPlayerCharacter(player) && playerPartyRegistered.Find(p => p.Name == player.Name) == null)
+                {
+                    gameManager.AddPlayerCharacter(player);
+                }
+            }
+        }
+
+        var inventoryManager = GetNode<InventoryManager>(InventoryManager.Path);
+        if (inventoryManager != null)
+        {
+            foreach (var kvp in StartingItems)
+            {
+                inventoryManager.AddItem(kvp.Key, kvp.Value);
             }
         }
 

@@ -1,12 +1,13 @@
-[gd_resource type="Resource" script_class="AttackData" load_steps=3 format=3 uid="uid://5l73s1ktetid"]
+[gd_resource type="Resource" script_class="AttackData" load_steps=4 format=3 uid="uid://5l73s1ktetid"]
 
 [ext_resource type="Script" uid="uid://d1q4ymghq0rd0" path="res://scripts/ui/turn_order/ActionComponentData.cs" id="1_wykw1"]
 [ext_resource type="Script" uid="uid://dotmxv788lodq" path="res://scripts/ui/turn_order/AttackData.cs" id="2_pckka"]
+[ext_resource type="Script" uid="uid://e03g772dil5b" path="res://scripts/ui/turn_order/TimedHitSettings.cs" id="2_xswyo"]
 
 [resource]
 script = ExtResource("2_pckka")
 Element = 3
-Category = "Magic"
+Category = 3
 PhysicalRatio = 0.0
 CommandName = "Fire"
 metadata/_custom_type_script = "uid://dotmxv788lodq"

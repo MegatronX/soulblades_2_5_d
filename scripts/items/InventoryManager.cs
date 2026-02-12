@@ -9,8 +9,14 @@ using System.Linq;
 [GlobalClass]
 public partial class InventoryManager : Node
 {
+    public const string Path = "/root/InventoryManager";
+    public const string NodeName = "InventoryManager";
+
     [Signal]
     public delegate void InventoryChangedEventHandler();
+
+    [Signal]
+    public delegate void ItemConsumedEventHandler(ItemData item, int quantity, int remaining);
 
     // The core data structure for the inventory. Maps an item resource to its quantity.
     private readonly Dictionary<ItemData, int> _inventory = new();
@@ -22,16 +28,18 @@ public partial class InventoryManager : Node
     {
         if (item == null || quantity <= 0) return;
 
-        if (_inventory.ContainsKey(item))
+        var resolved = ResolveInventoryItem(item) ?? item;
+
+        if (_inventory.ContainsKey(resolved))
         {
-            _inventory[item] += quantity;
+            _inventory[resolved] += quantity;
         }
         else
         {
-            _inventory[item] = quantity;
+            _inventory[resolved] = quantity;
         }
         
-        GD.Print($"Added {quantity}x {item.ItemName}. New total: {_inventory[item]}");
+        GD.Print($"Added {quantity}x {resolved.ItemName}. New total: {_inventory[resolved]}");
         EmitSignal(SignalName.InventoryChanged);
     }
 
@@ -41,20 +49,81 @@ public partial class InventoryManager : Node
     /// <returns>True if the items were successfully removed, false otherwise.</returns>
     public bool RemoveItem(ItemData item, int quantity = 1)
     {
-        if (item == null || quantity <= 0 || !_inventory.ContainsKey(item) || _inventory[item] < quantity)
+        var resolved = ResolveInventoryItem(item);
+        if (resolved == null || quantity <= 0 || !_inventory.ContainsKey(resolved) || _inventory[resolved] < quantity)
         {
             return false; // Cannot remove item.
         }
 
-        _inventory[item] -= quantity;
-        GD.Print($"Removed {quantity}x {item.ItemName}. New total: {_inventory[item]}");
+        _inventory[resolved] -= quantity;
+        GD.Print($"Removed {quantity}x {resolved.ItemName}. New total: {_inventory[resolved]}");
 
-        if (_inventory[item] == 0)
+        if (_inventory[resolved] == 0)
         {
-            _inventory.Remove(item);
+            _inventory.Remove(resolved);
         }
 
         EmitSignal(SignalName.InventoryChanged);
+        return true;
+    }
+
+    /// <summary>
+    /// Attempts to consume an item based on a chance. Returns true if the item was consumed.
+    /// </summary>
+    public bool TryConsumeItem(ItemData item, int quantity = 1, float? overrideChancePercent = null, IRandomNumberGenerator rng = null)
+    {
+        if (item == null || quantity <= 0) return false;
+
+        var resolved = ResolveInventoryItem(item) ?? item;
+        var consumable = resolved.Components?.OfType<ConsumableComponentData>().FirstOrDefault();
+        if (consumable == null) return false;
+
+        float chance = overrideChancePercent ?? consumable.ActionConsumeChancePercent;
+        chance = Mathf.Clamp(chance, 0f, 100f);
+
+        if (chance <= 0f) return false;
+        if (chance < 100f)
+        {
+            float roll = rng != null ? rng.RandRangeFloat(0f, 100f) : GD.Randf() * 100f;
+            if (roll > chance) return false;
+        }
+
+        if (!RemoveItem(resolved, quantity)) return false;
+
+        EmitSignal(SignalName.ItemConsumed, resolved, quantity, GetItemCount(resolved));
+        return true;
+    }
+
+    /// <summary>
+    /// Returns a list of items that can be used as actions in the given context.
+    /// </summary>
+    public List<ItemData> GetActionUsableItems(bool inBattle, Node user = null)
+    {
+        return _inventory.Keys
+            .Where(item => item != null && IsItemActionUsableInternal(item, inBattle, user))
+            .ToList();
+    }
+
+    public bool IsItemActionUsable(ItemData item, bool inBattle, Node user = null)
+    {
+        return IsItemActionUsableInternal(item, inBattle, user);
+    }
+
+    private static bool IsItemActionUsableInternal(ItemData item, bool inBattle, Node user)
+    {
+        var consumable = item.Components?.OfType<ConsumableComponentData>().FirstOrDefault();
+        if (consumable == null || consumable.ActionToPerform == null) return false;
+
+        if (consumable.AlwaysUsableAsAction) return true;
+
+        if (inBattle && !consumable.UsableInBattle) return false;
+        if (!inBattle && !consumable.UsableInMenu) return false;
+
+        if (consumable.ActionUseRequirements != null && !consumable.ActionUseRequirements.IsSatisfied(user))
+        {
+            return false;
+        }
+
         return true;
     }
 
@@ -63,7 +132,8 @@ public partial class InventoryManager : Node
     /// </summary>
     public int GetItemCount(ItemData item)
     {
-        return _inventory.GetValueOrDefault(item, 0);
+        var resolved = ResolveInventoryItem(item);
+        return resolved == null ? 0 : _inventory.GetValueOrDefault(resolved, 0);
     }
 
     /// <summary>
@@ -97,5 +167,21 @@ public partial class InventoryManager : Node
     public IReadOnlyDictionary<ItemData, int> GetInventory()
     {
         return _inventory;
+    }
+
+    private ItemData ResolveInventoryItem(ItemData item)
+    {
+        if (item == null) return null;
+        if (_inventory.ContainsKey(item)) return item;
+
+        var path = item.ResourcePath;
+        if (string.IsNullOrEmpty(path)) return null;
+
+        foreach (var key in _inventory.Keys)
+        {
+            if (key != null && key.ResourcePath == path) return key;
+        }
+
+        return null;
     }
 }

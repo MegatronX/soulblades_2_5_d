@@ -27,6 +27,7 @@ public partial class BattleMenuController : Control
     private int _currentPageIndex = 0;
     private bool _isAnimating = false;
     private bool _isTargeting = false;
+    private InventoryManager _inventoryManager;
 
     private List<FoldableMenu> _menuStack = new();
     private Dictionary<FoldableMenu, int> _menuSelectionHistory = new();
@@ -67,6 +68,8 @@ public partial class BattleMenuController : Control
             () => eventBus.TargetingCancelled += OnTargetingCancelled,
             () => eventBus.TargetingCancelled -= OnTargetingCancelled
         );
+
+        _inventoryManager = GetNodeOrNull<InventoryManager>(InventoryManager.Path);
     }
 
     /// <summary>
@@ -74,6 +77,12 @@ public partial class BattleMenuController : Control
     /// </summary>
     public void OnTurnStarted(TurnManager.TurnData turnData)
     {
+        if (!IsBattleActive())
+        {
+            Hide();
+            return;
+        }
+
         var character = turnData.Combatant;
 
         // 1. Check for AI Precedence
@@ -124,6 +133,16 @@ public partial class BattleMenuController : Control
 
     public override void _Process(double delta)
     {
+        if (!IsBattleActive())
+        {
+            if (Visible)
+            {
+                Hide();
+            }
+            _isTargeting = false;
+            return;
+        }
+
         if (!Visible || _currentActionManager == null || _inputProvider == null || _isAnimating || _isTargeting) return;
 
         // Confirm selection
@@ -197,6 +216,7 @@ public partial class BattleMenuController : Control
 
     private async void OnCommandSelected(FoldableMenu currentMenu, BattleCommand command, int index)
     {
+        if (!IsBattleActive()) return;
         if (_isTargeting) return; // Prevent double-clicks or race conditions
 
         if (command is BattleCategory category)
@@ -220,7 +240,17 @@ public partial class BattleMenuController : Control
 
             // Use the category's specific theme, or fallback to page theme
             var theme = category.Theme ?? _currentActionManager.GetPageTheme(_currentPageIndex) ?? _defaultTheme;
-            nextMenu.BuildMenu(new List<BattleCommand>(category.SubCommands), theme);
+            var isItemsMenu = _currentActionManager != null && _currentActionManager.IsItemsCategory(category);
+            if (isItemsMenu)
+            {
+                var actor = _currentActionManager.GetParent();
+                var itemCommands = BuildItemCommands(actor, out var isEnabled);
+                nextMenu.BuildMenu(itemCommands, theme, isEnabled);
+            }
+            else
+            {
+                nextMenu.BuildMenu(new List<BattleCommand>(category.SubCommands), theme);
+            }
             
             // Connect signal recursively
             nextMenu.CommandSelected += (c, i) => OnCommandSelected(nextMenu, c, i);
@@ -239,6 +269,7 @@ public partial class BattleMenuController : Control
 
     private void InitiateTargeting(BattleCommand command)
     {
+        if (!IsBattleActive()) return;
         _isTargeting = true;
         
         // Save the current focus so we can restore it if targeting is cancelled.
@@ -266,6 +297,12 @@ public partial class BattleMenuController : Control
 
     private async void OnTargetingConfirmed(BattleCommand command, Godot.Collections.Array<Node> targets)
     {
+        if (!IsBattleActive())
+        {
+            Hide();
+            _isTargeting = false;
+            return;
+        }
         if (!_isTargeting) return;
         _isTargeting = false;
         
@@ -274,6 +311,8 @@ public partial class BattleMenuController : Control
         {
             menu.SetInputEnabled(true);
         }
+
+        ResetMenusAfterCommit();
 
         // 1. Emit local signal for UI feedback
         EmitSignal(SignalName.ActionCommitted, command);
@@ -284,14 +323,22 @@ public partial class BattleMenuController : Control
             // We pass the resource path so the server can load the exact same ActionData
             // TODO: Pass targets to the server once the RPC signature is updated
             var targetPaths = targets.Select(t => t.GetPath().ToString()).ToArray();
+            var actionResourcePath = ResolveActionResourcePath(command);
+            var itemResourcePath = (command as ItemBattleCommand)?.Item?.ResourcePath;
+
+            if (string.IsNullOrEmpty(actionResourcePath))
+            {
+                GD.PrintErr($"Could not resolve action path for command '{command?.CommandName}'.");
+                return;
+            }
 
             if (Multiplayer.IsServer())
             {
-                _battleController.Server_PlayerCommitAction(command.ResourcePath, targetPaths);
+                _battleController.Server_PlayerCommitAction(actionResourcePath, itemResourcePath, targetPaths);
             }
             else
             {
-                _battleController.RpcId(1, nameof(BattleController.Server_PlayerCommitAction), command.ResourcePath, targetPaths);
+                _battleController.RpcId(1, nameof(BattleController.Server_PlayerCommitAction), actionResourcePath, itemResourcePath, targetPaths);
             }
         }
 
@@ -304,6 +351,12 @@ public partial class BattleMenuController : Control
 
     private void OnTargetingCancelled()
     {
+        if (!IsBattleActive())
+        {
+            Hide();
+            _isTargeting = false;
+            return;
+        }
         if (!_isTargeting) return;
 
         // Re-enable input to resume menu interaction.
@@ -328,6 +381,95 @@ public partial class BattleMenuController : Control
     }
 
     private void EndTargetingState() => _isTargeting = false;
+
+    private void ResetMenusAfterCommit()
+    {
+        foreach (var menu in _menuStack)
+        {
+            if (menu != _primaryMenu && menu != _subMenu)
+            {
+                menu.QueueFree();
+            }
+        }
+
+        _menuStack.Clear();
+        _menuStack.Add(_primaryMenu);
+        _menuSelectionHistory.Clear();
+        _savedFocusIndex = -1;
+
+        _subMenu.Hide();
+        _ = _primaryMenu.Unfold();
+    }
+
+    private string ResolveActionResourcePath(BattleCommand command)
+    {
+        if (command is ActionData action)
+        {
+            return action.ResourcePath;
+        }
+
+        if (command is ItemBattleCommand itemCommand)
+        {
+            return itemCommand.Action?.ResourcePath;
+        }
+
+        return null;
+    }
+
+    private List<BattleCommand> BuildItemCommands(Node actor, out System.Func<BattleCommand, bool> isEnabled)
+    {
+        isEnabled = null;
+
+        if (_inventoryManager == null)
+        {
+            _inventoryManager = GetNodeOrNull<InventoryManager>(InventoryManager.Path);
+        }
+
+        if (_inventoryManager == null)
+        {
+            GD.PrintErr("BattleMenuController could not find InventoryManager.");
+            return new List<BattleCommand>();
+        }
+
+        var commands = new List<BattleCommand>();
+        var usableLookup = new Dictionary<BattleCommand, bool>();
+
+        foreach (var kvp in _inventoryManager.GetInventory())
+        {
+            var item = kvp.Key;
+            if (item == null) continue;
+
+            var consumable = item.Components?.OfType<ConsumableComponentData>().FirstOrDefault();
+            if (consumable == null || consumable.ActionToPerform == null) continue;
+
+            var itemCommand = new ItemBattleCommand
+            {
+                Item = item,
+                Action = consumable.ActionToPerform,
+                Quantity = kvp.Value,
+                CommandName = $"{item.ItemName} x{kvp.Value}",
+                Description = item.Description,
+                Icon = item.Icon,
+                IsUsable = _inventoryManager.IsItemActionUsable(item, true, actor)
+            };
+
+            commands.Add(itemCommand);
+            usableLookup[itemCommand] = itemCommand.IsUsable;
+        }
+
+        commands = commands
+            .OrderBy(cmd => (cmd as ItemBattleCommand)?.Item?.ItemName ?? cmd.CommandName)
+            .ToList();
+
+        isEnabled = cmd =>
+        {
+            if (cmd is ItemBattleCommand itemCmd) return itemCmd.IsUsable;
+            if (usableLookup.TryGetValue(cmd, out bool usable)) return usable;
+            return true;
+        };
+
+        return commands;
+    }
 
     private async void CloseTopMenu()
     {
@@ -404,5 +546,10 @@ public partial class BattleMenuController : Control
                 rect.Scale = (i == _currentPageIndex) ? new Vector2(1.2f, 1.2f) : Vector2.One;
             }
         }
+    }
+
+    private bool IsBattleActive()
+    {
+        return _battleController != null && _battleController.CurrentState == BattleController.BattleState.InProgress;
     }
 }

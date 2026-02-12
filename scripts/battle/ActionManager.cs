@@ -156,7 +156,9 @@ public partial class ActionManager : Node
 
         // Find all learned actions that match this category's name (e.g. "Magic", "Skills")
         // or you could add a specific "CategoryTag" field to BattleCategory to match against ActionData.Category.
-        var matchingActions = LearnedActions.OfType<ActionData>().Where(a => a.Category == category.CommandName).ToList();
+        var matchingActions = LearnedActions.OfType<ActionData>()
+            .Where(a => MatchesCategory(a, category))
+            .ToList();
         
         // Add them to the category's sub-commands
         foreach (var action in matchingActions)
@@ -174,5 +176,36 @@ public partial class ActionManager : Node
                 category.SubCommands.Add(effectiveAction);
             }
         }
+    }
+
+    private static bool MatchesCategory(ActionData action, BattleCategory category)
+    {
+        if (action == null || category == null) return false;
+        var categoryName = category.CommandName ?? string.Empty;
+        var actionName = action.Category.ToString();
+
+        if (string.Equals(categoryName, actionName, System.StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        if (categoryName.EndsWith("s", System.StringComparison.OrdinalIgnoreCase))
+        {
+            var singular = categoryName[..^1];
+            if (string.Equals(singular, actionName, System.StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public bool IsItemsCategory(BattleCategory category)
+    {
+        if (category == null) return false;
+        var name = category.CommandName ?? string.Empty;
+        return string.Equals(name, "Items", System.StringComparison.OrdinalIgnoreCase)
+            || string.Equals(name, "Item", System.StringComparison.OrdinalIgnoreCase);
     }
 }

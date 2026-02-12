@@ -37,6 +37,12 @@ public partial class GlobalEventBus : Node
     public delegate void CombatantsChangedEventHandler();
 
     /// <summary>
+    /// Emitted when a battle has finished initial setup and is ready to start.
+    /// </summary>
+    [Signal]
+    public delegate void BattleReadyEventHandler();
+
+    /// <summary>
     /// Emitted when an action is selected in the menu, initiating the targeting phase.
     /// </summary>
     [Signal]

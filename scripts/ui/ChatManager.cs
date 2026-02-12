@@ -15,7 +15,10 @@ public partial class ChatManager : CanvasLayer
         _messageInput = GetNode<LineEdit>("MessageInput");
 
         // When the user presses Enter in the input field, send the message.
-        _messageInput.TextSubmitted += OnTextSubmitted;
+        this.Subscribe(
+            () => _messageInput.TextSubmitted += OnTextSubmitted,
+            () => _messageInput.TextSubmitted -= OnTextSubmitted
+        );
     }
 
     /// <summary>

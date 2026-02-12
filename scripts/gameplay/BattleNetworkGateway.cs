@@ -12,10 +12,11 @@ public sealed class BattleNetworkGateway
         _getActiveTurn = getActiveTurn;
     }
 
-    public bool TryBuildCommitRequest(string actionPath, string[] targetPaths, out TurnManager.TurnData currentTurn, out ActionData action, out List<Node> targets)
+    public bool TryBuildCommitRequest(string actionPath, string itemPath, string[] targetPaths, out TurnManager.TurnData currentTurn, out ActionData action, out ItemData item, out List<Node> targets)
     {
         currentTurn = null;
         action = null;
+        item = null;
         targets = new List<Node>();
 
         var multiplayer = _root.Multiplayer;
@@ -37,6 +38,16 @@ public sealed class BattleNetworkGateway
         {
             GD.PrintErr($"Server could not load action from path: {actionPath}");
             return false;
+        }
+
+        if (!string.IsNullOrEmpty(itemPath))
+        {
+            item = GD.Load<ItemData>(itemPath);
+            if (item == null)
+            {
+                GD.PrintErr($"Server could not load item from path: {itemPath}");
+                return false;
+            }
         }
 
         if (targetPaths != null)

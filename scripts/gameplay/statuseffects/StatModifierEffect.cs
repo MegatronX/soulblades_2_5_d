@@ -8,25 +8,54 @@ using Godot;
 public partial class StatModifierEffect : StatusEffect
 {
     [Export]
-    public StatType StatToModify { get; private set; }
-
-    [Export]
-    public float Multiplier { get; private set; } = 1.5f;
-
-    // We would need a StatsComponent on the character that can handle temporary modifiers.
-    // For example: owner.GetNode<StatsComponent>("StatsComponent").AddModifier(this);
+    public Godot.Collections.Array<StatMultiplierEntry> StatMultipliers { get; private set; } = new();
 
     public override void OnApply(Node owner, ActionDirector actionDirector)
     {
-        // In a real implementation, you would get the character's StatsComponent
-        // and tell it to add a modifier associated with this effect.
-        GD.Print($"{owner.Name} is now affected by {EffectName}! ({StatToModify} x{Multiplier})");
+        base.OnApply(owner, actionDirector);
+
+        var stats = owner.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
+        if (stats == null) return;
+
+        if (StatMultipliers == null || StatMultipliers.Count == 0)
+        {
+            GD.PrintErr($"{EffectName}: No stat multipliers configured.");
+            return;
+        }
+
+        var appliedDescriptions = new System.Collections.Generic.List<string>();
+        foreach (var entry in StatMultipliers)
+        {
+            if (entry == null) continue;
+            var effectiveMultiplier = entry.Multiplier;
+            if (effectiveMultiplier <= 0f)
+            {
+                GD.PrintErr($"{EffectName}: Multiplier for {entry.Stat} must be > 0. Defaulting to 1.0.");
+                effectiveMultiplier = 1.0f;
+            }
+
+            if (effectiveMultiplier != 1.0f)
+            {
+                var multModifier = new StatModifier(entry.Stat, effectiveMultiplier, ModifierType.Multiplicative, this);
+                stats.AddModifier(multModifier);
+            }
+            appliedDescriptions.Add($"{entry.Stat} x{effectiveMultiplier}");
+        }
+
+        if (appliedDescriptions.Count > 0)
+        {
+            GD.Print($"{owner.Name} is now affected by {EffectName}! ({string.Join(", ", appliedDescriptions)})");
+        }
     }
 
     public override void OnRemove(Node owner, ActionDirector actionDirector)
     {
-        // Similarly, you would tell the StatsComponent to remove the modifier
-        // associated with this effect.
+        base.OnRemove(owner, actionDirector);
+
+        var stats = owner.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
+        if (stats == null) return;
+
+        stats.RemoveAllModifiersFromSource(this);
         GD.Print($"{EffectName} has worn off for {owner.Name}.");
     }
 }

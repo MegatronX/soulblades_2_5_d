@@ -21,13 +21,13 @@ public sealed class BattleTurnFlow
 
     public event System.Action<TurnManager.TurnData> TurnStarted;
 
-    public async Task CommitAction(TurnManager.TurnData actor, ActionData action, List<Node> targets)
+    public async Task CommitAction(TurnManager.TurnData actor, ActionData action, List<Node> targets, ItemData sourceItem = null)
     {
         if (actor == null || action == null) return;
 
         GD.Print($"'{actor.Combatant.Name}' performs action '{action.CommandName}'.");
 
-        var context = new ActionContext(action, actor.Combatant, targets);
+        var context = new ActionContext(action, actor.Combatant, targets, sourceItem);
         await _actionDirector.ProcessAction(context);
 
         _turnManager.CommitTurn(actor, action.TickCost, _actionDirector);

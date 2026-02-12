@@ -32,8 +32,8 @@ public sealed class BattleRewardsApplier
         for (int i = 0; i < party.Count; i++)
         {
             var member = party[i];
-            int expToGive = perMemberExp + ((splitExp && i == 0) ? expRemainder : 0);
-            int apToGive = perMemberAp + ((splitAp && i == 0) ? apRemainder : 0);
+            int expToGive = perMemberExp + ((splitExp && i < expRemainder) ? 1 : 0);
+            int apToGive = perMemberAp + ((splitAp && i < apRemainder) ? 1 : 0);
 
             if (bonusPercent > 0f && killingBlowActor != null && member == killingBlowActor)
             {

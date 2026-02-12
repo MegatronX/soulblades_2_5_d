@@ -87,6 +87,9 @@ public partial class BattleController : Node
     public delegate void CombatantDefeatedEventHandler(Node combatant);
 
     [Signal]
+    public delegate void BattleReadyEventHandler();
+
+    [Signal]
     public delegate void BattleEndedEventHandler(BattleState result);
 
     public override void _Ready()
@@ -253,13 +256,15 @@ public partial class BattleController : Node
         }
 
         CurrentState = BattleState.InProgress;
+        EmitSignal(SignalName.BattleReady);
+        _eventBus?.EmitSignal(GlobalEventBus.SignalName.BattleReady);
         ProcessNextTurn();
     }
 
     /// <summary>
     /// Called by the active combatant when they have chosen an action to perform.
     /// </summary>
-    public async Task CommitAction(TurnManager.TurnData actor, ActionData action, List<Node> targets)
+    public async Task CommitAction(TurnManager.TurnData actor, ActionData action, List<Node> targets, ItemData sourceItem = null)
     {
         if (!Multiplayer.IsServer() || CurrentState != BattleState.InProgress) return;
 
@@ -283,7 +288,7 @@ public partial class BattleController : Node
             }
         }
 
-        await _turnFlow.CommitAction(actor, action, targets);
+        await _turnFlow.CommitAction(actor, action, targets, sourceItem);
     }
 
     private void OnCombatantDefeated(Node combatant)
@@ -472,12 +477,13 @@ public partial class BattleController : Node
     /// RPC called by the client when they select an action from the menu.
     /// </summary>
     /// <param name="actionPath">The resource path of the selected ActionData/BattleCommand.</param>
+    /// <param name="itemPath">Optional resource path of the selected ItemData (if the action came from an item).</param>
     /// <param name="targetPaths">An array of NodePaths for the selected targets.</param>
     [Rpc(MultiplayerApi.RpcMode.AnyPeer, CallLocal = false)]
-    public void Server_PlayerCommitAction(string actionPath, string[] targetPaths)
+    public void Server_PlayerCommitAction(string actionPath, string itemPath, string[] targetPaths)
     {
         if (!Multiplayer.IsServer()) return;
-        if (!_networkGateway.TryBuildCommitRequest(actionPath, targetPaths, out var currentTurn, out var actionResource, out var targets))
+        if (!_networkGateway.TryBuildCommitRequest(actionPath, itemPath, targetPaths, out var currentTurn, out var actionResource, out var itemResource, out var targets))
         {
             return;
         }
@@ -496,7 +502,7 @@ public partial class BattleController : Node
             }
         }
 
-        _ = CommitAction(currentTurn, actionResource, targets);
+        _ = CommitAction(currentTurn, actionResource, targets, itemResource);
     }
 
     private void DisableMovement(IEnumerable<Node> combatants)

@@ -14,4 +14,13 @@ public partial class ConsumableComponentData : ItemComponentData
 
     [Export]
     public bool UsableInMenu { get; private set; } = true;
+
+    [Export]
+    public bool AlwaysUsableAsAction { get; private set; } = false;
+
+    [Export]
+    public ItemActionRequirements ActionUseRequirements { get; private set; }
+
+    [Export(PropertyHint.Range, "0,100,0.1")]
+    public float ActionConsumeChancePercent { get; private set; } = 100f;
 }

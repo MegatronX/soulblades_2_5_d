@@ -1,0 +1,192 @@
+[gd_scene load_steps=4 format=3 uid="uid://ck3m0yb0b67jn"]
+
+[ext_resource type="Script" uid="uid://cgg6rq4bwh3jo" path="res://scripts/ui/battle/BattlePartyStatusRow.cs" id="1_x5j6p"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_row"]
+content_margin_left = 12.0
+content_margin_top = 10.0
+content_margin_right = 12.0
+content_margin_bottom = 10.0
+bg_color = Color(0.08, 0.08, 0.12, 0.25)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6, 0.6, 0.8, 0.8)
+corner_radius_top_left = 10
+corner_radius_top_right = 10
+corner_radius_bottom_right = 10
+corner_radius_bottom_left = 10
+shadow_color = Color(0, 0, 0, 0.35)
+shadow_size = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_charge_panel"]
+content_margin_left = 6.0
+content_margin_top = 4.0
+content_margin_right = 6.0
+content_margin_bottom = 4.0
+bg_color = Color(0.04, 0.05, 0.08, 0.5)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.55, 0.75, 0.7)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="BattlePartyStatusRow" type="Control"]
+custom_minimum_size = Vector2(360, 140)
+layout_mode = 3
+anchors_preset = 0
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("1_x5j6p")
+_nameLabelPath = NodePath("Panel/Content/Left/NameLabel")
+_hpBarPath = NodePath("Panel/Content/Left/HpBar")
+_hpNameLabelPath = NodePath("Panel/Content/Left/HpRow/HpNameLabel")
+_hpCurrentLabelPath = NodePath("Panel/Content/Left/HpRow/HpCurrentLabel")
+_hpMaxLabelPath = NodePath("Panel/Content/Left/HpRow/HpMaxLabel")
+_mpBarPath = NodePath("Panel/Content/Left/MpBar")
+_mpNameLabelPath = NodePath("Panel/Content/Left/MpRow/MpNameLabel")
+_mpCurrentLabelPath = NodePath("Panel/Content/Left/MpRow/MpCurrentLabel")
+_mpMaxLabelPath = NodePath("Panel/Content/Left/MpRow/MpMaxLabel")
+_chargeNotchContainerPath = NodePath("Panel/Content/Right/ChargePanel/ChargeContent/ChargeNotches")
+_positiveStatusContainerPath = NodePath("Panel/Content/Right/StatusRow/PositiveStatuses")
+_negativeStatusContainerPath = NodePath("Panel/Content/Right/StatusRow/NegativeStatuses")
+_limitBarPath = NodePath("Panel/Content/Right/LimitBar")
+_notchRotationDegrees = -8.0
+_barOutlineThickness = 4
+_statusIconSize = Vector2(32, 32)
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_row")
+
+[node name="Content" type="HBoxContainer" parent="Panel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="Left" type="VBoxContainer" parent="Panel/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.71
+theme_override_constants/separation = 4
+
+[node name="NameLabel" type="Label" parent="Panel/Content/Left"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Name"
+
+[node name="HpRow" type="HBoxContainer" parent="Panel/Content/Left"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.91
+theme_override_constants/separation = 6
+
+[node name="HpNameLabel" type="Label" parent="Panel/Content/Left/HpRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "HP"
+
+[node name="HpCurrentLabel" type="Label" parent="Panel/Content/Left/HpRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "100"
+
+[node name="HpMaxLabel" type="Label" parent="Panel/Content/Left/HpRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "/100"
+
+[node name="HpBar" type="TextureProgressBar" parent="Panel/Content/Left"]
+custom_minimum_size = Vector2(0, 12)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.9
+value = 100.0
+
+[node name="MpRow" type="HBoxContainer" parent="Panel/Content/Left"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="MpNameLabel" type="Label" parent="Panel/Content/Left/MpRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "MP"
+
+[node name="MpCurrentLabel" type="Label" parent="Panel/Content/Left/MpRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "50"
+
+[node name="MpMaxLabel" type="Label" parent="Panel/Content/Left/MpRow"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "/50"
+
+[node name="MpBar" type="TextureProgressBar" parent="Panel/Content/Left"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 50.0
+value = 50.0
+
+[node name="Right" type="VBoxContainer" parent="Panel/Content"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+size_flags_stretch_ratio = 0.25
+theme_override_constants/separation = 4
+
+[node name="ChargePanel" type="PanelContainer" parent="Panel/Content/Right"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_charge_panel")
+
+[node name="ChargeContent" type="VBoxContainer" parent="Panel/Content/Right/ChargePanel"]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+theme_override_constants/separation = 2
+
+[node name="ChargeLabel" type="Label" parent="Panel/Content/Right/ChargePanel/ChargeContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Charge"
+
+[node name="ChargeNotches" type="HBoxContainer" parent="Panel/Content/Right/ChargePanel/ChargeContent"]
+layout_mode = 2
+size_flags_horizontal = 0
+theme_override_constants/separation = 2
+
+[node name="StatusRow" type="VBoxContainer" parent="Panel/Content/Right"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="PositiveStatuses" type="HFlowContainer" parent="Panel/Content/Right/StatusRow"]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NegativeStatuses" type="HBoxContainer" parent="Panel/Content/Right/StatusRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 4
+
+[node name="LimitBar" type="TextureProgressBar" parent="Panel/Content/Right"]
+custom_minimum_size = Vector2(0, 10)
+layout_mode = 2
+size_flags_horizontal = 3

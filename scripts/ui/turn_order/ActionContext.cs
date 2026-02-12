@@ -22,6 +22,7 @@ public partial class ActionContext : RefCounted
     public ActionStage Stage { get; set; } = ActionStage.Initiated;
 
     public ActionData SourceAction { get; }
+    public ItemData SourceItem { get; }
     public Node Initiator { get; }
     public List<Node> InitialTargets { get; }
 
@@ -53,9 +54,10 @@ public partial class ActionContext : RefCounted
     /// <summary>
     /// Master constructor to create the initial context from an ActionData resource.
     /// </summary>
-    public ActionContext(ActionData source, Node initiator, IEnumerable<Node> targets)
+    public ActionContext(ActionData source, Node initiator, IEnumerable<Node> targets, ItemData sourceItem = null)
     {
         SourceAction = source;
+        SourceItem = sourceItem;
         Initiator = initiator;
         InitialTargets = new List<Node>(targets);
 
@@ -91,6 +93,7 @@ public partial class ActionContext : RefCounted
     public ActionContext(ActionContext original, Node currentTarget)
     {
         SourceAction = original.SourceAction;
+        SourceItem = original.SourceItem;
         Initiator = original.Initiator;
         InitialTargets = original.InitialTargets;
         CurrentTarget = currentTarget;

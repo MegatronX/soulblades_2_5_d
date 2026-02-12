@@ -1,0 +1,57 @@
+[gd_scene load_steps=4 format=3 uid="uid://c2j0f2t5b8j7g"]
+
+[ext_resource type="Script" uid="uid://bbt46g4wrdtt7" path="res://scripts/ui/battle/BattlePartyVisualizer.cs" id="1_t4njb"]
+[ext_resource type="PackedScene" uid="uid://ck3m0yb0b67jn" path="res://assets/scenes/battle/ui/BattlePartyStatusRow.tscn" id="2_k7x8p"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 12.0
+content_margin_top = 12.0
+content_margin_right = 12.0
+content_margin_bottom = 12.0
+bg_color = Color(0.05, 0.05, 0.08, 0.22)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.35, 0.45, 0.65, 0.75)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+shadow_color = Color(0, 0, 0, 0.3)
+shadow_size = 10
+
+[node name="BattlePartyVisualizer" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_t4njb")
+_playerTeamContainerPath = NodePath("../../PlayerTeamContainer")
+_rowContainerPath = NodePath("Panel/Rows")
+_rowScene = ExtResource("2_k7x8p")
+
+[node name="Panel" type="PanelContainer" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1240.0
+offset_top = -210.0
+offset_right = -30.0
+offset_bottom = -30.0
+grow_horizontal = 0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Rows" type="HBoxContainer" parent="Panel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10

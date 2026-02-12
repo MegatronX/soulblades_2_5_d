@@ -1,0 +1,31 @@
+[gd_resource type="Resource" script_class="ItemData" load_steps=10 format=3 uid="uid://wco61svul3tx"]
+
+[ext_resource type="Script" uid="uid://blflax5y5xdux" path="res://scripts/items/ItemComponentData.cs" id="1_17toa"]
+[ext_resource type="Script" uid="uid://d1q4ymghq0rd0" path="res://scripts/ui/turn_order/ActionComponentData.cs" id="2_k5mrv"]
+[ext_resource type="Script" uid="uid://b6fjolv8xfkhy" path="res://scripts/items/ItemData.cs" id="2_wdj0t"]
+[ext_resource type="Script" uid="uid://bp2sv1vy88xn2" path="res://scripts/ui/turn_order/StatusEffectChanceEntry.cs" id="3_k5mrv"]
+[ext_resource type="Script" uid="uid://e03g772dil5b" path="res://scripts/ui/turn_order/TimedHitSettings.cs" id="4_c5bst"]
+[ext_resource type="Script" uid="uid://dotmxv788lodq" path="res://scripts/ui/turn_order/AttackData.cs" id="5_jm0at"]
+[ext_resource type="Script" uid="uid://b4lg4bfgo0o4c" path="res://scripts/items/ConsumableComponentData.cs" id="6_aroar"]
+
+[sub_resource type="Resource" id="Resource_bnfcg"]
+script = ExtResource("5_jm0at")
+Power = 100
+Accuracy = 100
+Category = 4
+Flags = 21
+CommandName = "Potion"
+metadata/_custom_type_script = "uid://dotmxv788lodq"
+
+[sub_resource type="Resource" id="Resource_l0w8k"]
+script = ExtResource("6_aroar")
+ActionToPerform = SubResource("Resource_bnfcg")
+metadata/_custom_type_script = "uid://b4lg4bfgo0o4c"
+
+[resource]
+script = ExtResource("2_wdj0t")
+ItemName = "Potion"
+Description = "A basic healing item"
+Value = 25
+Components = Array[ExtResource("1_17toa")]([SubResource("Resource_l0w8k")])
+metadata/_custom_type_script = "uid://b6fjolv8xfkhy"

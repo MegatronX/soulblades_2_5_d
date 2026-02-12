@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="StatusEffect" load_steps=4 format=3 uid="uid://cjhy1gkdaehu8"]
+
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="1_crbe0"]
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="2_lcxid"]
+[ext_resource type="Resource" uid="uid://c2emykq2heprb" path="res://assets/resources/status_effects/haste/haste_stat_multipliers.tres" id="2_yecbe"]
+
+[resource]
+script = ExtResource("2_lcxid")
+EffectName = "Haste"
+MinDurationTurns = 5
+MaxDurationTurns = 8
+OnApplyEffects = Array[ExtResource("1_crbe0")]([ExtResource("2_yecbe")])
+OnRemoveEffects = Array[ExtResource("1_crbe0")]([ExtResource("2_yecbe")])
+metadata/_custom_type_script = "uid://bg8lacp8o3hs1"

@@ -8,7 +8,7 @@ using Godot;
 public partial class ActionData : BattleCommand
 {
     [Export]
-    public string Category { get; private set; } = "General";
+    public ActionCategory Category { get; private set; } = ActionCategory.General;
 
     [Export]
     public float TickCost { get; private set; } = 0f; // 0 = Standard Turn (1000 ticks). Positive values add delay.
@@ -53,4 +53,8 @@ public partial class ActionData : BattleCommand
     /// </summary>
     [Export]
     public Godot.Collections.Array<ActionComponentData> Components { get; private set; } = new();
+
+    [ExportGroup("Status Effects")]
+    [Export]
+    public Godot.Collections.Array<StatusEffectChanceEntry> StatusEffectsOnHit { get; private set; } = new();
 }

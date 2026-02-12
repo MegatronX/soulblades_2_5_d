@@ -15,7 +15,7 @@ public partial class SelfPreservationEvaluator : AIEvaluator
         if (target != user) return 0f;
 
         // Check if action is helpful (Heal or Defend)
-        bool isHeal = action.Category == "Heal";
+        bool isHeal = action.Category == ActionCategory.Heal;
         bool isDefensive = action.Intent == ActionIntent.Defensive;
 
         if (!isHeal && !isDefensive) return 0f;

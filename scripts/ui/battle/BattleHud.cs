@@ -26,12 +26,19 @@ public partial class BattleHUD : Control
         _battleController = GetTree().Root.FindChild("BattleController", true, false) as BattleController;
         if (_battleController != null)
         {
-            _battleController.TurnStarted += OnTurnStarted;
+            this.Subscribe(
+                () => _battleController.TurnStarted += OnTurnStarted,
+                () => _battleController.TurnStarted -= OnTurnStarted
+            );
             
             // Subscribe to TimedHitManager to update charges in real-time during action execution
             if (_battleController.ActionDirector != null && _battleController.ActionDirector.TimedHitManager != null)
             {
-                _battleController.ActionDirector.TimedHitManager.TimedHitResolved += OnTimedHitResolved;
+                var timedHitManager = _battleController.ActionDirector.TimedHitManager;
+                this.Subscribe(
+                    () => timedHitManager.TimedHitResolved += OnTimedHitResolved,
+                    () => timedHitManager.TimedHitResolved -= OnTimedHitResolved
+                );
             }
         }
 
@@ -39,28 +46,13 @@ public partial class BattleHUD : Control
         _eventBus = GetNodeOrNull<GlobalEventBus>(GlobalEventBus.Path);
         if (_eventBus != null)
         {
-            _eventBus.ActionExecuted += OnActionExecuted;
+            this.Subscribe(
+                () => _eventBus.ActionExecuted += OnActionExecuted,
+                () => _eventBus.ActionExecuted -= OnActionExecuted
+            );
         }
         
         if (_statusContainer != null) _statusContainer.Hide();
-    }
-
-    public override void _ExitTree()
-    {
-        if (_battleController != null)
-        {
-            _battleController.TurnStarted -= OnTurnStarted;
-            
-            if (_battleController.ActionDirector != null && _battleController.ActionDirector.TimedHitManager != null)
-            {
-                _battleController.ActionDirector.TimedHitManager.TimedHitResolved -= OnTimedHitResolved;
-            }
-        }
-
-        if (_eventBus != null)
-        {
-            _eventBus.ActionExecuted -= OnActionExecuted;
-        }
     }
 
     private void OnTurnStarted(TurnManager.TurnData turnData)

@@ -12,8 +12,10 @@ public partial class TargetSelectionController : Node
     private PackedScene _targetIndicatorScene;
 
     private ActionData _currentAction;
+    private BattleCommand _currentCommand;
     private Node _actor;
     private IInputProvider _inputProvider;
+    private BattleController _battleController;
     
     private TargetingType _currentTargetingMode;
     private TargetingType _allowedTargeting;
@@ -28,6 +30,8 @@ public partial class TargetSelectionController : Node
 
     public override void _Ready()
     {
+        _battleController = GetTree().Root.FindChild("BattleController", true, false) as BattleController;
+
         var eventBus = GetNode<GlobalEventBus>(GlobalEventBus.Path);
         this.Subscribe(
             () => eventBus.ActionSelectedForTargeting += OnActionSelected,
@@ -39,8 +43,17 @@ public partial class TargetSelectionController : Node
 
     private void OnActionSelected(BattleCommand command, Node actor)
     {
-        if (command is not ActionData actionData) return;
+        if (!IsBattleActive()) return;
+        ActionData actionData = command as ActionData;
+        if (actionData == null && command is ItemBattleCommand itemCommand)
+        {
+            actionData = itemCommand.Action
+                ?? itemCommand.Item?.Components?.OfType<ConsumableComponentData>().FirstOrDefault()?.ActionToPerform;
+        }
 
+        if (actionData == null) return;
+
+        _currentCommand = command;
         _currentAction = actionData;
         _actor = actor;
 
@@ -75,6 +88,12 @@ public partial class TargetSelectionController : Node
 
     public override void _Process(double delta)
     {
+        if (_isActive && !IsBattleActive())
+        {
+            AbortTargeting();
+            return;
+        }
+
         if (!_isActive || _inputProvider == null) return;
 
         // Handle Confirmation
@@ -366,7 +385,7 @@ public partial class TargetSelectionController : Node
     {
         if (_validParties.Count == 0) return;
 
-        if (_currentAction.Intent == ActionIntent.Defensive)
+        if (ShouldPreferAllies(_currentAction))
         {
             // Defensive: Prioritize Self -> Ally -> Enemy
             if (TrySelectSelf()) return;
@@ -384,6 +403,16 @@ public partial class TargetSelectionController : Node
         // Fallback
         _currentPartyIndex = 0;
         _currentTargetIndex = 0;
+    }
+
+    private static bool ShouldPreferAllies(ActionData action)
+    {
+        if (action == null) return false;
+        if (action.Intent == ActionIntent.Defensive) return true;
+
+        return action.Category == ActionCategory.Heal
+            || action.Category == ActionCategory.Support
+            || action.Category == ActionCategory.Defensive;
     }
 
     private bool TrySelectSelf()
@@ -557,7 +586,7 @@ public partial class TargetSelectionController : Node
         UISoundManager.Instance?.Play(UISoundType.Confirm);
         var targets = new Godot.Collections.Array<Node>(GetCurrentSelection());
         var eventBus = GetNode<GlobalEventBus>(GlobalEventBus.Path);
-        eventBus.EmitSignal(GlobalEventBus.SignalName.TargetingConfirmed, _currentAction, targets);
+        eventBus.EmitSignal(GlobalEventBus.SignalName.TargetingConfirmed, _currentCommand ?? _currentAction, targets);
         
         Cleanup();
     }
@@ -569,6 +598,11 @@ public partial class TargetSelectionController : Node
         eventBus.EmitSignal(GlobalEventBus.SignalName.ActionPreviewCancelled);
         eventBus.EmitSignal(GlobalEventBus.SignalName.TargetingCancelled);
         
+        Cleanup();
+    }
+
+    private void AbortTargeting()
+    {
         Cleanup();
     }
 
@@ -586,6 +620,11 @@ public partial class TargetSelectionController : Node
         
         var eventBus = GetNode<GlobalEventBus>(GlobalEventBus.Path);
         eventBus.EmitSignal(GlobalEventBus.SignalName.TargetSelectionChanged, new Godot.Collections.Array<Node>());
+    }
+
+    private bool IsBattleActive()
+    {
+        return _battleController != null && _battleController.CurrentState == BattleController.BattleState.InProgress;
     }
 
     private bool IsSingleTargetMode(TargetingType mode)

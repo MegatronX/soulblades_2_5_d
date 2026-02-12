@@ -12,10 +12,10 @@ public partial class StopEffect : StatusEffect
     [Export]
     public int MaxTurnsToSkip { get; private set; } = 5;
 
-    public override bool IsTurnSkipping => true;
-
     public override void OnApply(Node owner, ActionDirector actionDirector)
     {
+        base.OnApply(owner, actionDirector);
+
         // In a real implementation, this would call a method on the TurnManager
         // or a component on the owner that the TurnManager reads.
         // For example:

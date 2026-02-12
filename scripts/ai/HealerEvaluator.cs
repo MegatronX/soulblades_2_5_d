@@ -5,7 +5,7 @@ public partial class HealerEvaluator : AIEvaluator
 {
     public override float Evaluate(ActionData action, Node user, Node target, AIController controller)
     {
-        if (action.Category != "Heal") return 0f;
+        if (action.Category != ActionCategory.Heal) return 0f;
 
         var targetStats = target.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
         if (targetStats != null && targetStats.GetStatValue(StatType.HP) > 0)

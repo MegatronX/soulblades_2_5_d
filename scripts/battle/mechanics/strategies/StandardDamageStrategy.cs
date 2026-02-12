@@ -8,6 +8,16 @@ public partial class StandardDamageStrategy : DamageStrategy
         var damageComp = context.GetComponent<DamageComponent>();
         if (damageComp == null) return 0;
 
+        if (context.SourceAction.Flags.HasFlag(ActionFlags.FixedDamage))
+        {
+            int fixedValue = damageComp.Power;
+            if (context.SourceAction.Category == ActionCategory.Heal && fixedValue > 0)
+            {
+                fixedValue = -fixedValue;
+            }
+            return fixedValue;
+        }
+
         // Retrieve stats
         var attackerStats = context.Initiator.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
         var targetStats = target.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);

@@ -6,7 +6,7 @@ using Godot;
 [GlobalClass]
 public partial class TacticalEvaluator : AIEvaluator
 {
-    [Export] public string DebuffCategory { get; set; } = "Debuff";
+    [Export] public ActionCategory DebuffCategory { get; set; } = ActionCategory.Debuff;
 
     public override float Evaluate(ActionData action, Node user, Node target, AIController controller)
     {

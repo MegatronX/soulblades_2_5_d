@@ -15,6 +15,7 @@ public partial class FoldableMenu : PanelContainer
     [Export] private TextureRect _backgroundRect;
     
     private List<Button> _buttons = new();
+    private List<bool> _buttonEnabled = new();
     private MenuTheme _currentTheme;
     private Label _sidebarLabel;
     private Control _sidebarWrapper;
@@ -43,7 +44,7 @@ public partial class FoldableMenu : PanelContainer
         _sidebarWrapper.AddChild(_sidebarLabel);
     }
 
-    public void BuildMenu(List<BattleCommand> commands, MenuTheme theme)
+    public void BuildMenu(List<BattleCommand> commands, MenuTheme theme, Func<BattleCommand, bool> isEnabled = null)
     {
         // Reset constraints so the menu can calculate its natural size based on new buttons
         CustomMinimumSize = Vector2.Zero;
@@ -56,6 +57,7 @@ public partial class FoldableMenu : PanelContainer
             child.QueueFree();
         }
         _buttons.Clear();
+        _buttonEnabled.Clear();
 
         // Create new buttons
         for (int i = 0; i < commands.Count; i++)
@@ -108,6 +110,16 @@ public partial class FoldableMenu : PanelContainer
                 }
             }
 
+            bool enabled = isEnabled?.Invoke(cmd) ?? true;
+
+            if (!enabled)
+            {
+                btn.Disabled = true;
+                btn.FocusMode = FocusModeEnum.None;
+                btn.MouseFilter = MouseFilterEnum.Ignore;
+                btn.Modulate = new Color(1f, 1f, 1f, 0.45f);
+            }
+
             int index = i; // Capture for closure
             btn.Pressed += () => EmitSignal(SignalName.CommandSelected, cmd, index);
             
@@ -130,13 +142,16 @@ public partial class FoldableMenu : PanelContainer
 
             _listContainer.AddChild(wrapper);
             _buttons.Add(btn);
+            _buttonEnabled.Add(enabled);
         }
 
         // Setup Focus Neighbors for Wrap-Around
-        if (_buttons.Count > 1)
+        int firstEnabled = _buttonEnabled.FindIndex(v => v);
+        int lastEnabled = _buttonEnabled.FindLastIndex(v => v);
+        if (_buttons.Count > 1 && firstEnabled != -1 && lastEnabled != -1 && firstEnabled != lastEnabled)
         {
-            var firstBtn = _buttons[0];
-            var lastBtn = _buttons[_buttons.Count - 1];
+            var firstBtn = _buttons[firstEnabled];
+            var lastBtn = _buttons[lastEnabled];
 
             firstBtn.FocusNeighborTop = lastBtn.GetPath();
             lastBtn.FocusNeighborBottom = firstBtn.GetPath();
@@ -220,14 +235,18 @@ public partial class FoldableMenu : PanelContainer
     public void FocusFirst()
     {
         _suppressFocusSound = true;
-        if (_buttons.Count > 0) _buttons[0].GrabFocus();
+        int index = _buttonEnabled.FindIndex(v => v);
+        if (index >= 0 && index < _buttons.Count)
+        {
+            _buttons[index].GrabFocus();
+        }
         _suppressFocusSound = false;
     }
 
     public void FocusIndex(int index)
     {
         _suppressFocusSound = true;
-        if (index >= 0 && index < _buttons.Count)
+        if (index >= 0 && index < _buttons.Count && !_buttons[index].Disabled)
         {
             _buttons[index].GrabFocus();
         }
@@ -273,6 +292,13 @@ public partial class FoldableMenu : PanelContainer
     {
         foreach (var btn in _buttons)
         {
+            if (btn.Disabled)
+            {
+                btn.FocusMode = FocusModeEnum.None;
+                btn.MouseFilter = MouseFilterEnum.Ignore;
+                continue;
+            }
+
             btn.FocusMode = enabled ? FocusModeEnum.All : FocusModeEnum.None;
             btn.MouseFilter = enabled ? MouseFilterEnum.Stop : MouseFilterEnum.Ignore;
         }
@@ -342,6 +368,11 @@ public partial class FoldableMenu : PanelContainer
     /// </summary>
     public async Task Unfold()
     {
+        if (_expandedWidth <= 0)
+        {
+            _expandedWidth = CustomMinimumSize.X > 0 ? CustomMinimumSize.X : Size.X;
+        }
+
         // 1. Fade out label
         var labelTween = CreateTween();
         labelTween.TweenProperty(_sidebarLabel, "modulate:a", 0.0f, 0.1f);

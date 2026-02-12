@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ActionData" load_steps=4 format=3 uid="uid://c88h8vjvd6v45"]
+
+[ext_resource type="Script" uid="uid://d1q4ymghq0rd0" path="res://scripts/ui/turn_order/ActionComponentData.cs" id="1_tpm1t"]
+[ext_resource type="Script" uid="uid://e03g772dil5b" path="res://scripts/ui/turn_order/TimedHitSettings.cs" id="2_y6xql"]
+[ext_resource type="Script" uid="uid://d33m71ff2n3wd" path="res://scripts/ui/turn_order/ActionData.cs" id="3_8waga"]
+
+[resource]
+script = ExtResource("3_8waga")
+Category = 7
+metadata/_custom_type_script = "uid://d33m71ff2n3wd"

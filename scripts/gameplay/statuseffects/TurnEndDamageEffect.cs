@@ -12,6 +12,8 @@ public partial class TurnEndDamageEffect : StatusEffect
 
     public override void OnTurnEnd(Node owner, ActionDirector actionDirector)
     {
+        base.OnTurnEnd(owner, actionDirector);
+
         // In a real implementation, you would get the character's HealthComponent
         // and StatsComponent to apply the damage/healing.
         // var stats = owner.GetNode<StatsComponent>("StatsComponent");

@@ -23,6 +23,10 @@ public partial class ActionResult : RefCounted
     // Snapshot of stats at the time of calculation, useful for UI/Animation
     public Dictionary<ElementType, float> DamageElements { get; set; } = new();
 
+    // Snapshot of target position for UI elements (damage numbers) in case the target is freed.
+    public bool HasTargetWorldPosition { get; set; } = false;
+    public Vector3 TargetWorldPosition { get; set; } = Vector3.Zero;
+
     /// <summary>
     /// The magnitude of the damage or healing (absolute value).
     /// </summary>

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dikqkiaix53hb"
-path="res://.godot/imported/ceira_profile_happy_eyes_closed.png-30251f2e8ec64504a37d0ca4f513a164.ctex"
+uid="uid://bih12c3cimyuq"
+path="res://.godot/imported/juggernaut.png-f933607ca1604eaad01d6ba4b6ca73cb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/resources/ui/ceira_profile_happy_eyes_closed.png"
-dest_files=["res://.godot/imported/ceira_profile_happy_eyes_closed.png-30251f2e8ec64504a37d0ca4f513a164.ctex"]
+source_file="res://assets/sprites/icons/status_effects/juggernaut.png"
+dest_files=["res://.godot/imported/juggernaut.png-f933607ca1604eaad01d6ba4b6ca73cb.ctex"]
 
 [params]
 

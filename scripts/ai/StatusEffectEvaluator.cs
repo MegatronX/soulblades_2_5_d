@@ -7,7 +7,7 @@ using Godot;
 [GlobalClass]
 public partial class StatusEffectEvaluator : AIEvaluator
 {
-    [Export] public string TargetCategory { get; set; } = "Debuff"; // Matches ActionData.Category
+    [Export] public ActionCategory TargetCategory { get; set; } = ActionCategory.Debuff; // Matches ActionData.Category
 
     public override float Evaluate(ActionData action, Node user, Node target, AIController controller)
     {

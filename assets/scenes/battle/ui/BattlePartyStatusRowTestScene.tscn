@@ -1,0 +1,147 @@
+[gd_scene load_steps=9 format=3 uid="uid://dhes7m6hll08s"]
+
+[ext_resource type="Script" uid="uid://6c0oothoo5rc" path="res://scripts/ui/battle/BattlePartyStatusRowTest.cs" id="1_7w5v3"]
+[ext_resource type="PackedScene" uid="uid://ck3m0yb0b67jn" path="res://assets/scenes/battle/ui/BattlePartyStatusRow.tscn" id="2_6l2l6"]
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="3_sx4dj"]
+[ext_resource type="Texture2D" uid="uid://diiyia5yip2hg" path="res://assets/sprites/icons/status_effects/haste.png" id="4_d5mrk"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="4_uwfl5"]
+[ext_resource type="Texture2D" uid="uid://ckbictkew3kkd" path="res://assets/sprites/icons/status_effects/juggernaut_2.png" id="6_uwfl5"]
+
+[sub_resource type="Resource" id="Resource_8xihw"]
+script = ExtResource("3_sx4dj")
+Icon = ExtResource("4_d5mrk")
+metadata/_custom_type_script = "uid://bg8lacp8o3hs1"
+
+[sub_resource type="Resource" id="Resource_uwyeo"]
+script = ExtResource("3_sx4dj")
+Icon = ExtResource("6_uwfl5")
+metadata/_custom_type_script = "uid://bg8lacp8o3hs1"
+
+[node name="BattlePartyStatusRowTest" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_7w5v3")
+_rowScene = ExtResource("2_6l2l6")
+_rowHostPath = NodePath("Center/Stack/RowHost")
+_infoLabelPath = NodePath("Center/Stack/InfoLabel")
+_amountSpinPath = NodePath("Center/Stack/Controls/Row1/AmountSpin")
+_damageButtonPath = NodePath("Center/Stack/Controls/Row1/DamageButton")
+_healButtonPath = NodePath("Center/Stack/Controls/Row1/HealButton")
+_mpUseButtonPath = NodePath("Center/Stack/Controls/Row2/MpUseButton")
+_mpGainButtonPath = NodePath("Center/Stack/Controls/Row2/MpGainButton")
+_chargeGainButtonPath = NodePath("Center/Stack/Controls/Row2/ChargeGainButton")
+_chargeSpendButtonPath = NodePath("Center/Stack/Controls/Row2/ChargeSpendButton")
+_statusNameEditPath = NodePath("Center/Stack/Controls/Row3/StatusNameEdit")
+_statusAddButtonPath = NodePath("Center/Stack/Controls/Row3/AddStatusButton")
+_statusRemoveButtonPath = NodePath("Center/Stack/Controls/Row3/RemoveStatusButton")
+_autoPlay = false
+_statusEffectLibrary = Dictionary[String, ExtResource("3_sx4dj")]({
+"Haste": SubResource("Resource_8xihw"),
+"Juggernaut": SubResource("Resource_uwyeo")
+})
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.05, 0.05, 0.08, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Stack" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 12
+
+[node name="InfoLabel" type="Label" parent="Center/Stack"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "BattlePartyStatusRow Test - press Space/Enter to step"
+
+[node name="RowHost" type="Control" parent="Center/Stack"]
+custom_minimum_size = Vector2(600, 180)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+
+[node name="Controls" type="VBoxContainer" parent="Center/Stack"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="Row1" type="HBoxContainer" parent="Center/Stack/Controls"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="AmountLabel" type="Label" parent="Center/Stack/Controls/Row1"]
+layout_mode = 2
+text = "Amount"
+
+[node name="AmountSpin" type="SpinBox" parent="Center/Stack/Controls/Row1"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 999.0
+value = 20.0
+
+[node name="DamageButton" type="Button" parent="Center/Stack/Controls/Row1"]
+layout_mode = 2
+text = "Damage"
+
+[node name="HealButton" type="Button" parent="Center/Stack/Controls/Row1"]
+layout_mode = 2
+text = "Heal"
+
+[node name="Row2" type="HBoxContainer" parent="Center/Stack/Controls"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="MpUseButton" type="Button" parent="Center/Stack/Controls/Row2"]
+layout_mode = 2
+text = "Use MP"
+
+[node name="MpGainButton" type="Button" parent="Center/Stack/Controls/Row2"]
+layout_mode = 2
+text = "Gain MP"
+
+[node name="ChargeGainButton" type="Button" parent="Center/Stack/Controls/Row2"]
+layout_mode = 2
+text = "Charge +"
+
+[node name="ChargeSpendButton" type="Button" parent="Center/Stack/Controls/Row2"]
+layout_mode = 2
+text = "Charge -"
+
+[node name="Row3" type="HBoxContainer" parent="Center/Stack/Controls"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="StatusNameEdit" type="LineEdit" parent="Center/Stack/Controls/Row3"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+placeholder_text = "Status name (e.g. Haste)"
+
+[node name="AddStatusButton" type="Button" parent="Center/Stack/Controls/Row3"]
+layout_mode = 2
+text = "Add Status"
+
+[node name="RemoveStatusButton" type="Button" parent="Center/Stack/Controls/Row3"]
+layout_mode = 2
+text = "Remove Status"

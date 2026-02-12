@@ -13,6 +13,9 @@ public enum MultiTargetApproachStrategy
 [GlobalClass]
 public partial class VisualActionSettings : Resource
 {
+    [ExportGroup("Camera")]
+    [Export] public ActionCameraSettings CameraSettings { get; set; }
+
     [ExportGroup("Windup (Caster)")]
     [Export] public string WindupAnimation { get; set; } = "Cast";
     [Export] public bool WaitForWindupAnimation { get; set; } = true;

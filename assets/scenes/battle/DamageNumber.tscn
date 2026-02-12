@@ -20,6 +20,13 @@ mouse_filter = 2
 script = ExtResource("1_diiya")
 _label = NodePath("Content/Label")
 _iconsContainer = NodePath("Content/Icons")
+_baseFontSize = 32
+_outlineSize = 8
+_healFontSize = 34
+_critFontSize = 36
+_greatFontColor = Color(0.8735575, 0.7075309, 0.39353117, 1)
+_perfectFontColor = Color(0.65185547, 0.763035, 0.98747164, 1)
+_perfectFontSize = 44
 
 [node name="Content" type="HBoxContainer" parent="."]
 layout_mode = 1

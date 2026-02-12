@@ -18,7 +18,13 @@ public abstract partial class EffectLogic : Resource
     /// </summary>
     public abstract void OnRemove(Node target);
 
-    // We will add more hooks here later, such as:
-    // public virtual void OnTurnStart(StatsComponent target) { }
-    // public virtual void OnDamageDealt(DamageInfo damage) { }
+    /// <summary>
+    /// Called at the start of the owner's turn.
+    /// </summary>
+    public virtual void OnTurnStart(Node target) { }
+
+    /// <summary>
+    /// Called at the end of the owner's turn.
+    /// </summary>
+    public virtual void OnTurnEnd(Node target) { }
 }

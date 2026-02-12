@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://dloy2xq33lywb"]
+[gd_scene load_steps=8 format=3 uid="uid://dloy2xq33lywb"]
 
 [ext_resource type="Script" uid="uid://dq0uansmp4tyd" path="res://scripts/battle/ActionManager.cs" id="1_bau14"]
 [ext_resource type="Script" uid="uid://cvxdrgvt8vkxn" path="res://scripts/battle/BattleCategory.cs" id="2_q8ygv"]
@@ -10,9 +10,14 @@ script = ExtResource("2_q8ygv")
 CommandName = "Magic"
 metadata/_custom_type_script = "uid://cvxdrgvt8vkxn"
 
+[sub_resource type="Resource" id="Resource_bau14"]
+script = ExtResource("2_q8ygv")
+CommandName = "Items"
+metadata/_custom_type_script = "uid://cvxdrgvt8vkxn"
+
 [sub_resource type="Resource" id="Resource_cnq2t"]
 script = ExtResource("2_q8ygv")
-SubCommands = Array[ExtResource("3_u56hm")]([ExtResource("4_u0kxi"), SubResource("Resource_ksnoo"), null, null])
+SubCommands = Array[ExtResource("3_u56hm")]([ExtResource("4_u0kxi"), SubResource("Resource_ksnoo"), SubResource("Resource_bau14"), null])
 metadata/_custom_type_script = "uid://cvxdrgvt8vkxn"
 
 [node name="ActionManager" type="Node"]

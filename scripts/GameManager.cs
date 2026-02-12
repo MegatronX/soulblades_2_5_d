@@ -15,9 +15,14 @@ public partial class GameManager : Node
     /// </summary>
     public string LocalPlayerName { get; set; }
 
-    // This list holds the current party of player characters.
-    // It can be modified by story events to add/remove temporary members.
-    public List<Node> PlayerParty { get; } = new();
+    // Active party members currently in battle/overworld.
+    public List<Node> ActiveParty { get; } = new();
+
+    // Reserve party members available for swapping.
+    public List<Node> ReserveParty { get; } = new();
+
+    // Legacy alias for code that still references PlayerParty.
+    public List<Node> PlayerParty => ActiveParty;
 
     // Temporary storage for the upcoming battle's data.
     public BattleConfig PendingBattleConfig { get; private set; }
@@ -51,10 +56,42 @@ public partial class GameManager : Node
             SetTimeScale(_prePauseTimeScale);
         }
 
-        GetTree().SceneChanged += OnSceneChanged;
+        this.Subscribe(
+            () => GetTree().SceneChanged += OnSceneChanged,
+            () => GetTree().SceneChanged -= OnSceneChanged
+        );
     }
 
     private double _prePauseTimeScale = 1.0;
+
+    public bool MoveToReserve(Node member)
+    {
+        if (member == null) return false;
+        if (!ActiveParty.Remove(member)) return false;
+        if (!ReserveParty.Contains(member)) ReserveParty.Add(member);
+        return true;
+    }
+
+    public bool MoveToActive(Node member)
+    {
+        if (member == null) return false;
+        if (!ReserveParty.Remove(member)) return false;
+        if (!ActiveParty.Contains(member)) ActiveParty.Add(member);
+        return true;
+    }
+
+    public bool SwapActiveWithReserve(Node activeMember, Node reserveMember)
+    {
+        if (activeMember == null || reserveMember == null) return false;
+        if (!ActiveParty.Contains(activeMember)) return false;
+        if (!ReserveParty.Contains(reserveMember)) return false;
+
+        int activeIndex = ActiveParty.IndexOf(activeMember);
+        ActiveParty[activeIndex] = reserveMember;
+        ReserveParty.Remove(reserveMember);
+        if (!ReserveParty.Contains(activeMember)) ReserveParty.Add(activeMember);
+        return true;
+    }
 
     /// <summary>
     /// Sets the global time scale (speed) of the game.
@@ -131,6 +168,12 @@ public partial class GameManager : Node
     {
         PlayerParty.Add(character);
     }
+
+    public bool HasPlayerCharacter(Node character)
+    {
+        return PlayerParty.Contains(character);
+    }
+
 
     /// <summary>
     /// The host assigns a character to a specific player. This would be called from a host-only UI.

@@ -1,7 +1,6 @@
 using Godot;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 
 /// <summary>
 /// A component that manages all active status effects on a character.
@@ -18,6 +17,10 @@ public partial class StatusEffectManager : Node
 
     [Signal]
     public delegate void StatusEffectRemovedEventHandler(StatusEffect effectData, Node owner);
+
+    [ExportGroup("Resistances")]
+    [Export]
+    public Godot.Collections.Dictionary<string, int> StatusEffectResistances { get; private set; } = new();
 
     // Represents an active instance of a status effect on this character.
     public class StatusEffectInstance
@@ -44,13 +47,40 @@ public partial class StatusEffectManager : Node
     /// <summary>
     /// Applies a new status effect to this character and triggers its OnApply logic.
     /// </summary>
-    public void ApplyEffect(StatusEffect effectData, ActionDirector actionDirector)
+    public bool ApplyEffect(StatusEffect effectData, ActionDirector actionDirector)
     {
+        return TryApplyEffect(effectData, actionDirector, 100f, null);
+    }
+
+    public bool TryApplyEffect(StatusEffect effectData, ActionDirector actionDirector, float baseChancePercent = 100f, IRandomNumberGenerator rng = null)
+    {
+        if (effectData == null || _owner == null) return false;
+
+        if (HandleCancelEffects(effectData, actionDirector))
+        {
+            return false;
+        }
+
+        RemoveReplacementEffects(effectData, actionDirector);
+
+        float resistance = GetResistance(effectData);
+        float effectiveChance = Mathf.Clamp(baseChancePercent, 0f, 100f) * (1f - resistance / 100f);
+        effectiveChance = Mathf.Clamp(effectiveChance, 0f, 100f);
+
+        if (effectiveChance <= 0f) return false;
+
+        if (effectiveChance < 100f)
+        {
+            float roll = rng != null ? rng.RandRangeFloat(0f, 100f) : GD.Randf() * 100f;
+            if (roll > effectiveChance) return false;
+        }
+
         var instance = new StatusEffectInstance(effectData);
         _activeEffects.Add(instance);
         instance.EffectData.OnApply(_owner, actionDirector);
         GD.Print($"{_owner.Name} is now affected by {effectData.EffectName} for {instance.RemainingTurns} turns.");
         EmitSignal(SignalName.StatusEffectApplied, effectData, this.GetParent());
+        return true;
     }
 
     /// <summary>
@@ -62,6 +92,169 @@ public partial class StatusEffectManager : Node
         _activeEffects.Remove(instance);
         GD.Print($"{instance.EffectData.EffectName} has worn off for {_owner.Name}.");
         EmitSignal(SignalName.StatusEffectRemoved, instance.EffectData, this.GetParent());
+    }
+
+    private bool HandleCancelEffects(StatusEffect effectData, ActionDirector actionDirector)
+    {
+        if (effectData.CancelEffects == null || effectData.CancelEffects.Count == 0) return false;
+
+        bool removedAny = false;
+        for (int i = _activeEffects.Count - 1; i >= 0; i--)
+        {
+            var active = _activeEffects[i];
+            if (IsEffectInList(active.EffectData, effectData.CancelEffects))
+            {
+                RemoveEffect(active, actionDirector);
+                removedAny = true;
+            }
+        }
+
+        return removedAny;
+    }
+
+    private void RemoveReplacementEffects(StatusEffect effectData, ActionDirector actionDirector)
+    {
+        if (effectData.ReplacementEffects == null || effectData.ReplacementEffects.Count == 0) return;
+
+        for (int i = _activeEffects.Count - 1; i >= 0; i--)
+        {
+            var active = _activeEffects[i];
+            if (IsEffectInList(active.EffectData, effectData.ReplacementEffects))
+            {
+                RemoveEffect(active, actionDirector);
+            }
+        }
+    }
+
+    private int GetResistance(StatusEffect effectData)
+    {
+        if (effectData == null) return 0;
+        var key = ResolveResistanceKey(effectData);
+        return GetResistance(key);
+    }
+
+    public int GetResistance(string effectKey)
+    {
+        if (string.IsNullOrEmpty(effectKey)) return 0;
+        return Mathf.Clamp(StatusEffectResistances.GetValueOrDefault(effectKey, 0), 0, 100);
+    }
+
+    public void SetResistance(string effectKey, int value)
+    {
+        if (string.IsNullOrEmpty(effectKey)) return;
+        StatusEffectResistances[effectKey] = Mathf.Clamp(value, 0, 100);
+    }
+
+    public void AddResistance(string effectKey, int delta)
+    {
+        if (string.IsNullOrEmpty(effectKey)) return;
+        int current = GetResistance(effectKey);
+        StatusEffectResistances[effectKey] = Mathf.Clamp(current + delta, 0, 100);
+    }
+
+    public void RemoveResistance(string effectKey, int delta)
+    {
+        AddResistance(effectKey, -delta);
+    }
+
+    public void ClearResistance(string effectKey)
+    {
+        if (string.IsNullOrEmpty(effectKey)) return;
+        StatusEffectResistances.Remove(effectKey);
+    }
+
+    public int GetResistance(StatusEffect effectData, bool useNameFallback)
+    {
+        if (effectData == null) return 0;
+        var key = ResolveResistanceKey(effectData, useNameFallback);
+        return GetResistance(key);
+    }
+
+    public void AddResistance(StatusEffect effectData, int delta, bool useNameFallback = true)
+    {
+        var key = ResolveResistanceKey(effectData, useNameFallback);
+        AddResistance(key, delta);
+    }
+
+    public void RemoveResistance(StatusEffect effectData, int delta, bool useNameFallback = true)
+    {
+        var key = ResolveResistanceKey(effectData, useNameFallback);
+        RemoveResistance(key, delta);
+    }
+
+    public void SetResistance(StatusEffect effectData, int value, bool useNameFallback = true)
+    {
+        var key = ResolveResistanceKey(effectData, useNameFallback);
+        SetResistance(key, value);
+    }
+
+    public void ApplyResistanceChanges(IEnumerable<KeyValuePair<string, int>> changes)
+    {
+        if (changes == null) return;
+        foreach (var change in changes)
+        {
+            AddResistance(change.Key, change.Value);
+        }
+    }
+
+    public void ApplyResistanceChanges(IEnumerable<StatusEffectChanceEntry> changes)
+    {
+        if (changes == null) return;
+        foreach (var change in changes)
+        {
+            if (change?.Effect == null) continue;
+            AddResistance(change.Effect, Mathf.RoundToInt(change.ChancePercent));
+        }
+    }
+
+    private static string ResolveResistanceKey(StatusEffect effectData, bool useNameFallback = true)
+    {
+        if (effectData == null) return null;
+
+        if (!string.IsNullOrEmpty(effectData.ResourcePath))
+        {
+            return effectData.ResourcePath;
+        }
+
+        if (useNameFallback)
+        {
+            if (!string.IsNullOrEmpty(effectData.EffectName)) return effectData.EffectName;
+            if (!string.IsNullOrEmpty(effectData.ResourceName)) return effectData.ResourceName;
+        }
+
+        return null;
+    }
+
+    private static bool IsEffectInList(StatusEffect effectData, Godot.Collections.Array<StatusEffect> list)
+    {
+        if (effectData == null || list == null || list.Count == 0) return false;
+
+        foreach (var candidate in list)
+        {
+            if (candidate == null) continue;
+            if (AreSameEffect(effectData, candidate)) return true;
+        }
+        return false;
+    }
+
+    private static bool AreSameEffect(StatusEffect a, StatusEffect b)
+    {
+        if (a == null || b == null) return false;
+        if (a == b) return true;
+
+        var aPath = a.ResourcePath;
+        var bPath = b.ResourcePath;
+        if (!string.IsNullOrEmpty(aPath) && !string.IsNullOrEmpty(bPath))
+        {
+            return aPath == bPath;
+        }
+
+        if (!string.IsNullOrEmpty(a.EffectName) && !string.IsNullOrEmpty(b.EffectName))
+        {
+            return string.Equals(a.EffectName, b.EffectName, System.StringComparison.OrdinalIgnoreCase);
+        }
+
+        return false;
     }
 
     /// <summary>

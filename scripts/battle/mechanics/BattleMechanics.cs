@@ -116,8 +116,15 @@ public partial class BattleMechanics : Node
 
             if (result.IsHit)
             {
-                // 2. Crit Calculation
-                result.IsCritical = strategy.CalculateCrit(ctx, ctx.CurrentTarget, _rng);
+                // 2. Crit Calculation (skip for fixed damage to avoid randomness)
+                if (!ctx.SourceAction.Flags.HasFlag(ActionFlags.FixedDamage))
+                {
+                    result.IsCritical = strategy.CalculateCrit(ctx, ctx.CurrentTarget, _rng);
+                }
+                else
+                {
+                    result.IsCritical = false;
+                }
             }
         }
     }
@@ -132,6 +139,12 @@ public partial class BattleMechanics : Node
             ctx.Stage = ActionStage.Finalized;
             var strategy = ctx.SourceAction.CalculationStrategy ?? _defaultStrategy;
             var result = ctx.GetResult(ctx.CurrentTarget);
+
+            if (ctx.CurrentTarget is Node3D target3D)
+            {
+                result.HasTargetWorldPosition = true;
+                result.TargetWorldPosition = target3D.GlobalPosition;
+            }
 
             if (result.IsHit)
             {
@@ -174,10 +187,38 @@ public partial class BattleMechanics : Node
                     targetStats.ModifyCurrentHP(-result.FinalDamage);
                 }
 
+                // 4.5 Apply on-hit status effects
+                TryApplyStatusEffectsOnHit(ctx, result);
+
                 // 5. Log Runtime Events
                 if (result.IsTimedHit) ctx.RuntimeEvents.Add("TimedHitSuccess");
                 if (result.IsCritical) ctx.RuntimeEvents.Add("CriticalHit");
             }
+        }
+    }
+
+    private void TryApplyStatusEffectsOnHit(ActionContext context, ActionResult result)
+    {
+        if (context?.SourceAction?.StatusEffectsOnHit == null) return;
+        if (!result.IsHit) return;
+
+        var entries = context.SourceAction.StatusEffectsOnHit;
+        if (entries.Count == 0) return;
+
+        var target = context.CurrentTarget;
+        if (!GodotObject.IsInstanceValid(target)) return;
+
+        var statusManager = target.GetNodeOrNull<StatusEffectManager>(StatusEffectManager.NodeName);
+        if (statusManager == null) return;
+
+        foreach (var entry in entries)
+        {
+            if (entry == null || entry.Effect == null) continue;
+
+            float chance = Mathf.Clamp(entry.ChancePercent, 0f, 100f);
+            if (chance <= 0f) continue;
+
+            statusManager.TryApplyEffect(entry.Effect, null, chance, _rng);
         }
     }
 
@@ -189,6 +230,13 @@ public partial class BattleMechanics : Node
         // Example: Check for a CostComponent in the action
         // var costComp = context.GetComponent<CostComponent>();
         // if (costComp != null) { ... deduct MP ... }
+
+        if (context?.SourceItem == null) return;
+
+        var inventory = GetNodeOrNull<InventoryManager>("/root/InventoryManager");
+        if (inventory == null) return;
+
+        inventory.TryConsumeItem(context.SourceItem, 1, null, _rng);
     }
 
     /// <summary>

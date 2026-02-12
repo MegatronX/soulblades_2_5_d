@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="StatMultiplierEffectLogic" load_steps=6 format=3 uid="uid://c2emykq2heprb"]
+
+[ext_resource type="Script" uid="uid://cddjus60t0c7l" path="res://scripts/gameplay/statuseffects/StatMultiplierEntry.cs" id="1_dayug"]
+[ext_resource type="Script" uid="uid://x8lk8u0lophf" path="res://scripts/gameplay/effectors/StatMultiplierEffectLogic.cs" id="2_xrwwj"]
+
+[sub_resource type="Resource" id="Resource_0guv7"]
+script = ExtResource("1_dayug")
+Stat = 6
+Multiplier = 1.5
+metadata/_custom_type_script = "uid://cddjus60t0c7l"
+
+[sub_resource type="Resource" id="Resource_oc53b"]
+script = ExtResource("1_dayug")
+Stat = 7
+Multiplier = 1.2
+metadata/_custom_type_script = "uid://cddjus60t0c7l"
+
+[sub_resource type="Resource" id="Resource_2wq3k"]
+script = ExtResource("1_dayug")
+Stat = 8
+Multiplier = 1.2
+metadata/_custom_type_script = "uid://cddjus60t0c7l"
+
+[resource]
+script = ExtResource("2_xrwwj")
+StatMultipliers = Array[ExtResource("1_dayug")]([SubResource("Resource_0guv7"), SubResource("Resource_oc53b"), SubResource("Resource_2wq3k")])

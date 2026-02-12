@@ -31,7 +31,7 @@ public partial class AIController : Node
     private Dictionary<ulong, float> _threatTable = new();
 
     // Map of Opponent Instance ID -> Set of ineffective Action Categories/Tags (e.g. "Slow", "Fire")
-    private Dictionary<ulong, HashSet<string>> _immunityMemory = new();
+    private Dictionary<ulong, HashSet<ActionCategory>> _immunityMemory = new();
 
     private BattleController _battleController;
     private ActionManager _actionManager;
@@ -52,7 +52,10 @@ public partial class AIController : Node
         _battleController = GetTree().Root.FindChild("BattleController", true, false) as BattleController;
         if (_battleController != null)
         {
-            _battleController.TurnStarted += OnTurnStarted;
+            this.Subscribe(
+                () => _battleController.TurnStarted += OnTurnStarted,
+                () => _battleController.TurnStarted -= OnTurnStarted
+            );
         }
         
         var eventBus = GetNode<GlobalEventBus>(GlobalEventBus.Path);
@@ -67,10 +70,6 @@ public partial class AIController : Node
     public override void _ExitTree()
     {
         ActiveControllers.Remove(this);
-        if (_battleController != null)
-        {
-            _battleController.TurnStarted -= OnTurnStarted;
-        }
     }
 
     private async void OnTurnStarted(TurnManager.TurnData turnData)
@@ -111,7 +110,7 @@ public partial class AIController : Node
 
     // --- Debug Accessors ---
     public IReadOnlyDictionary<ulong, float> Debug_GetThreatTable() => _threatTable;
-    public IReadOnlyDictionary<ulong, HashSet<string>> Debug_GetImmunityMemory() => _immunityMemory;
+    public IReadOnlyDictionary<ulong, HashSet<ActionCategory>> Debug_GetImmunityMemory() => _immunityMemory;
 
     public float GetThreat(Node target)
     {
@@ -129,15 +128,15 @@ public partial class AIController : Node
         // Decay over time? Clamp? For now just accumulate.
     }
 
-    public void RecordImmunity(Node target, string tag)
+    public void RecordImmunity(Node target, ActionCategory tag)
     {
-        if (target == null || string.IsNullOrEmpty(tag)) return;
+        if (target == null || tag == ActionCategory.None) return;
         ulong id = target.GetInstanceId();
-        if (!_immunityMemory.ContainsKey(id)) _immunityMemory[id] = new HashSet<string>();
+        if (!_immunityMemory.ContainsKey(id)) _immunityMemory[id] = new HashSet<ActionCategory>();
         _immunityMemory[id].Add(tag);
     }
 
-    public bool IsImmune(Node target, string tag)
+    public bool IsImmune(Node target, ActionCategory tag)
     {
         if (target == null) return false;
         return _immunityMemory.TryGetValue(target.GetInstanceId(), out var tags) && tags.Contains(tag);
@@ -173,7 +172,7 @@ public partial class AIController : Node
                 {
                     threatGenerated += result.FinalDamage; // Damage generates threat directly
                 }
-                else if (context.SourceAction.Category == "Heal")
+                else if (context.SourceAction.Category == ActionCategory.Heal)
                 {
                     // If they healed themselves/allies, that generates threat!
                     threatGenerated += 20f; 
