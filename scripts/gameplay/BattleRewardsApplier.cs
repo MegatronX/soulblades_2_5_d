@@ -44,6 +44,29 @@ public sealed class BattleRewardsApplier
                 }
             }
 
+            var abilityManager = member.GetNodeOrNull<AbilityManager>(AbilityManager.NodeName);
+            if (abilityManager != null)
+            {
+                var expContext = new AbilityEffectContext(member, AbilityTrigger.ExperienceGain)
+                {
+                    Amount = expToGive,
+                    Multiplier = 1.0f
+                };
+                abilityManager.ApplyTrigger(AbilityTrigger.ExperienceGain, expContext);
+                expToGive = Mathf.Max(0, Mathf.RoundToInt(expContext.Amount * expContext.Multiplier));
+
+                if (splitAp)
+                {
+                    var apContext = new AbilityEffectContext(member, AbilityTrigger.ApGain)
+                    {
+                        Amount = apToGive,
+                        Multiplier = 1.0f
+                    };
+                    abilityManager.ApplyTrigger(AbilityTrigger.ApGain, apContext);
+                    apToGive = Mathf.Max(0, Mathf.RoundToInt(apContext.Amount * apContext.Multiplier));
+                }
+            }
+
             var leveling = member.GetNodeOrNull<LevelingComponent>(LevelingComponent.NodeName);
             if (leveling != null)
             {

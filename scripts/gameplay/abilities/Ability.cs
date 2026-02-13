@@ -20,6 +20,13 @@ public partial class Ability : Resource
     [Export]
     public bool IsStackable { get; private set; } = false;
 
+    [ExportGroup("Priority")]
+    [Export]
+    public int Priority { get; private set; } = 0;
+
     [Export]
     public Godot.Collections.Array<EffectLogic> Effects { get; private set; }
+
+    [Export]
+    public Godot.Collections.Array<AbilityEffect> TriggeredEffects { get; private set; } = new();
 }

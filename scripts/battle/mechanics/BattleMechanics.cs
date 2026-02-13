@@ -30,18 +30,17 @@ public partial class BattleMechanics : Node
     public void ProcessInitiation(ActionContext context, IEnumerable<Node> allies)
     {
         // A. Initiator Modifiers (e.g. "Charge Up")
-        foreach (var modifier in GetActionModifiersFrom(context.Initiator))
+        foreach (var modifier in GetOrderedModifiersFrom(context.Initiator))
         {
             modifier.OnActionInitiated(context, context.Initiator);
         }
 
         // B. Ally Modifiers (e.g. "Commander's Aura")
-        foreach (var ally in allies)
+        var allyList = allies?.ToList() ?? new List<Node>();
+        var orderedAllyModifiers = GetOrderedModifiersFromMany(allyList);
+        foreach (var entry in orderedAllyModifiers)
         {
-            foreach (var modifier in GetActionModifiersFrom(ally))
-            {
-                modifier.OnAllyActionInitiated(context, context.Initiator, ally);
-            }
+            entry.Modifier.OnAllyActionInitiated(context, context.Initiator, entry.Owner);
         }
     }
 
@@ -51,12 +50,10 @@ public partial class BattleMechanics : Node
     public void ProcessGlobalMods(ActionContext context, IEnumerable<Node> allCombatants)
     {
         // Global Interception (e.g. "Storm Drain")
-        foreach (var combatant in allCombatants)
+        var orderedModifiers = GetOrderedModifiersFromMany(allCombatants);
+        foreach (var entry in orderedModifiers)
         {
-            foreach (var modifier in GetActionModifiersFrom(combatant))
-            {
-                modifier.OnActionBroadcast(context, combatant);
-            }
+            entry.Modifier.OnActionBroadcast(context, entry.Owner);
         }
     }
 
@@ -74,22 +71,15 @@ public partial class BattleMechanics : Node
             targetContext.Stage = ActionStage.Targeting;
 
             // B. Target Modifiers (e.g. "Resist", "Reflect")
-            foreach (var modifier in GetActionModifiersFrom(originalTarget))
-            {
-                modifier.OnActionTargeted(targetContext, originalTarget);
-            }
-
             // C. Target Ally Modifiers (e.g. "Cover")
             // We need to find allies of the *current* target (which might have changed in step B)
             // For simplicity here, we iterate all and check alliance, or pass in a lookup.
             // Assuming we can filter allies from allCombatants:
             var targetAllies = GetAlliesOf(originalTarget, allCombatants);
-            foreach (var ally in targetAllies)
+            var orderedTargetModifiers = GetOrderedModifiersFromMany(new[] { originalTarget }.Concat(targetAllies));
+            foreach (var entry in orderedTargetModifiers)
             {
-                foreach (var modifier in GetActionModifiersFrom(ally))
-                {
-                    modifier.OnActionTargeted(targetContext, ally);
-                }
+                entry.Modifier.OnActionTargeted(targetContext, entry.Owner);
             }
 
             finalContexts.Add(targetContext);
@@ -180,6 +170,8 @@ public partial class BattleMechanics : Node
                     result.FinalDamage = Mathf.RoundToInt(result.FinalDamage * totalMultiplier);
                 }
 
+                ApplyAbilityDamageCalculated(ctx, result);
+
                 // 4. Apply to Stats
                 var targetStats = ctx.CurrentTarget.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
                 if (targetStats != null)
@@ -195,6 +187,33 @@ public partial class BattleMechanics : Node
                 if (result.IsCritical) ctx.RuntimeEvents.Add("CriticalHit");
             }
         }
+    }
+
+    private void ApplyAbilityDamageCalculated(ActionContext ctx, ActionResult result)
+    {
+        if (ctx == null || result == null) return;
+
+        var initiator = ctx.Initiator;
+        var target = ctx.CurrentTarget;
+
+        ApplyAbilityTrigger(initiator, AbilityTrigger.DamageCalculated, ctx, result);
+        ApplyAbilityTrigger(target, AbilityTrigger.DamageCalculated, ctx, result);
+    }
+
+    private void ApplyAbilityTrigger(Node owner, AbilityTrigger trigger, ActionContext ctx, ActionResult result)
+    {
+        if (owner == null) return;
+
+        var abilityManager = owner.GetNodeOrNull<AbilityManager>(AbilityManager.NodeName);
+        if (abilityManager == null) return;
+
+        var effectContext = new AbilityEffectContext(owner, trigger)
+        {
+            ActionContext = ctx,
+            ActionResult = result,
+            Item = ctx?.SourceItem
+        };
+        abilityManager.ApplyTrigger(trigger, effectContext);
     }
 
     private void TryApplyStatusEffectsOnHit(ActionContext context, ActionResult result)
@@ -235,8 +254,37 @@ public partial class BattleMechanics : Node
 
         var inventory = GetNodeOrNull<InventoryManager>("/root/InventoryManager");
         if (inventory == null) return;
+        float chance = GetItemConsumeChance(context.SourceItem);
 
-        inventory.TryConsumeItem(context.SourceItem, 1, null, _rng);
+        var initiator = context.Initiator;
+        if (initiator != null)
+        {
+            var abilityManager = initiator.GetNodeOrNull<AbilityManager>(AbilityManager.NodeName);
+            if (abilityManager != null)
+            {
+                var effectContext = new AbilityEffectContext(initiator, AbilityTrigger.ItemConsume)
+                {
+                    ActionContext = context,
+                    Item = context.SourceItem,
+                    Amount = Mathf.RoundToInt(chance),
+                    Multiplier = 1.0f
+                };
+                abilityManager.ApplyTrigger(AbilityTrigger.ItemConsume, effectContext);
+                if (effectContext.Cancel)
+                {
+                    return;
+                }
+                chance = Mathf.Clamp(effectContext.Amount * effectContext.Multiplier, 0f, 100f);
+            }
+        }
+
+        inventory.TryConsumeItem(context.SourceItem, 1, chance, _rng);
+    }
+
+    private static float GetItemConsumeChance(ItemData item)
+    {
+        var consumable = item?.Components?.OfType<ConsumableComponentData>().FirstOrDefault();
+        return consumable?.ActionConsumeChancePercent ?? 100f;
     }
 
     /// <summary>
@@ -268,7 +316,62 @@ public partial class BattleMechanics : Node
 
     private IEnumerable<IActionModifier> GetActionModifiersFrom(Node character)
     {
-        return character.FindChildren("*", recursive: true).OfType<IActionModifier>();
+        if (character == null) return Enumerable.Empty<IActionModifier>();
+
+        // TODO: Consider caching action modifiers per combatant to avoid repeated FindChildren/LINQ allocations.
+        var modifiers = new List<IActionModifier>();
+        modifiers.AddRange(character.FindChildren("*", recursive: true).OfType<IActionModifier>());
+
+        var statusManager = character.GetNodeOrNull<StatusEffectManager>(StatusEffectManager.NodeName);
+        if (statusManager != null)
+        {
+            modifiers.AddRange(statusManager.GetActionModifiers().OfType<IActionModifier>());
+        }
+
+        var abilityManager = character.GetNodeOrNull<AbilityManager>(AbilityManager.NodeName);
+        if (abilityManager != null)
+        {
+            modifiers.AddRange(abilityManager.GetActionModifiers());
+        }
+
+        return modifiers;
+    }
+
+    private IEnumerable<IActionModifier> GetOrderedModifiersFrom(Node owner)
+    {
+        return GetActionModifiersFrom(owner)
+            .OrderByDescending(GetModifierPriority)
+            .ToList();
+    }
+
+    private struct ModifierEntry
+    {
+        public IActionModifier Modifier;
+        public Node Owner;
+    }
+
+    private IEnumerable<ModifierEntry> GetOrderedModifiersFromMany(IEnumerable<Node> owners)
+    {
+        if (owners == null) return Enumerable.Empty<ModifierEntry>();
+
+        var entries = new List<ModifierEntry>();
+        foreach (var owner in owners)
+        {
+            if (owner == null) continue;
+            foreach (var modifier in GetActionModifiersFrom(owner))
+            {
+                entries.Add(new ModifierEntry { Modifier = modifier, Owner = owner });
+            }
+        }
+
+        return entries
+            .OrderByDescending(entry => GetModifierPriority(entry.Modifier))
+            .ToList();
+    }
+
+    private static int GetModifierPriority(IActionModifier modifier)
+    {
+        return modifier is IPrioritizedModifier prioritized ? prioritized.Priority : 0;
     }
 
     private IEnumerable<Node> GetAlliesOf(Node character, IEnumerable<Node> allCombatants)

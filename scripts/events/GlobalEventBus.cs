@@ -79,6 +79,12 @@ public partial class GlobalEventBus : Node
     public delegate void PlaySFX3DRequestedEventHandler(AudioStream stream, Vector3 position, float volumeDb, float pitchScale);
 
     /// <summary>
+    /// Emitted to request a triggered VFX (e.g., Reflect shimmer).
+    /// </summary>
+    [Signal]
+    public delegate void EffectVfxRequestedEventHandler(PackedScene vfxScene, Node owner, Vector3 offset, bool parentToOwner);
+
+    /// <summary>
     /// Emitted when an action has been fully executed (animation and mechanics complete).
     /// Useful for AI learning, logging, or achievements.
     /// </summary>

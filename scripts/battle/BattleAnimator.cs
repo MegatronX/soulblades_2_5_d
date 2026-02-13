@@ -33,6 +33,15 @@ public partial class BattleAnimator : Node
     {
         _screenEffects = new ScreenEffects();
         AddChild(_screenEffects);
+
+        var eventBus = GetNodeOrNull<GlobalEventBus>(GlobalEventBus.Path);
+        if (eventBus != null)
+        {
+            this.Subscribe(
+                () => eventBus.EffectVfxRequested += OnEffectVfxRequested,
+                () => eventBus.EffectVfxRequested -= OnEffectVfxRequested
+            );
+        }
     }
 
     // In a real implementation, this would likely interface with a sequence editor or timeline resource.
@@ -437,6 +446,49 @@ public partial class BattleAnimator : Node
         }
         // Note: The VFX scene is responsible for queueing itself free (e.g. via AnimationPlayer or Timer)
         return vfx;
+    }
+
+    private void OnEffectVfxRequested(PackedScene vfxScene, Node owner, Vector3 offset, bool parentToOwner)
+    {
+        if (vfxScene == null || owner == null) return;
+        if (!GodotObject.IsInstanceValid(owner)) return;
+
+        var vfxNode = vfxScene.Instantiate();
+        if (vfxNode == null) return;
+
+        if (owner is Node3D owner3D && vfxNode is Node3D vfx3D)
+        {
+            if (parentToOwner)
+            {
+                owner3D.AddChild(vfx3D);
+                vfx3D.Position = offset;
+            }
+            else
+            {
+                (GetTree().CurrentScene ?? this).AddChild(vfx3D);
+                vfx3D.GlobalPosition = owner3D.GlobalPosition + offset;
+            }
+            return;
+        }
+
+        if (owner is Node2D owner2D && vfxNode is Node2D vfx2D)
+        {
+            var offset2D = new Vector2(offset.X, offset.Y);
+            if (parentToOwner)
+            {
+                owner2D.AddChild(vfx2D);
+                vfx2D.Position = offset2D;
+            }
+            else
+            {
+                (GetTree().CurrentScene ?? this).AddChild(vfx2D);
+                vfx2D.GlobalPosition = owner2D.GlobalPosition + offset2D;
+            }
+            return;
+        }
+
+        // Fallback: attach to scene without positioning if types mismatch.
+        (GetTree().CurrentScene ?? this).AddChild(vfxNode);
     }
 
     private void SpawnTravelVfx(PackedScene vfxScene, Vector3 startPos, Vector3 endPos, float duration)

@@ -6,7 +6,7 @@ using Godot;
 /// or trigger effects at different points in the battle flow.
 /// </summary>
 [GlobalClass]
-public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect
+public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect, IPrioritizedModifier
 {
     [Export]
     public string EffectName { get; private set; }
@@ -50,6 +50,12 @@ public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect
     [Export(PropertyHint.ResourceType, "PackedScene")]
     public PackedScene TriggerAnimation { get; private set; }
 
+    [Export]
+    public Vector3 TriggerAnimationOffset { get; private set; } = Vector3.Zero;
+
+    [Export]
+    public bool AttachTriggerAnimationToOwner { get; private set; } = true;
+
     /// <summary>
     /// A shader material to apply to the character's sprite while this effect is active.
     /// Used for effects like Haste's red aura.
@@ -59,6 +65,10 @@ public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect
 
     [Export]
     public StatusEffectPolarity Polarity { get; set; } = StatusEffectPolarity.Neutral;
+
+    [ExportGroup("Priority")]
+    [Export]
+    public int Priority { get; private set; } = 0;
 
     [Export]
     public float ScaleMultiplier { get; private set; } = 1.0f;
@@ -101,6 +111,33 @@ public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect
     public virtual void OnTurnStart(Node owner, ActionDirector actionDirector)
     {
         RunEffectLogic(OnTurnStartEffects, owner, effect => effect.OnTurnStart(owner));
+    }
+
+    /// <summary>
+    /// Called during the global broadcast phase (before targeting is finalized).
+    /// Use for effects like Storm Drain that can redirect actions.
+    /// </summary>
+    public virtual void OnActionBroadcast(ActionContext context, Node owner)
+    {
+    }
+
+    /// <summary>
+    /// Called during the per-target phase (after targeting is finalized).
+    /// Use for effects like Reflect that can redirect or nullify actions.
+    /// </summary>
+    public virtual void OnActionTargeted(ActionContext context, Node owner)
+    {
+    }
+
+    protected void RequestTriggerAnimation(Node owner)
+    {
+        if (TriggerAnimation == null || owner == null) return;
+        if (!GodotObject.IsInstanceValid(owner)) return;
+
+        var eventBus = owner.GetNodeOrNull<GlobalEventBus>(GlobalEventBus.Path);
+        if (eventBus == null) return;
+
+        eventBus.EmitSignal(GlobalEventBus.SignalName.EffectVfxRequested, TriggerAnimation, owner, TriggerAnimationOffset, AttachTriggerAnimationToOwner);
     }
 
     private static void RunEffectLogic(Godot.Collections.Array<EffectLogic> effects, Node owner, System.Action<EffectLogic> callback)

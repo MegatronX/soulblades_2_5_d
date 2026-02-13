@@ -52,6 +52,11 @@ public partial class ActionContext : RefCounted
     public TimedHitRating LastTimedHitRating { get; set; } = TimedHitRating.Miss;
 
     /// <summary>
+    /// Set to true when an action's target has been redirected to avoid infinite ping-pong.
+    /// </summary>
+    public bool WasRedirected { get; set; } = false;
+
+    /// <summary>
     /// Master constructor to create the initial context from an ActionData resource.
     /// </summary>
     public ActionContext(ActionData source, Node initiator, IEnumerable<Node> targets, ItemData sourceItem = null)
@@ -97,6 +102,7 @@ public partial class ActionContext : RefCounted
         Initiator = original.Initiator;
         InitialTargets = original.InitialTargets;
         CurrentTarget = currentTarget;
+        WasRedirected = original.WasRedirected;
         ModificationLog = new List<string>(); // Each target gets a fresh log.
 
         // Create deep copies of the runtime components so modifications are isolated per target.

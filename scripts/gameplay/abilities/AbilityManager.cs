@@ -48,6 +48,21 @@ public partial class AbilityManager : Node
     public IReadOnlyList<Ability> GetKnownAbilities() => _knownAbilities;
     public IReadOnlyList<Ability> GetEquippedAbilities() => _equippedAbilities;
 
+    public IEnumerable<IActionModifier> GetActionModifiers()
+    {
+        foreach (var ability in _equippedAbilities)
+        {
+            if (ability?.TriggeredEffects == null) continue;
+            foreach (var effect in ability.TriggeredEffects)
+            {
+                if (effect is IActionModifier modifier)
+                {
+                    yield return modifier;
+                }
+            }
+        }
+    }
+
     /// <summary>
     /// Adds an ability to the character's list of known abilities.
     /// This would be called when learning an ability from equipment.
@@ -86,9 +101,12 @@ public partial class AbilityManager : Node
         }
 
         _equippedAbilities.Add(abilityToEquip);
-        foreach (var logic in abilityToEquip.Effects)
+        if (abilityToEquip.Effects != null)
         {
-            logic.OnApply(_owner);
+            foreach (var logic in abilityToEquip.Effects)
+            {
+                logic?.OnApply(_owner);
+            }
         }
         EmitSignal(SignalName.EquippedAbilitiesChanged);
         return true;
@@ -102,12 +120,56 @@ public partial class AbilityManager : Node
         if (_equippedAbilities.Contains(abilityToUnequip))
         {
             _equippedAbilities.Remove(abilityToUnequip);
-            foreach (var logic in abilityToUnequip.Effects)
+            if (abilityToUnequip.Effects != null)
             {
-                // Note: This correctly removes modifiers sourced by the EffectLogic instance.
-                logic.OnRemove(_owner);
+                foreach (var logic in abilityToUnequip.Effects)
+                {
+                    // Note: This correctly removes modifiers sourced by the EffectLogic instance.
+                    logic?.OnRemove(_owner);
+                }
             }
             EmitSignal(SignalName.EquippedAbilitiesChanged);
         }
+    }
+
+    /// <summary>
+    /// Dispatches a trigger to all equipped ability effects that match it.
+    /// </summary>
+    public void ApplyTrigger(AbilityTrigger trigger, AbilityEffectContext context = null)
+    {
+        if (_equippedAbilities.Count == 0) return;
+
+        context ??= new AbilityEffectContext(_owner, trigger);
+        context.Ability = null;
+
+        foreach (var ability in _equippedAbilities)
+        {
+            if (ability == null) continue;
+            if (ability.TriggeredEffects == null || ability.TriggeredEffects.Count == 0) continue;
+
+            context.Ability = ability;
+            foreach (var effect in ability.TriggeredEffects)
+            {
+                if (effect == null || !effect.Matches(trigger)) continue;
+                context.WasTriggered = false;
+                effect.Apply(context);
+                TryPlayTriggerVfx(effect, context);
+            }
+        }
+    }
+
+    private void TryPlayTriggerVfx(AbilityEffect effect, AbilityEffectContext context)
+    {
+        if (effect == null || context == null) return;
+        if (effect.TriggerVfx == null) return;
+        if (effect.RequireExplicitTrigger && !context.WasTriggered) return;
+
+        var owner = context.Owner;
+        if (owner == null) return;
+
+        var eventBus = owner.GetNodeOrNull<GlobalEventBus>(GlobalEventBus.Path);
+        if (eventBus == null) return;
+
+        eventBus.EmitSignal(GlobalEventBus.SignalName.EffectVfxRequested, effect.TriggerVfx, owner, effect.TriggerVfxOffset, effect.AttachTriggerVfxToOwner);
     }
 }

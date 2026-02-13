@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="ReflectStatusEffect" load_steps=8 format=3 uid="uid://wug2akxeaj0r"]
+
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_6wpwo"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_h12qa"]
+[ext_resource type="Script" uid="uid://c225o6bhxqcqp" path="res://scripts/gameplay/statuseffects/ActionRedirectCriteria.cs" id="3_h12qa"]
+[ext_resource type="Script" uid="uid://dyhw8n8ki1xcd" path="res://scripts/gameplay/statuseffects/ReflectStatusEffect.cs" id="3_v8gaa"]
+[ext_resource type="Script" uid="uid://bqg83x2vmmjw7" path="res://scripts/gameplay/statuseffects/ActionRedirectDefinition.cs" id="4_v8gaa"]
+
+[sub_resource type="Resource" id="Resource_6qdgh"]
+script = ExtResource("3_h12qa")
+RequireOwnerIsCurrentTarget = true
+RequireMagicRatio = true
+metadata/_custom_type_script = "uid://c225o6bhxqcqp"
+
+[sub_resource type="Resource" id="Resource_xa3gs"]
+script = ExtResource("4_v8gaa")
+Criteria = SubResource("Resource_6qdgh")
+Message = "Reflected!"
+metadata/_custom_type_script = "uid://bqg83x2vmmjw7"
+
+[resource]
+script = ExtResource("3_v8gaa")
+RedirectDefinition = SubResource("Resource_xa3gs")
+EffectName = "Reflect"
+Description = "Reflects most magic attacks back to the attacker"
+MinDurationTurns = 10
+MaxDurationTurns = 14
+metadata/_custom_type_script = "uid://dyhw8n8ki1xcd"

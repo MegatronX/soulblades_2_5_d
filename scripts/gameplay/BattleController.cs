@@ -258,6 +258,7 @@ public partial class BattleController : Node
         CurrentState = BattleState.InProgress;
         EmitSignal(SignalName.BattleReady);
         _eventBus?.EmitSignal(GlobalEventBus.SignalName.BattleReady);
+        TriggerAbilityBattleStart();
         ProcessNextTurn();
     }
 
@@ -471,6 +472,29 @@ public partial class BattleController : Node
         {
             CurrentState = BattleState.Defeat; // Or some error state
         }
+    }
+
+    private void TriggerAbilityBattleStart()
+    {
+        foreach (var member in EnumerateAllCombatants())
+        {
+            var abilityManager = member.GetNodeOrNull<AbilityManager>(AbilityManager.NodeName);
+            if (abilityManager == null) continue;
+
+            var perMemberContext = new AbilityEffectContext(member, AbilityTrigger.BattleStart)
+            {
+                BattleContext = _context,
+                ActionDirector = _actionDirector
+            };
+            abilityManager.ApplyTrigger(AbilityTrigger.BattleStart, perMemberContext);
+        }
+    }
+
+    private IEnumerable<Node> EnumerateAllCombatants()
+    {
+        foreach (Node node in _playerTeamContainer.GetChildren()) yield return node;
+        foreach (Node node in _allyTeamContainer.GetChildren()) yield return node;
+        foreach (Node node in _enemyTeamContainer.GetChildren()) yield return node;
     }
 
     /// <summary>

@@ -12,4 +12,5 @@ public enum ActionFlags
     FixedDamage = 1 << 2,    // Damage is not affected by stats, only by resistances.
     Piercing = 1 << 3,       // Damage ignores target's defense stats.
     AlwaysHits = 1 << 4,     // Bypasses accuracy checks.
+    CannotBeRedirected = 1 << 5, // Ignores redirect/reflect effects.
 }
