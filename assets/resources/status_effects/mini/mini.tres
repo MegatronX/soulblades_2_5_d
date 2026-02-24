@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="MiniStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/MiniStatusEffect.cs" id="1_mini"]
+
+[resource]
+script = ExtResource("1_mini")
+EffectName = "Mini"
+Description = "Boosts evasiveness but lowers outgoing damage."
+Polarity = 0
+MinDurationTurns = 2
+MaxDurationTurns = 4
+EvasionBonusPercent = 0.5
+PhysicalDamageDealtMultiplier = 0.5
+MagicalDamageDealtMultiplier = 0.75

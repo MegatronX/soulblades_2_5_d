@@ -1,0 +1,22 @@
+[gd_resource type="Resource" script_class="BleedStatusEffect" load_steps=4 format=3 uid="uid://d0ybw3g1elmr"]
+
+[ext_resource type="Script" uid="uid://wriuoibjqex7" path="res://scripts/gameplay/statuseffects/BleedStatusEffect.cs" id="1_bleed"]
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_rljyu"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_wwkto"]
+
+[resource]
+script = ExtResource("1_bleed")
+BaseTickNormal = 12
+BaseTickBoss = 8
+TickPerAdditionalStackNormal = 12
+TickPerAdditionalStackBoss = 8
+PercentTickMode = 2
+BasePercentNormal = 0.005
+BasePercentBoss = 0.0035
+PerStackPercentNormal = 0.0025
+PerStackPercentBoss = 0.00175
+EffectName = "Bleed"
+Description = "Deals turn-end bleed damage and boosts crit chance against the target."
+MinDurationTurns = 3
+MaxDurationTurns = 5
+Polarity = 2

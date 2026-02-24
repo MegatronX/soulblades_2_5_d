@@ -27,17 +27,19 @@ public partial class StatusEffectManager : Node
     {
         public StatusEffect EffectData { get; }
         public int RemainingTurns { get; set; }
+        public int Stacks { get; set; } = 1;
+        public Dictionary<string, Variant> RuntimeState { get; } = new();
 
-        public StatusEffectInstance(StatusEffect effectData)
+        public StatusEffectInstance(StatusEffect effectData, int initialDuration)
         {
             EffectData = effectData;
-            // In a real game, you might use a shared RNG instance passed in.
-            RemainingTurns = new RandomNumberGenerator().RandiRange(effectData.MinDurationTurns, effectData.MaxDurationTurns);
+            RemainingTurns = initialDuration;
         }
     }
 
     private readonly List<StatusEffectInstance> _activeEffects = new();
     private Node _owner;
+    public new Node Owner => _owner;
 
     public override void _Ready()
     {
@@ -75,12 +77,36 @@ public partial class StatusEffectManager : Node
             if (roll > effectiveChance) return false;
         }
 
-        var instance = new StatusEffectInstance(effectData);
+        var existing = GetEffectInstance(effectData);
+        if (existing != null && effectData is StackingStatusEffect stacking)
+        {
+            bool changed = stacking.OnReapply(this, existing, actionDirector, rng);
+            if (changed)
+            {
+                EmitSignal(SignalName.StatusEffectApplied, effectData, this.GetParent());
+            }
+            return changed;
+        }
+
+        int duration = RollDuration(effectData, rng);
+        var instance = new StatusEffectInstance(effectData, duration);
         _activeEffects.Add(instance);
         instance.EffectData.OnApply(_owner, actionDirector);
+        if (effectData is StackingStatusEffect newStacking)
+        {
+            newStacking.OnStacksChanged(_owner, this, instance, actionDirector);
+        }
         GD.Print($"{_owner.Name} is now affected by {effectData.EffectName} for {instance.RemainingTurns} turns.");
         EmitSignal(SignalName.StatusEffectApplied, effectData, this.GetParent());
         return true;
+    }
+
+    public int RollDuration(StatusEffect effectData, IRandomNumberGenerator rng = null)
+    {
+        if (effectData == null) return 1;
+        int min = Mathf.Max(1, effectData.MinDurationTurns);
+        int max = Mathf.Max(min, effectData.MaxDurationTurns);
+        return rng != null ? rng.RandRangeInt(min, max) : new RandomNumberGenerator().RandiRange(min, max);
     }
 
     /// <summary>
@@ -88,10 +114,19 @@ public partial class StatusEffectManager : Node
     /// </summary>
     public void RemoveEffect(StatusEffectInstance instance, ActionDirector actionDirector)
     {
+        if (instance == null || instance.EffectData == null) return;
         instance.EffectData.OnRemove(_owner, actionDirector);
         _activeEffects.Remove(instance);
         GD.Print($"{instance.EffectData.EffectName} has worn off for {_owner.Name}.");
         EmitSignal(SignalName.StatusEffectRemoved, instance.EffectData, this.GetParent());
+    }
+
+    public bool RemoveEffect(StatusEffect effectData, ActionDirector actionDirector)
+    {
+        var instance = GetEffectInstance(effectData);
+        if (instance == null) return false;
+        RemoveEffect(instance, actionDirector);
+        return true;
     }
 
     private bool HandleCancelEffects(StatusEffect effectData, ActionDirector actionDirector)
@@ -326,5 +361,61 @@ public partial class StatusEffectManager : Node
     public IReadOnlyList<StatusEffectInstance> GetActiveEffects()
     {
         return _activeEffects;
+    }
+
+    public bool HasEffect(StatusEffect effectData)
+    {
+        if (effectData == null) return false;
+        return _activeEffects.Any(active => AreSameEffect(active?.EffectData, effectData));
+    }
+
+    public StatusEffectInstance GetEffectInstance(StatusEffect effectData)
+    {
+        if (effectData == null) return null;
+        return _activeEffects.FirstOrDefault(active => AreSameEffect(active?.EffectData, effectData));
+    }
+
+    public int GetStacks(StatusEffect effectData)
+    {
+        var instance = GetEffectInstance(effectData);
+        return instance?.Stacks ?? 0;
+    }
+
+    public bool RefreshDuration(StatusEffect effectData, int turns = -1)
+    {
+        var instance = GetEffectInstance(effectData);
+        if (instance == null) return false;
+        instance.RemainingTurns = turns > 0 ? turns : RollDuration(effectData);
+        return true;
+    }
+
+    public bool SetState(StatusEffect effectData, string key, Variant value)
+    {
+        if (string.IsNullOrEmpty(key)) return false;
+        var instance = GetEffectInstance(effectData);
+        if (instance == null) return false;
+        instance.RuntimeState[key] = value;
+        return true;
+    }
+
+    public bool TryGetState(StatusEffect effectData, string key, out Variant value)
+    {
+        value = default;
+        if (string.IsNullOrEmpty(key)) return false;
+        var instance = GetEffectInstance(effectData);
+        if (instance == null) return false;
+        return instance.RuntimeState.TryGetValue(key, out value);
+    }
+
+    public int ModifyIncomingMpRestore(int incomingAmount)
+    {
+        int result = Mathf.Max(0, incomingAmount);
+        for (int i = 0; i < _activeEffects.Count; i++)
+        {
+            var instance = _activeEffects[i];
+            if (instance?.EffectData is not IMpRestoreModifierStatusEffect modifier) continue;
+            result = Mathf.Max(0, modifier.ModifyIncomingMpRestore(_owner, this, instance, result));
+        }
+        return result;
     }
 }

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DamageTakenModifierStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/DamageTakenModifierStatusEffect.cs" id="1_ward"]
+
+[resource]
+script = ExtResource("1_ward")
+EffectName = "Ward"
+Description = "Next incoming damage instance is reduced by 50%."
+Polarity = 1
+MinDurationTurns = 2
+MaxDurationTurns = 2
+Filter = 0
+DamageTakenMultiplier = 0.5
+ConsumeOnFirstDamageTrigger = true
+ExpireAtOwnerTurnStartIfUnused = true

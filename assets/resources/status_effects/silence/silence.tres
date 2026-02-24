@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="SilenceStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/SilenceStatusEffect.cs" id="1_silence"]
+
+[resource]
+script = ExtResource("1_silence")
+EffectName = "Silence"
+Description = "Prevents spellcasting while active."
+Polarity = 2
+MinDurationTurns = 2
+MaxDurationTurns = 4
+RejectReason = "Silenced."

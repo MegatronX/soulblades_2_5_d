@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="ConfuseStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/ConfuseStatusEffect.cs" id="1_confuse"]
+
+[resource]
+script = ExtResource("1_confuse")
+EffectName = "Confuse"
+Description = "Actions may randomly target any living combatant."
+Polarity = 2
+MinDurationTurns = 2
+MaxDurationTurns = 3
+RandomizeTargetChance = 0.5

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="StatModifierEffect" load_steps=6 format=3 uid="uid://c0j2qey71r7lo"]
+
+[ext_resource type="Script" uid="uid://7levb7dp7cb1" path="res://scripts/gameplay/statuseffects/StatModifierEffect.cs" id="1_juggernaut"]
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_m0sfm"]
+[ext_resource type="Script" uid="uid://cddjus60t0c7l" path="res://scripts/gameplay/statuseffects/StatMultiplierEntry.cs" id="2_juggernaut"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_qhygl"]
+
+[sub_resource type="Resource" id="Resource_juggernaut_strength"]
+script = ExtResource("2_juggernaut")
+Stat = 2
+Multiplier = 1.33
+
+[resource]
+script = ExtResource("1_juggernaut")
+StatMultipliers = Array[ExtResource("2_juggernaut")]([SubResource("Resource_juggernaut_strength")])
+EffectName = "Juggernaut"
+Description = "Increases attack power by 33%."
+MinDurationTurns = 2
+MaxDurationTurns = 4
+Polarity = 1

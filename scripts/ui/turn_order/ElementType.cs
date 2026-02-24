@@ -7,5 +7,6 @@ public enum ElementType
     Ice,
     Lightning,
     Holy,
-    Dark
+    Dark,
+    Earth
 }

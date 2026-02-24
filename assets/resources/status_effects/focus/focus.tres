@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DamageDealtModifierStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/DamageDealtModifierStatusEffect.cs" id="1_focus"]
+
+[resource]
+script = ExtResource("1_focus")
+EffectName = "Focus"
+Description = "Magic damage dealt is increased by 25%."
+Polarity = 1
+MinDurationTurns = 2
+MaxDurationTurns = 4
+Filter = 2
+OutgoingMultiplier = 1.25
+RequireDamagingAction = true
+ConsumeOnTrigger = false

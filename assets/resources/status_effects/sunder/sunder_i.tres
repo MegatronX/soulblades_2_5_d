@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DamageTakenModifierStatusEffect" load_steps=4 format=3 uid="uid://brtji11lat618"]
+
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_g6iiy"]
+[ext_resource type="Script" uid="uid://n7jrh4nwbj68" path="res://scripts/gameplay/statuseffects/DamageTakenModifierStatusEffect.cs" id="1_sunder_i"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_e2100"]
+
+[resource]
+script = ExtResource("1_sunder_i")
+Filter = 1
+DamageTakenMultiplier = 1.25
+EffectName = "Sunder I"
+Description = "Target takes 25% more physical damage."
+MinDurationTurns = 2
+MaxDurationTurns = 4
+Polarity = 2

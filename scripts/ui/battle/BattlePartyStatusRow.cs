@@ -169,6 +169,8 @@ public partial class BattlePartyStatusRow : Control
             UpdateMp(_currentMp, maxMp, immediate: true);
             SetDefeated(_currentHp <= 0);
         }
+
+        SetLimitGauge(0, 1, immediate: true);
     }
 
     public void Unbind()
@@ -482,6 +484,25 @@ public partial class BattlePartyStatusRow : Control
 
         UpdateValueLabels(_mpCurrentLabel, _mpMaxLabel, _currentMp, value, maxValue, immediate, value >= _currentMp ? _mpGainColor : _mpLossColor, _mpTweenSeconds, _mpPrefix);
         _currentMp = value;
+    }
+
+    public void SetLimitGauge(int value, int maxValue, bool immediate = false)
+    {
+        if (_limitBar == null) return;
+
+        int safeMax = Mathf.Max(1, maxValue);
+        int safeValue = Mathf.Clamp(value, 0, safeMax);
+        _limitBar.MaxValue = safeMax;
+
+        if (immediate)
+        {
+            _limitBar.Value = safeValue;
+            return;
+        }
+
+        var tween = CreateTween();
+        tween.TweenProperty(_limitBar, "value", safeValue, _mpTweenSeconds)
+            .SetTrans(Tween.TransitionType.Quad).SetEase(Tween.EaseType.Out);
     }
 
     private void UpdateValueLabels(Label currentLabel, Label maxLabel, int startValue, int value, int maxValue, bool immediate, Color pulseColor, float duration, string prefix)

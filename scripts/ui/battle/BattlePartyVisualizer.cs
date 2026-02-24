@@ -22,6 +22,9 @@ public partial class BattlePartyVisualizer : Control
     [Export]
     private ChargeSystem _chargeSystem;
 
+    [Export]
+    private OverflowSystem _overflowSystem;
+
     private readonly Dictionary<Node, BattlePartyStatusRow> _rowsByMember = new();
     private bool _partyBindingsInitialized;
 
@@ -29,6 +32,7 @@ public partial class BattlePartyVisualizer : Control
     {
         _battleController = _battleController ?? GetTree().Root.FindChild("BattleController", true, false) as BattleController;
         _chargeSystem = _chargeSystem ?? _battleController?.ChargeSystem;
+        _overflowSystem = _overflowSystem ?? _battleController?.OverflowSystem;
 
         _rowContainer = GetNodeOrNull<BoxContainer>(_rowContainerPath);
 
@@ -57,6 +61,14 @@ public partial class BattlePartyVisualizer : Control
             }
         }
 
+        if (_overflowSystem != null)
+        {
+            this.Subscribe(
+                () => _overflowSystem.OverflowChanged += OnOverflowChanged,
+                () => _overflowSystem.OverflowChanged -= OnOverflowChanged
+            );
+        }
+
         var eventBus = GetNodeOrNull<GlobalEventBus>(GlobalEventBus.Path);
         if (eventBus != null)
         {
@@ -70,6 +82,7 @@ public partial class BattlePartyVisualizer : Control
     private void OnBattleReady()
     {
         InitializePartyBindings();
+        UpdatePlayerOverflowGauge(immediate: true);
     }
 
     private void InitializePartyBindings()
@@ -115,6 +128,7 @@ public partial class BattlePartyVisualizer : Control
         }
 
         AdjustRowSizing();
+        UpdatePlayerOverflowGauge(immediate: true);
         SetMouseFilterRecursive(this, MouseFilterEnum.Ignore);
     }
 
@@ -222,6 +236,29 @@ public partial class BattlePartyVisualizer : Control
 
         row.Bind(member, _chargeSystem);
         _rowsByMember[member] = row;
+        UpdatePlayerOverflowGauge(immediate: true);
+    }
+
+    private void OnOverflowChanged(long side, int currentValue, int maxValue, int delta, string reason)
+    {
+        if ((OverflowPartySide)side != OverflowPartySide.Player) return;
+
+        foreach (var row in _rowsByMember.Values)
+        {
+            row?.SetLimitGauge(currentValue, maxValue);
+        }
+    }
+
+    private void UpdatePlayerOverflowGauge(bool immediate = false)
+    {
+        if (_overflowSystem == null) return;
+
+        int current = _overflowSystem.GetOverflowForSide(OverflowPartySide.Player);
+        int max = _overflowSystem.GetOverflowCapForSide(OverflowPartySide.Player);
+        foreach (var row in _rowsByMember.Values)
+        {
+            row?.SetLimitGauge(current, max, immediate);
+        }
     }
 
     private static void SetMouseFilterRecursive(Node node, Control.MouseFilterEnum filter)

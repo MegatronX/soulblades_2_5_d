@@ -144,20 +144,23 @@ public partial class ActionManager : Node
 
     private void PopulateCategory(BattleCategory category)
     {
+        if (category == null) return;
+
         // 1. Apply overrides to existing static commands in this category
         for (int i = 0; i < category.SubCommands.Count; i++)
         {
             var cmd = category.SubCommands[i];
+            if (cmd == null) continue;
             if (_commandOverrides.TryGetValue(cmd.CommandName, out var overrideCmd))
             {
                 category.SubCommands[i] = overrideCmd;
             }
         }
 
-        // Find all learned actions that match this category's name (e.g. "Magic", "Skills")
-        // or you could add a specific "CategoryTag" field to BattleCategory to match against ActionData.Category.
+        // Find all learned actions that match this category's configured filters.
+        // If no filters are configured, BattleCategory falls back to legacy name matching.
         var matchingActions = LearnedActions.OfType<ActionData>()
-            .Where(a => MatchesCategory(a, category))
+            .Where(category.MatchesLearnedAction)
             .ToList();
         
         // Add them to the category's sub-commands
@@ -176,29 +179,6 @@ public partial class ActionManager : Node
                 category.SubCommands.Add(effectiveAction);
             }
         }
-    }
-
-    private static bool MatchesCategory(ActionData action, BattleCategory category)
-    {
-        if (action == null || category == null) return false;
-        var categoryName = category.CommandName ?? string.Empty;
-        var actionName = action.Category.ToString();
-
-        if (string.Equals(categoryName, actionName, System.StringComparison.OrdinalIgnoreCase))
-        {
-            return true;
-        }
-
-        if (categoryName.EndsWith("s", System.StringComparison.OrdinalIgnoreCase))
-        {
-            var singular = categoryName[..^1];
-            if (string.Equals(singular, actionName, System.StringComparison.OrdinalIgnoreCase))
-            {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     public bool IsItemsCategory(BattleCategory category)

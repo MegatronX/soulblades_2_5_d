@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BreakStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/BreakStatusEffect.cs" id="1_break"]
+
+[resource]
+script = ExtResource("1_break")
+EffectName = "Break"
+Description = "Sets the target to a defeated state until cured."
+Polarity = 2
+MinDurationTurns = 99
+MaxDurationTurns = 99
+ReviveOnRemove = true
+RevivePercentOnRemove = 25

@@ -57,6 +57,10 @@ public partial class BattleController : Node
     public ChargeSystem ChargeSystem => _chargeSystem;
 
     [Export]
+    private OverflowSystem _overflowSystem;
+    public OverflowSystem OverflowSystem => _overflowSystem;
+
+    [Export]
     private BattlePlacementSettings _placementSettings;
 
     [Export]
@@ -116,6 +120,11 @@ public partial class BattleController : Node
             _chargeSystem = GetNodeOrNull<ChargeSystem>("ChargeSystem");
         }
 
+        if (_overflowSystem == null)
+        {
+            _overflowSystem = GetNodeOrNull<OverflowSystem>("OverflowSystem");
+        }
+
         if (BattleCamera == null)
         {
             // Fallback: Look for BattleCamera in the scene root (MainBattleScene)
@@ -148,8 +157,12 @@ public partial class BattleController : Node
         // Add AI Debug Overlay in debug builds
         if (OS.IsDebugBuild())
         {
-            var debugOverlay = new AIDebugOverlay();
-            AddChild(debugOverlay);
+            var aiDebugOverlay = new AIDebugOverlay();
+            AddChild(aiDebugOverlay);
+
+            var battleStatsOverlay = new BattleStatsDebugOverlay();
+            battleStatsOverlay.Initialize(this);
+            AddChild(battleStatsOverlay);
         }
 
         _eventBus = GetNodeOrNull<GlobalEventBus>(GlobalEventBus.Path);
@@ -210,10 +223,15 @@ public partial class BattleController : Node
             _chargeSystem.Initialize(_actionDirector.TimedHitManager);
         }
 
+        if (_overflowSystem != null)
+        {
+            _overflowSystem.Initialize(this, _actionDirector.TimedHitManager);
+        }
+
         _roster = new BattleRoster(_playerTeamContainer, _enemyTeamContainer, _allyTeamContainer, _turnManager, _actionDirector);
         _roster.CombatantDefeated += OnCombatantDefeated;
 
-        _turnFlow = new BattleTurnFlow(_turnManager, _actionDirector, BattleCamera, _eventBus);
+        _turnFlow = new BattleTurnFlow(_turnManager, _actionDirector, BattleCamera, _eventBus, _overflowSystem);
         _turnFlow.TurnStarted += (turn) => EmitSignal(SignalName.TurnStarted, turn);
         _networkGateway = new BattleNetworkGateway(this, () => _turnFlow.ActiveTurn);
 
@@ -235,6 +253,11 @@ public partial class BattleController : Node
             context.AllyCombatants,
             () => _rng.RandRangeFloat(_minCounterStart, _normalMaxCounterStart)
         );
+
+        if (_overflowSystem != null)
+        {
+            _overflowSystem.ResetForBattle(allCombatants);
+        }
 
         // Apply initial status effects based on formation
         if (context.Config.Formation == BattleFormation.EnemyAdvantage)
@@ -287,6 +310,20 @@ public partial class BattleController : Node
                 if (_playerTeamContainer.GetChildCount() > 0)
                     targets.Add(_playerTeamContainer.GetChild(0));
             }
+        }
+
+        if (!IsActionAllowedForActor(actor?.Combatant, action, sourceItem, out var ruleRejection))
+        {
+            GD.Print($"[Status Rule] Action '{action?.CommandName}' rejected: {ruleRejection}");
+            return;
+        }
+
+        targets = RewriteTargetsFromStatusRules(actor?.Combatant, action, sourceItem, targets);
+
+        if (_overflowSystem != null && !_overflowSystem.TrySpendForAction(actor?.Combatant, action, out var overflowRejection))
+        {
+            GD.Print($"[Overflow] Action '{action?.CommandName}' rejected: {overflowRejection}");
+            return;
         }
 
         await _turnFlow.CommitAction(actor, action, targets, sourceItem);
@@ -368,6 +405,7 @@ public partial class BattleController : Node
         if (CurrentState == BattleState.Victory || CurrentState == BattleState.Defeat) return;
 
         CurrentState = result;
+        _overflowSystem?.EndBattle();
         GD.Print($"Battle Ended: {result}");
         EmitSignal(SignalName.BattleEnded, (int)result);
 
@@ -484,7 +522,8 @@ public partial class BattleController : Node
             var perMemberContext = new AbilityEffectContext(member, AbilityTrigger.BattleStart)
             {
                 BattleContext = _context,
-                ActionDirector = _actionDirector
+                ActionDirector = _actionDirector,
+                OverflowSystem = _overflowSystem
             };
             abilityManager.ApplyTrigger(AbilityTrigger.BattleStart, perMemberContext);
         }
@@ -492,9 +531,25 @@ public partial class BattleController : Node
 
     private IEnumerable<Node> EnumerateAllCombatants()
     {
-        foreach (Node node in _playerTeamContainer.GetChildren()) yield return node;
-        foreach (Node node in _allyTeamContainer.GetChildren()) yield return node;
-        foreach (Node node in _enemyTeamContainer.GetChildren()) yield return node;
+        if (_playerTeamContainer != null)
+        {
+            foreach (Node node in _playerTeamContainer.GetChildren()) yield return node;
+        }
+
+        if (_allyTeamContainer != null)
+        {
+            foreach (Node node in _allyTeamContainer.GetChildren()) yield return node;
+        }
+
+        if (_enemyTeamContainer != null)
+        {
+            foreach (Node node in _enemyTeamContainer.GetChildren()) yield return node;
+        }
+    }
+
+    public IEnumerable<Node> GetCombatantsForDebugOverlay()
+    {
+        return EnumerateAllCombatants();
     }
 
     /// <summary>
@@ -509,6 +564,12 @@ public partial class BattleController : Node
         if (!Multiplayer.IsServer()) return;
         if (!_networkGateway.TryBuildCommitRequest(actionPath, itemPath, targetPaths, out var currentTurn, out var actionResource, out var itemResource, out var targets))
         {
+            return;
+        }
+
+        if (!IsActionAllowedForActor(currentTurn.Combatant, actionResource, itemResource, out var actionRejection))
+        {
+            GD.Print($"[Status Rule] Server rejected '{actionResource?.CommandName}': {actionRejection}");
             return;
         }
 
@@ -556,5 +617,91 @@ public partial class BattleController : Node
     public bool IsPlayerSide(Node character)
     {
         return _roster != null && _roster.IsPlayerSide(character);
+    }
+
+    public bool IsActionAllowedForActor(Node actor, ActionData action, ItemData sourceItem, out string reason)
+    {
+        reason = string.Empty;
+        if (actor == null || action == null)
+        {
+            reason = "Invalid actor or action.";
+            return false;
+        }
+
+        var statusManager = actor.GetNodeOrNull<StatusEffectManager>(StatusEffectManager.NodeName);
+        if (statusManager != null)
+        {
+            foreach (var instance in statusManager.GetActiveEffects())
+            {
+                if (instance?.EffectData is not IStatusActionRule rule) continue;
+                if (rule.IsActionAllowed(action, sourceItem, actor, this, out reason))
+                {
+                    continue;
+                }
+                if (string.IsNullOrEmpty(reason))
+                {
+                    reason = "Blocked by status.";
+                }
+                return false;
+            }
+        }
+
+        if (_overflowSystem != null && !_overflowSystem.CanAffordAction(actor, action, out var overflowReason))
+        {
+            reason = overflowReason;
+            return false;
+        }
+
+        return true;
+    }
+
+    public List<Node> RewriteTargetsFromStatusRules(Node actor, ActionData action, ItemData sourceItem, List<Node> currentTargets)
+    {
+        if (actor == null || action == null || currentTargets == null || currentTargets.Count == 0)
+        {
+            return currentTargets;
+        }
+
+        var statusManager = actor.GetNodeOrNull<StatusEffectManager>(StatusEffectManager.NodeName);
+        if (statusManager == null) return currentTargets;
+
+        foreach (var instance in statusManager.GetActiveEffects())
+        {
+            if (instance?.EffectData is not IStatusActionRule rule) continue;
+            if (!rule.TryRewriteTargets(action, sourceItem, actor, currentTargets, this, _rng, out var rewritten) || rewritten == null || rewritten.Count == 0)
+            {
+                continue;
+            }
+            return rewritten;
+        }
+
+        return currentTargets;
+    }
+
+    public IEnumerable<Node> GetLivingCombatants()
+    {
+        foreach (var combatant in EnumerateAllCombatants())
+        {
+            if (_roster == null || _roster.IsCombatantAlive(combatant))
+            {
+                yield return combatant;
+            }
+        }
+    }
+
+    public int GetLivingCombatantCount()
+    {
+        if (_roster == null)
+        {
+            return Mathf.Max(1, EnumerateAllCombatants().Count());
+        }
+
+        int alive = 0;
+        foreach (var combatant in GetLivingCombatants())
+        {
+            alive++;
+        }
+
+        return Mathf.Max(1, alive);
     }
 }

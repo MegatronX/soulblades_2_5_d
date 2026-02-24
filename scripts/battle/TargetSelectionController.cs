@@ -470,8 +470,144 @@ public partial class TargetSelectionController : Node
         eventBus.EmitSignal(GlobalEventBus.SignalName.TargetSelectionChanged, targetsArray);
 
         // 3. Emit Preview Event
-        var preview = new TurnManager.ActionPreview { ActionTickCost = _currentAction.TickCost };
+        var preview = BuildActionPreview(currentlyTargeted);
         eventBus.EmitSignal(GlobalEventBus.SignalName.ActionPreviewRequested, preview, _actor); 
+    }
+
+    private TurnManager.ActionPreview BuildActionPreview(List<Node> selectedTargets)
+    {
+        var preview = new TurnManager.ActionPreview();
+        if (_currentAction == null || _actor == null)
+        {
+            return preview;
+        }
+
+        ItemData sourceItem = (_currentCommand as ItemBattleCommand)?.Item;
+        var rewrittenTargets = _battleController?.RewriteTargetsFromStatusRules(_actor, _currentAction, sourceItem, selectedTargets) ?? selectedTargets;
+        rewrittenTargets ??= new List<Node>();
+
+        var context = new ActionContext(_currentAction, _actor, rewrittenTargets, sourceItem);
+        ApplyPreviewInitiationModifiers(context);
+
+        float resolvedTickCost = _currentAction.TickCost + context.TickCostAdjustment;
+        resolvedTickCost = Mathf.Max(-TurnManager.TickThreshold + 1f, resolvedTickCost);
+        preview.ActionTickCost = resolvedTickCost;
+
+        AddGuaranteedAppliedStatuses(preview, rewrittenTargets, context);
+        return preview;
+    }
+
+    private void ApplyPreviewInitiationModifiers(ActionContext context)
+    {
+        if (context == null || _actor == null) return;
+
+        // Mirror the initiation phase from BattleMechanics for turn-cost/status preview accuracy.
+        foreach (var modifier in GetOrderedActionModifiersFrom(_actor))
+        {
+            modifier.OnActionInitiated(context, _actor);
+        }
+
+        IEnumerable<Node> allies = _battleController?.GetAllies(_actor) ?? Enumerable.Empty<Node>();
+        foreach (var entry in GetOrderedActionModifiersFromMany(allies.Where(a => a != null && a != _actor)))
+        {
+            entry.Modifier.OnAllyActionInitiated(context, _actor, entry.Owner);
+        }
+    }
+
+    private void AddGuaranteedAppliedStatuses(TurnManager.ActionPreview preview, List<Node> targets, ActionContext context)
+    {
+        if (preview == null || targets == null || context == null) return;
+
+        var entries = new List<StatusEffectChanceEntry>();
+        if (_currentAction?.StatusEffectsOnHit != null)
+        {
+            entries.AddRange(_currentAction.StatusEffectsOnHit);
+        }
+        if (context.ExtraStatusEffectsOnHit != null && context.ExtraStatusEffectsOnHit.Count > 0)
+        {
+            entries.AddRange(context.ExtraStatusEffectsOnHit);
+        }
+        if (entries.Count == 0) return;
+
+        foreach (var target in targets)
+        {
+            if (target == null || !GodotObject.IsInstanceValid(target)) continue;
+            if (!preview.AppliedEffects.TryGetValue(target, out var targetEffects))
+            {
+                targetEffects = new List<StatusEffect>();
+                preview.AppliedEffects[target] = targetEffects;
+            }
+
+            foreach (var entry in entries)
+            {
+                if (entry?.Effect == null) continue;
+                if (entry.ChancePercent < 100f) continue; // Keep preview deterministic.
+
+                if (!targetEffects.Contains(entry.Effect))
+                {
+                    targetEffects.Add(entry.Effect);
+                }
+            }
+        }
+    }
+
+    private struct ModifierOwnerEntry
+    {
+        public Node Owner;
+        public IActionModifier Modifier;
+    }
+
+    private IEnumerable<IActionModifier> GetOrderedActionModifiersFrom(Node owner)
+    {
+        return GetActionModifiersFrom(owner)
+            .OrderByDescending(GetModifierPriority)
+            .ToList();
+    }
+
+    private IEnumerable<ModifierOwnerEntry> GetOrderedActionModifiersFromMany(IEnumerable<Node> owners)
+    {
+        if (owners == null) return Enumerable.Empty<ModifierOwnerEntry>();
+
+        var entries = new List<ModifierOwnerEntry>();
+        foreach (var owner in owners)
+        {
+            if (owner == null) continue;
+            foreach (var modifier in GetActionModifiersFrom(owner))
+            {
+                entries.Add(new ModifierOwnerEntry { Owner = owner, Modifier = modifier });
+            }
+        }
+
+        return entries
+            .OrderByDescending(entry => GetModifierPriority(entry.Modifier))
+            .ToList();
+    }
+
+    private IEnumerable<IActionModifier> GetActionModifiersFrom(Node owner)
+    {
+        if (owner == null) return Enumerable.Empty<IActionModifier>();
+
+        var modifiers = new List<IActionModifier>();
+        modifiers.AddRange(owner.FindChildren("*", recursive: true).OfType<IActionModifier>());
+
+        var statusManager = owner.GetNodeOrNull<StatusEffectManager>(StatusEffectManager.NodeName);
+        if (statusManager != null)
+        {
+            modifiers.AddRange(statusManager.GetActionModifiers().OfType<IActionModifier>());
+        }
+
+        var abilityManager = owner.GetNodeOrNull<AbilityManager>(AbilityManager.NodeName);
+        if (abilityManager != null)
+        {
+            modifiers.AddRange(abilityManager.GetActionModifiers());
+        }
+
+        return modifiers;
+    }
+
+    private static int GetModifierPriority(IActionModifier modifier)
+    {
+        return modifier is IPrioritizedModifier prioritized ? prioritized.Priority : 0;
     }
 
     private void UpdateIndicators(List<Node> currentlyTargeted)

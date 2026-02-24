@@ -1,15 +1,17 @@
-[gd_scene load_steps=21 format=3 uid="uid://cg40606sv55"]
+[gd_scene load_steps=23 format=3 uid="uid://cg40606sv55"]
 
 [ext_resource type="PackedScene" uid="uid://7vqyqph1fwuk" path="res://assets/resources/characters/CharacterTemplate.tscn" id="1_672v4"]
 [ext_resource type="Texture2D" uid="uid://d2hs72wbue50s" path="res://assets/characters/ceira/ceira_new_1.png" id="2_2nsdi"]
 [ext_resource type="Resource" uid="uid://bw5ummbpi0fg3" path="res://assets/resources/characters/ceira/Ceira_Presentation.tres" id="2_fvrya"]
 [ext_resource type="Resource" uid="uid://cf0sodp0rftil" path="res://assets/resources/characters/ceira/ceira_starting_stats.tres" id="3_2nsdi"]
-[ext_resource type="PackedScene" uid="uid://dloy2xq33lywb" path="res://assets/scenes/templates/characters/action_manager.tscn" id="5_p5dt3"]
 [ext_resource type="Script" uid="uid://e81v4n2lmbrf" path="res://scripts/battle/BattleCommand.cs" id="6_oq1o5"]
 [ext_resource type="Resource" uid="uid://5l73s1ktetid" path="res://assets/resources/actions/Magic/Fire.tres" id="7_rs81e"]
 [ext_resource type="Script" uid="uid://cvvakp7v5sci0" path="res://scripts/gameplay/levels/LevelingComponent.cs" id="8_m77l6"]
+[ext_resource type="Resource" uid="uid://c88h8vjvd6v45" path="res://assets/resources/actions/Magic/haste.tres" id="8_tnjsy"]
 [ext_resource type="Resource" uid="uid://do1pmcipim73i" path="res://assets/resources/characters/leveling/standard_level_progression.tres" id="9_0v5ua"]
 [ext_resource type="Script" uid="uid://cmla3sajsrahf" path="res://scripts/gameplay/levels/StatGrowthRule.cs" id="10_0v5ua"]
+[ext_resource type="Script" uid="uid://cvxdrgvt8vkxn" path="res://scripts/battle/BattleCategory.cs" id="10_mvujd"]
+[ext_resource type="Resource" uid="uid://17yafsmyh48i" path="res://assets/resources/actions/menu_ui/Page_MainCommandsDefault.tres" id="11_7vds4"]
 [ext_resource type="Script" uid="uid://bqxj5lwew5tg1" path="res://scripts/gameplay/levels/LevelStatIncrementEntry.cs" id="11_tnjsy"]
 [ext_resource type="Script" uid="uid://brt8ukgksnvmy" path="res://scripts/gameplay/levels/StatIncrement.cs" id="12_7vds4"]
 
@@ -102,10 +104,7 @@ libraries = {
 }
 autoplay = "Idle"
 
-[node name="ActionManager" parent="." index="6" instance=ExtResource("5_p5dt3")]
-LearnedActions = Array[ExtResource("6_oq1o5")]([ExtResource("7_rs81e")])
-
-[node name="LevelingComponent" type="Node" parent="." index="7"]
+[node name="LevelingComponent" type="Node" parent="." index="6"]
 script = ExtResource("8_m77l6")
 Progression = ExtResource("9_0v5ua")
 StatGrowthRules = Array[ExtResource("10_0v5ua")]([SubResource("Resource_mvujd"), SubResource("Resource_32bix")])
@@ -113,3 +112,7 @@ LevelStatIncrements = Array[ExtResource("11_tnjsy")]([SubResource("Resource_nay0
 StartingLevel = 5
 StartingExperience = 111
 metadata/_custom_type_script = "uid://cvvakp7v5sci0"
+
+[node name="ActionManager" parent="." index="7"]
+RootPages = Array[ExtResource("10_mvujd")]([ExtResource("11_7vds4")])
+LearnedActions = Array[ExtResource("6_oq1o5")]([ExtResource("7_rs81e"), ExtResource("8_tnjsy")])

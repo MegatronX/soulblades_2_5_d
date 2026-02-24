@@ -29,6 +29,10 @@ public partial class ActionComponent : RefCounted
         {
             return new ChainActionComponent(chainData);
         }
+        if (data is OverflowCostComponentData overflowCostData)
+        {
+            return new OverflowCostComponent(overflowCostData);
+        }
         // Add other component types here...
         
         // Fallback for components without a specific runtime version.
@@ -86,4 +90,38 @@ public partial class ChainActionComponent : ActionComponent
     }
 
     public override ActionComponent DeepCopy() => new ChainActionComponent(SourceData as ChainActionComponentData);
+}
+
+/// <summary>
+/// Runtime overflow cost payload copied from OverflowCostComponentData.
+/// </summary>
+public partial class OverflowCostComponent : ActionComponent
+{
+    public int Cost { get; set; }
+    public OverflowSpendType SpendType { get; set; } = OverflowSpendType.Utility;
+    public bool IgnorePerRoundSpendLimits { get; set; } = false;
+    public string SpendReason { get; set; } = string.Empty;
+
+    public OverflowCostComponent(OverflowCostComponentData data)
+    {
+        if (data == null) return;
+
+        SourceData = data;
+        Cost = data.Cost;
+        SpendType = data.SpendType;
+        IgnorePerRoundSpendLimits = data.IgnorePerRoundSpendLimits;
+        SpendReason = data.SpendReason;
+    }
+
+    public override ActionComponent DeepCopy()
+    {
+        var copy = new OverflowCostComponent(SourceData as OverflowCostComponentData)
+        {
+            Cost = Cost,
+            SpendType = SpendType,
+            IgnorePerRoundSpendLimits = IgnorePerRoundSpendLimits,
+            SpendReason = SpendReason
+        };
+        return copy;
+    }
 }

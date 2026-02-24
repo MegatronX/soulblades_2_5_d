@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="HexedEdgeStatusEffect" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/HexedEdgeStatusEffect.cs" id="1_hexed_edge"]
+[ext_resource type="Resource" path="res://assets/resources/status_effects/poison/poison.tres" id="2_hexed_debuff"]
+
+[resource]
+script = ExtResource("1_hexed_edge")
+EffectName = "Hexed Edge"
+Description = "Next damaging hit applies a selected debuff with bonus chance."
+Polarity = 1
+MinDurationTurns = 2
+MaxDurationTurns = 2
+DebuffToApply = ExtResource("2_hexed_debuff")
+BaseApplyChancePercent = 100.0
+BonusChancePercent = 30.0

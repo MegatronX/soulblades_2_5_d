@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DamageDealtModifierStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/DamageDealtModifierStatusEffect.cs" id="1_focused"]
+
+[resource]
+script = ExtResource("1_focused")
+EffectName = "Focused"
+Description = "Next magic damage action deals double damage."
+Polarity = 1
+MinDurationTurns = 2
+MaxDurationTurns = 2
+Filter = 2
+OutgoingMultiplier = 2.0
+RequireDamagingAction = true
+ConsumeOnTrigger = true

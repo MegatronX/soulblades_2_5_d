@@ -37,6 +37,11 @@ public partial class DynamicAIStrategy : AIStrategy
 
         foreach (var action in availableActions)
         {
+            if (battleController != null && !battleController.IsActionAllowedForActor(user, action, null, out _))
+            {
+                continue;
+            }
+
             // Determine valid targets
             var potentialTargets = new List<Node>();
             if (action.AllowedTargeting.HasFlag(TargetingType.AnyEnemy)) potentialTargets.AddRange(opponents);

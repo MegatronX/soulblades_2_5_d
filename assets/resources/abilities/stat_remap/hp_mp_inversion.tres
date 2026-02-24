@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="Ability" load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/abilities/Ability.cs" id="1_ability"]
+[ext_resource type="Script" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_effect_logic"]
+[ext_resource type="Script" path="res://scripts/gameplay/effectors/ApplyStatRemap_EffectLogic.cs" id="3_apply_remap"]
+[ext_resource type="Script" path="res://scripts/gameplay/stats/StatRemapRule.cs" id="4_remap_rule"]
+
+[sub_resource type="Resource" id="Resource_hp_to_mp"]
+script = ExtResource("4_remap_rule")
+SourceStat = 0
+TargetStat = 1
+RemapCount = 1
+
+[sub_resource type="Resource" id="Resource_mp_to_hp"]
+script = ExtResource("4_remap_rule")
+SourceStat = 1
+TargetStat = 0
+RemapCount = 1
+
+[sub_resource type="Resource" id="Resource_inversion_effect"]
+script = ExtResource("3_apply_remap")
+Remaps = Array[ExtResource("4_remap_rule")]([SubResource("Resource_hp_to_mp"), SubResource("Resource_mp_to_hp")])
+
+[resource]
+script = ExtResource("1_ability")
+AbilityName = "HP/MP Inversion"
+Description = "Max HP and Max MP lookups are swapped while equipped."
+ApCost = 3
+Effects = Array[ExtResource("2_effect_logic")]([SubResource("Resource_inversion_effect")])
+TriggeredEffects = null

@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="DamageTakenModifierStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/DamageTakenModifierStatusEffect.cs" id="1_defender"]
+
+[resource]
+script = ExtResource("1_defender")
+EffectName = "Defender"
+Description = "Stance: halves incoming damage until start of next turn."
+Polarity = 1
+MinDurationTurns = 2
+MaxDurationTurns = 2
+Filter = 0
+DamageTakenMultiplier = 0.5
+ConsumeOnFirstDamageTrigger = false
+ExpireAtOwnerTurnStartIfUnused = true

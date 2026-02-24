@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ToadStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/ToadStatusEffect.cs" id="1_toad"]
+
+[resource]
+script = ExtResource("1_toad")
+EffectName = "Toad"
+Description = "Heavily reduces combat stats and restricts available actions."
+Polarity = 2
+MinDurationTurns = 2
+MaxDurationTurns = 4
+AttackMultiplier = 0.4
+MagicMultiplier = 0.4
+DefenseMultiplier = 0.8
+AllowItems = true

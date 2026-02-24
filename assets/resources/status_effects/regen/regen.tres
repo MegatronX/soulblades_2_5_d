@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="PercentDotStackingStatusEffect" load_steps=4 format=3 uid="uid://mac85oriombm"]
+
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_ilvfx"]
+[ext_resource type="Script" uid="uid://m1hlhi0iy3i1" path="res://scripts/gameplay/statuseffects/PercentDotStackingStatusEffect.cs" id="1_regen"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_f3svj"]
+
+[resource]
+script = ExtResource("1_regen")
+BasePercentNormal = 0.03
+HealInsteadOfDamage = true
+AddStackOnReapply = false
+EffectName = "Regen"
+Description = "Heals 3% max HP at end of turn. Reapply refreshes duration."
+MinDurationTurns = 3
+MaxDurationTurns = 5
+Polarity = 1

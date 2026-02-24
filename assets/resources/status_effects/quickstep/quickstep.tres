@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="QuickstepStatusEffect" load_steps=4 format=3 uid="uid://dhmuymp5buvtf"]
+
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_omaw0"]
+[ext_resource type="Script" uid="uid://61wx11isgaoh" path="res://scripts/gameplay/statuseffects/QuickstepStatusEffect.cs" id="1_quickstep"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_27nir"]
+
+[resource]
+script = ExtResource("1_quickstep")
+EffectName = "Quickstep"
+Description = "Next action gains priority by reducing tick cost."
+MinDurationTurns = 2
+MaxDurationTurns = 2
+Polarity = 1

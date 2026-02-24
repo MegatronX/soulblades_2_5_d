@@ -14,6 +14,7 @@ public sealed class AbilityEffectContext
 
     public BattleContext BattleContext { get; set; }
     public ActionDirector ActionDirector { get; set; }
+    public OverflowSystem OverflowSystem { get; set; }
     public ActionContext ActionContext { get; set; }
     public ActionResult ActionResult { get; set; }
     public ItemData Item { get; set; }

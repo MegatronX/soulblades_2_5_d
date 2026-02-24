@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="EchoCastStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/EchoCastStatusEffect.cs" id="1_echo_cast"]
+
+[resource]
+script = ExtResource("1_echo_cast")
+EffectName = "Echo Cast"
+Description = "Next spell repeats at 50% potency."
+Polarity = 1
+MinDurationTurns = 2
+MaxDurationTurns = 2
+RepeatPotencyScalar = 0.5

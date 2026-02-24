@@ -44,6 +44,9 @@ public partial class StandardDamageStrategy : DamageStrategy
         // Apply Accumulated Timed Hit Bonus
         rawDamage *= context.TimedHitMultiplier;
 
+        // Apply runtime scalar from statuses/reactions (e.g. Focused, Echo Cast).
+        rawDamage *= context.ActionPowerScalar;
+
         return Mathf.Max(1, Mathf.RoundToInt(rawDamage));
     }
 }

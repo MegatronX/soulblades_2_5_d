@@ -18,6 +18,23 @@ public partial class StatsComponent : Node
     // A list of all active stat modifiers from equipment, status effects, etc.
     private readonly List<StatModifier> _statModifiers = new();
 
+    private sealed class ActiveStatRemap
+    {
+        public StatType SourceStat { get; set; }
+        public StatType TargetStat { get; set; }
+        public int RemapCount { get; set; }
+        public object Source { get; set; }
+        public long Sequence { get; set; }
+    }
+
+    // Active stat remaps applied by abilities/statuses at runtime.
+    private readonly List<ActiveStatRemap> _statRemaps = new();
+    private long _remapSequence = 0;
+    private StatType _currentHpSourceStat = StatType.HP;
+    private StatType _currentMpSourceStat = StatType.MP;
+
+    // Unremapped calculated stat values.
+    private readonly Dictionary<StatType, int> _rawFinalValues = new();
     // A cache for the final calculated stat values.
     private readonly Dictionary<StatType, int> _finalValues = new();
     private bool _isDirty = true; // Flag to recalculate stats only when needed.
@@ -73,7 +90,8 @@ public partial class StatsComponent : Node
 
     public int GetBaseStatValue(StatType statType)
     {
-        return _characterBaseStats.GetValueOrDefault(statType, 0);
+        StatType resolvedStat = ResolveRemappedStat(statType);
+        return _characterBaseStats.GetValueOrDefault(resolvedStat, 0);
     }
 
     public int GetStatValueWithoutModifiersFromSource(StatType statType, object source)
@@ -82,7 +100,8 @@ public partial class StatsComponent : Node
         {
             RecalculateAllStats();
         }
-        return (int)CalculateSingleStat(statType, _statModifiers.Where(m => m.StatToModify == statType && m.Source != source).ToList());
+        StatType resolvedStat = ResolveRemappedStat(statType);
+        return (int)CalculateSingleStat(resolvedStat, _statModifiers.Where(m => m.StatToModify == resolvedStat && m.Source != source).ToList());
     }
 
     /// <summary>
@@ -100,6 +119,45 @@ public partial class StatsComponent : Node
     public void RemoveAllModifiersFromSource(object source)
     {
         _statModifiers.RemoveAll(mod => mod.Source == source);
+        _isDirty = true;
+    }
+
+    /// <summary>
+    /// Remaps lookups for targetStat to resolve using sourceStat.
+    /// If multiple remaps exist for a target stat, highest RemapCount wins.
+    /// If tied, latest-applied remap wins.
+    /// </summary>
+    public void AddStatRemap(StatType sourceStat, StatType targetStat, int remapCount = 1, object source = null)
+    {
+        if (remapCount <= 0) return;
+
+        _statRemaps.Add(new ActiveStatRemap
+        {
+            SourceStat = sourceStat,
+            TargetStat = targetStat,
+            RemapCount = remapCount,
+            Source = source,
+            Sequence = ++_remapSequence
+        });
+        _isDirty = true;
+    }
+
+    /// <summary>
+    /// Removes all stat remaps that originated from a source.
+    /// </summary>
+    public void RemoveAllStatRemapsFromSource(object source)
+    {
+        int removed = _statRemaps.RemoveAll(remap => remap.Source == source);
+        if (removed > 0)
+        {
+            _isDirty = true;
+        }
+    }
+
+    public void ClearAllStatRemaps()
+    {
+        if (_statRemaps.Count == 0) return;
+        _statRemaps.Clear();
         _isDirty = true;
     }
 
@@ -140,9 +198,14 @@ public partial class StatsComponent : Node
     /// <returns>The predicted final value of the stat.</returns>
     public int PredictStatValue(StatType statType, StatModifier hypotheticalModifier)
     {
+        StatType resolvedStat = ResolveRemappedStat(statType);
         // Create a temporary list of modifiers including the new one.
-        var hypotheticalModifiers = new List<StatModifier>(_statModifiers) { hypotheticalModifier };
-        return (int)CalculateSingleStat(statType, hypotheticalModifiers);
+        var hypotheticalModifiers = new List<StatModifier>(_statModifiers);
+        if (hypotheticalModifier != null)
+        {
+            hypotheticalModifiers.Add(hypotheticalModifier);
+        }
+        return (int)CalculateSingleStat(resolvedStat, hypotheticalModifiers.Where(m => m != null && m.StatToModify == resolvedStat).ToList());
     }
 
     private void InitializeStats()
@@ -169,6 +232,8 @@ public partial class StatsComponent : Node
         // Set current volatile stats to their maximums upon initialization.
         CurrentHP = GetStatValue(StatType.HP);
         CurrentMP = GetStatValue(StatType.MP);
+        _currentHpSourceStat = ResolveRemappedStat(StatType.HP);
+        _currentMpSourceStat = ResolveRemappedStat(StatType.MP);
     }
 
     private void RecalculateAllStats()
@@ -177,11 +242,19 @@ public partial class StatsComponent : Node
 
         // Create a temporary copy of the old values to detect changes.
         var oldFinalValues = new Dictionary<StatType, int>(_finalValues);
+        _rawFinalValues.Clear();
         _finalValues.Clear();
 
         foreach (StatType statType in _characterBaseStats.Keys)
         {
             int newValue = (int)CalculateSingleStat(statType, _statModifiers.Where(m => m.StatToModify == statType).ToList());
+            _rawFinalValues[statType] = newValue;
+        }
+
+        foreach (StatType statType in _characterBaseStats.Keys)
+        {
+            StatType resolvedStat = ResolveRemappedStat(statType);
+            int newValue = _rawFinalValues.GetValueOrDefault(resolvedStat, 0);
             _finalValues[statType] = newValue;
 
             // If the calculated value has changed, emit a signal.
@@ -190,11 +263,19 @@ public partial class StatsComponent : Node
                 EmitSignal(SignalName.StatValueChanged, (long)statType, newValue);
             }
         }
+        int oldHP = CurrentHP;
+        int oldMP = CurrentMP;
+
+        // If remap bindings changed, remap current resource pools so "effective"
+        // HP/MP values remain consistent with the newly requested stat mapping.
+        StatType resolvedHpSource = ResolveRemappedStat(StatType.HP);
+        StatType resolvedMpSource = ResolveRemappedStat(StatType.MP);
+        RemapCurrentResourcePools(resolvedHpSource, resolvedMpSource);
+
         _isDirty = false;
 
         // After recalculating, ensure current HP/MP don't exceed the new maximums.
         // This handles cases where a debuff might lower a character's Max HP.
-        int oldHP = CurrentHP;
         int maxHP = _finalValues.GetValueOrDefault(StatType.HP, 0);
         CurrentHP = Mathf.Clamp(CurrentHP, 0, maxHP);
         if (oldHP != CurrentHP)
@@ -202,7 +283,6 @@ public partial class StatsComponent : Node
             EmitSignal(SignalName.CurrentHPChanged, CurrentHP, maxHP);
         }
 
-        int oldMP = CurrentMP;
         int maxMP = _finalValues.GetValueOrDefault(StatType.MP, 0);
         CurrentMP = Mathf.Clamp(CurrentMP, 0, maxMP);
         if (oldMP != CurrentMP)
@@ -243,6 +323,55 @@ public partial class StatsComponent : Node
 
     public IReadOnlyDictionary<StatType, int> GetStatDictionary()
     {
+        if (_isDirty)
+        {
+            RecalculateAllStats();
+        }
         return _finalValues;
+    }
+
+    private StatType ResolveRemappedStat(StatType requestedStat)
+    {
+        if (_statRemaps.Count == 0) return requestedStat;
+
+        ActiveStatRemap winningRemap = null;
+        foreach (var remap in _statRemaps)
+        {
+            if (remap.TargetStat != requestedStat) continue;
+
+            if (winningRemap == null ||
+                remap.RemapCount > winningRemap.RemapCount ||
+                (remap.RemapCount == winningRemap.RemapCount && remap.Sequence > winningRemap.Sequence))
+            {
+                winningRemap = remap;
+            }
+        }
+
+        return winningRemap?.SourceStat ?? requestedStat;
+    }
+
+    private void RemapCurrentResourcePools(StatType newHpSourceStat, StatType newMpSourceStat)
+    {
+        if (_currentHpSourceStat == newHpSourceStat && _currentMpSourceStat == newMpSourceStat)
+        {
+            return;
+        }
+
+        var sourceValues = new Dictionary<StatType, int>();
+        sourceValues[_currentHpSourceStat] = CurrentHP;
+        sourceValues[_currentMpSourceStat] = CurrentMP;
+
+        if (sourceValues.TryGetValue(newHpSourceStat, out int remappedHp))
+        {
+            CurrentHP = remappedHp;
+        }
+
+        if (sourceValues.TryGetValue(newMpSourceStat, out int remappedMp))
+        {
+            CurrentMP = remappedMp;
+        }
+
+        _currentHpSourceStat = newHpSourceStat;
+        _currentMpSourceStat = newMpSourceStat;
     }
 }

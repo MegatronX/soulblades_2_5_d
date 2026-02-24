@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="FloatStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/FloatStatusEffect.cs" id="1_float"]
+
+[resource]
+script = ExtResource("1_float")
+EffectName = "Float"
+Description = "Reduces earth damage and can ignore ground hazard ticks."
+Polarity = 1
+MinDurationTurns = 3
+MaxDurationTurns = 5
+EarthDamageTakenMultiplier = 0.67
+IgnoreGroundHazardTicks = true

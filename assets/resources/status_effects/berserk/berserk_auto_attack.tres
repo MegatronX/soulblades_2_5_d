@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BerserkAutoAttackStatusEffect" load_steps=5 format=3 uid="uid://nufhhe0oua8c"]
+
+[ext_resource type="Script" uid="uid://24yrhhaoaajm" path="res://scripts/gameplay/statuseffects/BerserkAutoAttackStatusEffect.cs" id="1_berserk_auto"]
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="2_5n7yg"]
+[ext_resource type="Resource" uid="uid://djr07cuyi6m66" path="res://assets/resources/actions/Attack.tres" id="2_attack"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="3_qohp0"]
+
+[resource]
+script = ExtResource("1_berserk_auto")
+BasicAttackAction = ExtResource("2_attack")
+AttackMultiplier = 1.33
+SpeedMultiplier = 1.2
+DefenseMultiplier = 0.85
+EffectName = "Berserk (Frenzy)"
+Description = "Increases offense and speed, then auto-selects basic attack."
+MinDurationTurns = 2
+MaxDurationTurns = 4

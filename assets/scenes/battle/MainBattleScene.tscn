@@ -1,4 +1,4 @@
-[gd_scene load_steps=38 format=3 uid="uid://ccd7ai2lpxylm"]
+[gd_scene load_steps=39 format=3 uid="uid://ccd7ai2lpxylm"]
 
 [ext_resource type="Script" uid="uid://duqljtammbdvq" path="res://scripts/mechanics/turns/TurnManager.cs" id="1_23ekb"]
 [ext_resource type="PackedScene" uid="uid://ddbhgeh1rfpoe" path="res://assets/scenes/battle/ui/TurnOrderPreviewUI.tscn" id="2_2uhgy"]
@@ -27,6 +27,7 @@
 [ext_resource type="Script" uid="uid://dud7m0q86em5m" path="res://scripts/audio/SceneAudioController.cs" id="21_jimiy"]
 [ext_resource type="Script" uid="uid://cgpkraak8my5t" path="res://scripts/gameplay/experimtenal/ChargeSystem.cs" id="23_sb4i4"]
 [ext_resource type="PackedScene" uid="uid://c2j0f2t5b8j7g" path="res://assets/scenes/battle/ui/BattlePartyVisualizer.tscn" id="25_g5m2s"]
+[ext_resource type="Script" path="res://scripts/gameplay/overflow/OverflowSystem.cs" id="26_7m2jf"]
 
 [sub_resource type="Resource" id="Resource_utwf6"]
 script = ExtResource("5_65ea0")
@@ -96,7 +97,7 @@ script = ExtResource("3_f3le5")
 
 [node name="AllyTeamContainer" type="Node3D" parent="."]
 
-[node name="BattleController" type="Node" parent="." node_paths=PackedStringArray("_playerTeamContainer", "_enemyTeamContainer", "_allyTeamContainer", "_turnOrderPreviewUI", "_actionDirector", "_chargeSystem", "BattleCamera")]
+[node name="BattleController" type="Node" parent="." node_paths=PackedStringArray("_playerTeamContainer", "_enemyTeamContainer", "_allyTeamContainer", "_turnOrderPreviewUI", "_actionDirector", "_chargeSystem", "_overflowSystem", "BattleCamera")]
 script = ExtResource("4_w6hkx")
 _playerTeamContainer = NodePath("../PlayerTeamContainer")
 _enemyTeamContainer = NodePath("../EnemyTeamContainer")
@@ -106,6 +107,7 @@ _turnOrderPreviewUI = NodePath("../TurnOrderPreviewUI")
 _battleResultsOverlayScene = ExtResource("5_2xjdu")
 _actionDirector = NodePath("../ActionDirector")
 _chargeSystem = NodePath("../ChargeCounterSystem")
+_overflowSystem = NodePath("../OverflowSystem")
 _placementSettings = SubResource("Resource_utwf6")
 BattleCamera = NodePath("../BattleCamera")
 
@@ -154,9 +156,10 @@ script = ExtResource("9_7ovj4")
 
 [node name="BattleMenu" parent="BattleUI" instance=ExtResource("10_wcpqv")]
 
-[node name="BattlePartyVisualizer" parent="BattleUI" node_paths=PackedStringArray("_battleController", "_chargeSystem") instance=ExtResource("25_g5m2s")]
+[node name="BattlePartyVisualizer" parent="BattleUI" node_paths=PackedStringArray("_battleController", "_chargeSystem", "_overflowSystem") instance=ExtResource("25_g5m2s")]
 _battleController = NodePath("../../BattleController")
 _chargeSystem = NodePath("../../ChargeCounterSystem")
+_overflowSystem = NodePath("../../OverflowSystem")
 
 [node name="TargetSelectionController" type="Node" parent="." node_paths=PackedStringArray("_playerTeamContainer", "_enemyTeamContainer", "_allyTeamContainer")]
 script = ExtResource("11_rur5o")
@@ -171,3 +174,6 @@ AttemptToPlayBattleMusic = true
 
 [node name="ChargeCounterSystem" type="Node" parent="."]
 script = ExtResource("23_sb4i4")
+
+[node name="OverflowSystem" type="Node" parent="."]
+script = ExtResource("26_7m2jf")

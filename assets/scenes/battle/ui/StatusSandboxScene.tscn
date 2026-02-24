@@ -1,0 +1,633 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/battle/StatusSandboxController.cs" id="1_status_sandbox"]
+[ext_resource type="PackedScene" path="res://assets/resources/characters/ceira/ceira.tscn" id="2_ceira"]
+[ext_resource type="PackedScene" path="res://assets/resources/characters/goblin_lv5/goblin_lv5_animated.tscn" id="3_goblin"]
+[ext_resource type="PackedScene" path="res://assets/resources/characters/CharacterTemplate.tscn" id="4_template"]
+[ext_resource type="Resource" path="res://assets/resources/characters/ceira/ceira_starting_stats.tres" id="5_base_stats"]
+
+[node name="StatusSandboxScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_status_sandbox")
+CharacterSceneLibrary = Array[PackedScene]([ExtResource("2_ceira"), ExtResource("3_goblin"), ExtResource("4_template")])
+DefaultActorScene = ExtResource("2_ceira")
+DefaultTargetScene = ExtResource("3_goblin")
+FallbackBaseStats = ExtResource("5_base_stats")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0588235, 0.0627451, 0.0862745, 1)
+
+[node name="SandboxWorld" type="Node3D" parent="."]
+
+[node name="PlayerAnchor" type="Node3D" parent="SandboxWorld"]
+position = Vector3(-2.5, 0, 0)
+
+[node name="EnemyAnchor" type="Node3D" parent="SandboxWorld"]
+position = Vector3(2.5, 0, 0)
+
+[node name="AllyAnchor" type="Node3D" parent="SandboxWorld"]
+position = Vector3(-5, 0, 0)
+
+[node name="Camera3D" type="Camera3D" parent="SandboxWorld"]
+current = true
+position = Vector3(0, 3.6, 10)
+rotation = Vector3(-0.25, 0, 0)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SandboxWorld"]
+position = Vector3(0, 5, 0)
+rotation = Vector3(-0.8, 0.8, 0)
+light_energy = 1.15
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainSplit" type="HSplitContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+split_offset = 630
+
+[node name="LeftScroll" type="ScrollContainer" parent="UI/MainSplit"]
+custom_minimum_size = Vector2(620, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="LeftPanel" type="VBoxContainer" parent="UI/MainSplit/LeftScroll"]
+custom_minimum_size = Vector2(610, 980)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="SetupPanel" type="PanelContainer" parent="UI/MainSplit/LeftScroll/LeftPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body"]
+layout_mode = 2
+text = "Character Setup"
+
+[node name="ActorRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActorLabel" type="Label" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body/ActorRow"]
+layout_mode = 2
+text = "Actor"
+
+[node name="ActorSceneSelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body/ActorRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RespawnActorButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body/ActorRow"]
+layout_mode = 2
+text = "Respawn"
+tooltip_text = "Spawn or rebuild Actor using the selected scene."
+
+[node name="TargetRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TargetLabel" type="Label" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body/TargetRow"]
+layout_mode = 2
+text = "Target"
+
+[node name="TargetSceneSelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body/TargetRow"]
+custom_minimum_size = Vector2(280, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RespawnTargetButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body/TargetRow"]
+layout_mode = 2
+text = "Respawn"
+tooltip_text = "Spawn or rebuild Target using the selected scene."
+
+[node name="RespawnBothButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body"]
+layout_mode = 2
+text = "Respawn Both"
+tooltip_text = "Respawn both units and reset sandbox charge/overflow state."
+
+[node name="SummaryLabel" type="Label" parent="UI/MainSplit/LeftScroll/LeftPanel/SetupPanel/Body"]
+layout_mode = 2
+text = "Actor: (none) | Target: (none)"
+
+[node name="StatusPanel" type="PanelContainer" parent="UI/MainSplit/LeftScroll/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body"]
+layout_mode = 2
+text = "Status Effects"
+
+[node name="StatusControlRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatusSubjectSelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body/StatusControlRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+
+[node name="StatusSelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body/StatusControlRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatusButtonRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ApplyStatusButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body/StatusButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Apply"
+tooltip_text = "Apply selected status to selected subject (Actor or Target)."
+
+[node name="RemoveStatusButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body/StatusButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Remove"
+tooltip_text = "Remove selected status from selected subject."
+
+[node name="ClearStatusesButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body/StatusButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Clear Subject"
+tooltip_text = "Remove all active statuses from selected subject."
+
+[node name="StatusListsRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body"]
+custom_minimum_size = Vector2(0, 130)
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActorStatusList" type="ItemList" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body/StatusListsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="TargetStatusList" type="ItemList" parent="UI/MainSplit/LeftScroll/LeftPanel/StatusPanel/Body/StatusListsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="TurnPanel" type="PanelContainer" parent="UI/MainSplit/LeftScroll/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/TurnPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftScroll/LeftPanel/TurnPanel/Body"]
+layout_mode = 2
+text = "Turn Simulation"
+
+[node name="TurnControlRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/TurnPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TurnSubjectSelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/TurnPanel/Body/TurnControlRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+
+[node name="TurnButtonRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/TurnPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TurnStartButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/TurnPanel/Body/TurnButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Turn Start"
+tooltip_text = "Run OnTurnStart status hooks and TurnStart ability triggers."
+
+[node name="TurnEndButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/TurnPanel/Body/TurnButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Turn End"
+tooltip_text = "Run OnTurnEnd status hooks and TurnEnd ability triggers."
+
+[node name="FullTurnButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/TurnPanel/Body/TurnButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Full Turn"
+tooltip_text = "Run Turn Start, Turn End, then commit overflow turn progression."
+
+[node name="CommitOverflowTurnButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/TurnPanel/Body/TurnButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Commit Overflow Turn"
+tooltip_text = "Advance Overflow round/decay tracking as if this unit committed a turn."
+
+[node name="StatsPanel" type="PanelContainer" parent="UI/MainSplit/LeftScroll/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body"]
+layout_mode = 2
+text = "HP/MP Controls"
+
+[node name="StatSubjectRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatSubjectSelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body/StatSubjectRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+
+[node name="StatSetRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SetHpSpin" type="SpinBox" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body/StatSetRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+max_value = 99999.0
+value = 100.0
+
+[node name="SetHpButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body/StatSetRow"]
+layout_mode = 2
+text = "Set HP"
+tooltip_text = "Set selected subject HP to the Set HP value."
+
+[node name="SetMpSpin" type="SpinBox" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body/StatSetRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+max_value = 99999.0
+value = 50.0
+
+[node name="SetMpButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body/StatSetRow"]
+layout_mode = 2
+text = "Set MP"
+tooltip_text = "Set selected subject MP to the Set MP value."
+
+[node name="StatDeltaRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="StatAmountSpin" type="SpinBox" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body/StatDeltaRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 99999.0
+value = 25.0
+
+[node name="DamageButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body/StatDeltaRow"]
+layout_mode = 2
+text = "Damage"
+tooltip_text = "Apply direct HP damage using the amount value."
+
+[node name="HealButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body/StatDeltaRow"]
+layout_mode = 2
+text = "Heal"
+tooltip_text = "Apply direct HP healing using the amount value."
+
+[node name="GainMpButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body/StatDeltaRow"]
+layout_mode = 2
+text = "MP+"
+tooltip_text = "Restore MP using amount (includes incoming MP-restore status modifiers)."
+
+[node name="SpendMpButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/StatsPanel/Body/StatDeltaRow"]
+layout_mode = 2
+text = "MP-"
+tooltip_text = "Spend MP using the amount value."
+
+[node name="AbilityPanel" type="PanelContainer" parent="UI/MainSplit/LeftScroll/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel/Body"]
+layout_mode = 2
+text = "Ability Controls"
+
+[node name="AbilityControlRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AbilitySubjectSelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel/Body/AbilityControlRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+
+[node name="AbilitySelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel/Body/AbilityControlRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AbilityButtonRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EquipAbilityButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel/Body/AbilityButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Learn + Equip"
+tooltip_text = "Learn and equip selected ability on selected subject."
+
+[node name="UnequipAbilityButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel/Body/AbilityButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Unequip"
+tooltip_text = "Unequip selected ability from selected subject."
+
+[node name="AbilityTriggerRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AbilityTriggerSelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel/Body/AbilityTriggerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TriggerAbilityButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/AbilityPanel/Body/AbilityTriggerRow"]
+layout_mode = 2
+text = "Trigger"
+tooltip_text = "Manually fire the selected ability trigger on selected subject."
+
+[node name="ResourcesPanel" type="PanelContainer" parent="UI/MainSplit/LeftScroll/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body"]
+layout_mode = 2
+text = "Charge + Overflow"
+
+[node name="ResourceSubjectRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ResourceSubjectSelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/ResourceSubjectRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+
+[node name="ChargeRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ChargeAmountSpin" type="SpinBox" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/ChargeRow"]
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+min_value = 0.0
+max_value = 99999.0
+value = 5.0
+
+[node name="AddChargeButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/ChargeRow"]
+layout_mode = 2
+text = "Charge +"
+tooltip_text = "Add charge to selected subject."
+
+[node name="SpendChargeButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/ChargeRow"]
+layout_mode = 2
+text = "Charge -"
+tooltip_text = "Spend charge from selected subject."
+
+[node name="SetChargeButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/ChargeRow"]
+layout_mode = 2
+text = "Charge ="
+tooltip_text = "Set selected subject charge to the exact amount."
+
+[node name="OverflowRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="OverflowSideSelect" type="OptionButton" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/OverflowRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+
+[node name="OverflowAmountSpin" type="SpinBox" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/OverflowRow"]
+custom_minimum_size = Vector2(110, 0)
+layout_mode = 2
+min_value = 0.0
+max_value = 999999.0
+value = 100.0
+
+[node name="AddOverflowButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/OverflowRow"]
+layout_mode = 2
+text = "Overflow +"
+tooltip_text = "Add Overflow to the selected side."
+
+[node name="SpendOverflowButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/OverflowRow"]
+layout_mode = 2
+text = "Overflow -"
+tooltip_text = "Spend Overflow (utility spend type) from selected side."
+
+[node name="SetOverflowButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/OverflowRow"]
+layout_mode = 2
+text = "Overflow ="
+tooltip_text = "Set selected side Overflow to the exact amount."
+
+[node name="OverflowEventRow" type="HBoxContainer" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="OverflowPerfectHitButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/OverflowEventRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Perfect Hit"
+tooltip_text = "Emit PerfectTimedHit overflow generation event."
+
+[node name="OverflowPerfectGuardButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/OverflowEventRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Perfect Guard"
+tooltip_text = "Emit PerfectTimedGuard overflow generation event."
+
+[node name="OverflowOverhealButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/OverflowEventRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Overheal"
+tooltip_text = "Emit Overheal overflow generation event using overflow amount."
+
+[node name="OverflowMpRestoreButton" type="Button" parent="UI/MainSplit/LeftScroll/LeftPanel/ResourcesPanel/Body/OverflowEventRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "MP Restore"
+tooltip_text = "Emit MP-restored overflow generation event using overflow amount."
+
+[node name="RightPanel" type="VBoxContainer" parent="UI/MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="ActionPanel" type="PanelContainer" parent="UI/MainSplit/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/RightPanel/ActionPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/RightPanel/ActionPanel/Body"]
+layout_mode = 2
+text = "Action + Menu Simulation"
+
+[node name="ActionUnitRow" type="HBoxContainer" parent="UI/MainSplit/RightPanel/ActionPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActionAttackerSelect" type="OptionButton" parent="UI/MainSplit/RightPanel/ActionPanel/Body/ActionUnitRow"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+
+[node name="ActionDefenderSelect" type="OptionButton" parent="UI/MainSplit/RightPanel/ActionPanel/Body/ActionUnitRow"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+
+[node name="ActionValueRow" type="HBoxContainer" parent="UI/MainSplit/RightPanel/ActionPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActionPowerSpin" type="SpinBox" parent="UI/MainSplit/RightPanel/ActionPanel/Body/ActionValueRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 999.0
+value = 30.0
+
+[node name="ActionCritSpin" type="SpinBox" parent="UI/MainSplit/RightPanel/ActionPanel/Body/ActionValueRow"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+min_value = 0.0
+max_value = 100.0
+value = 5.0
+
+[node name="ActionButtonRow" type="HBoxContainer" parent="UI/MainSplit/RightPanel/ActionPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SimulatePhysicalButton" type="Button" parent="UI/MainSplit/RightPanel/ActionPanel/Body/ActionButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sim Phys"
+tooltip_text = "Simulate a physical action with current power/crit values and status rules."
+
+[node name="SimulateMagicButton" type="Button" parent="UI/MainSplit/RightPanel/ActionPanel/Body/ActionButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sim Mag"
+tooltip_text = "Simulate a magical action with current power/crit values and status rules."
+
+[node name="SimulateHealButton" type="Button" parent="UI/MainSplit/RightPanel/ActionPanel/Body/ActionButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sim Heal"
+tooltip_text = "Simulate a heal action with current power value and status rules."
+
+[node name="MenuButtonRow" type="HBoxContainer" parent="UI/MainSplit/RightPanel/ActionPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RefreshMenuButton" type="Button" parent="UI/MainSplit/RightPanel/ActionPanel/Body/MenuButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Refresh Menu"
+tooltip_text = "Rebuild action list from selected attacker's ActionManager."
+
+[node name="ValidateMenuActionButton" type="Button" parent="UI/MainSplit/RightPanel/ActionPanel/Body/MenuButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Validate"
+tooltip_text = "Validate selected menu action against status rules and Overflow costs."
+
+[node name="SimulateMenuActionButton" type="Button" parent="UI/MainSplit/RightPanel/ActionPanel/Body/MenuButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Sim Selected"
+tooltip_text = "Simulate the selected menu action against selected defender."
+
+[node name="MenuActionList" type="ItemList" parent="UI/MainSplit/RightPanel/ActionPanel/Body"]
+custom_minimum_size = Vector2(0, 170)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="MenuValidationLabel" type="Label" parent="UI/MainSplit/RightPanel/ActionPanel/Body"]
+layout_mode = 2
+text = "Validation:"
+autowrap_mode = 2
+
+[node name="StatePanel" type="PanelContainer" parent="UI/MainSplit/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/RightPanel/StatePanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/RightPanel/StatePanel/Body"]
+layout_mode = 2
+text = "Live State"
+
+[node name="ActorStateLabel" type="Label" parent="UI/MainSplit/RightPanel/StatePanel/Body"]
+layout_mode = 2
+text = "Actor:"
+autowrap_mode = 2
+
+[node name="TargetStateLabel" type="Label" parent="UI/MainSplit/RightPanel/StatePanel/Body"]
+layout_mode = 2
+text = "Target:"
+autowrap_mode = 2
+
+[node name="ResourceStateLabel" type="Label" parent="UI/MainSplit/RightPanel/StatePanel/Body"]
+layout_mode = 2
+text = "Resources:"
+autowrap_mode = 2
+
+[node name="LogPanel" type="PanelContainer" parent="UI/MainSplit/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/RightPanel/LogPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/RightPanel/LogPanel/Body"]
+layout_mode = 2
+text = "Event Log"
+
+[node name="LogLabel" type="RichTextLabel" parent="UI/MainSplit/RightPanel/LogPanel/Body"]
+custom_minimum_size = Vector2(0, 220)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = false
+scroll_following = true
+text = ""

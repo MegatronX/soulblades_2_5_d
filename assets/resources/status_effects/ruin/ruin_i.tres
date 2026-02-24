@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DamageTakenModifierStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/DamageTakenModifierStatusEffect.cs" id="1_ruin_i"]
+
+[resource]
+script = ExtResource("1_ruin_i")
+EffectName = "Ruin I"
+Description = "Target takes 25% more magical damage."
+Polarity = 2
+MinDurationTurns = 2
+MaxDurationTurns = 4
+Filter = 2
+DamageTakenMultiplier = 1.25

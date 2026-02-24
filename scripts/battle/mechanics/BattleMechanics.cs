@@ -11,12 +11,17 @@ using System.Linq;
 public partial class BattleMechanics : Node
 {
     [Export] private CalculationStrategy _defaultStrategy;
+    [Export] private OverflowSystem _overflowSystem;
     
     private IRandomNumberGenerator _rng;
 
     public override void _Ready()
     {
         _rng = new GodotRandomNumberGenerator();
+        if (_overflowSystem == null)
+        {
+            _overflowSystem = GetTree()?.CurrentScene?.FindChild("OverflowSystem", true, false) as OverflowSystem;
+        }
     }
 
     public void SetRNG(IRandomNumberGenerator rng)
@@ -107,7 +112,7 @@ public partial class BattleMechanics : Node
             if (result.IsHit)
             {
                 // 2. Crit Calculation (skip for fixed damage to avoid randomness)
-                if (!ctx.SourceAction.Flags.HasFlag(ActionFlags.FixedDamage))
+                if (StatusRuleUtils.ShouldResolveDamage(ctx) && !ctx.SourceAction.Flags.HasFlag(ActionFlags.FixedDamage))
                 {
                     result.IsCritical = strategy.CalculateCrit(ctx, ctx.CurrentTarget, _rng);
                 }
@@ -138,17 +143,23 @@ public partial class BattleMechanics : Node
 
             if (result.IsHit)
             {
+                bool shouldResolveDamage = StatusRuleUtils.ShouldResolveDamage(ctx);
+
                 // 3. Final Damage Calculation (includes Timed Hit flags from animation phase)
-                if (strategy != null)
+                if (shouldResolveDamage && strategy != null)
                 {
                     result.FinalDamage = strategy.CalculateDamage(ctx, ctx.CurrentTarget, result, _rng);
+                }
+                else
+                {
+                    result.FinalDamage = 0;
                 }
 
                 // Apply Elemental Resistances
                 var damageComponent = ctx.GetComponent<DamageComponent>();
                 var elementalComponent = ctx.CurrentTarget.GetNodeOrNull<ElementalComponent>(ElementalComponent.NodeName);
 
-                if (damageComponent != null && elementalComponent != null && damageComponent.ElementalWeights.Count > 0)
+                if (shouldResolveDamage && damageComponent != null && elementalComponent != null && damageComponent.ElementalWeights.Count > 0)
                 {
                     float totalMultiplier = 0f;
                     float totalWeight = 0f;
@@ -170,13 +181,31 @@ public partial class BattleMechanics : Node
                     result.FinalDamage = Mathf.RoundToInt(result.FinalDamage * totalMultiplier);
                 }
 
-                ApplyAbilityDamageCalculated(ctx, result);
+                if (shouldResolveDamage)
+                {
+                    ApplyAbilityDamageCalculated(ctx, result);
+                }
 
                 // 4. Apply to Stats
                 var targetStats = ctx.CurrentTarget.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
-                if (targetStats != null)
+                if (shouldResolveDamage && targetStats != null)
                 {
+                    int beforeHp = targetStats.CurrentHP;
+                    int maxHp = targetStats.GetStatValue(StatType.HP);
                     targetStats.ModifyCurrentHP(-result.FinalDamage);
+
+                    if (result.IsHeal)
+                    {
+                        int requestedHeal = -result.FinalDamage;
+                        int effectiveHeal = Mathf.Clamp(maxHp - beforeHp, 0, requestedHeal);
+                        result.HealingAmount = effectiveHeal;
+
+                        int overheal = Mathf.Max(0, requestedHeal - effectiveHeal);
+                        if (overheal > 0)
+                        {
+                            _overflowSystem?.ReportOverheal(ctx.Initiator, ctx.CurrentTarget, overheal);
+                        }
+                    }
                 }
 
                 // 4.5 Apply on-hit status effects
@@ -184,7 +213,7 @@ public partial class BattleMechanics : Node
 
                 // 5. Log Runtime Events
                 if (result.IsTimedHit) ctx.RuntimeEvents.Add("TimedHitSuccess");
-                if (result.IsCritical) ctx.RuntimeEvents.Add("CriticalHit");
+                if (shouldResolveDamage && result.IsCritical) ctx.RuntimeEvents.Add("CriticalHit");
             }
         }
     }
@@ -211,17 +240,26 @@ public partial class BattleMechanics : Node
         {
             ActionContext = ctx,
             ActionResult = result,
-            Item = ctx?.SourceItem
+            Item = ctx?.SourceItem,
+            OverflowSystem = _overflowSystem
         };
         abilityManager.ApplyTrigger(trigger, effectContext);
     }
 
     private void TryApplyStatusEffectsOnHit(ActionContext context, ActionResult result)
     {
-        if (context?.SourceAction?.StatusEffectsOnHit == null) return;
+        if (context == null) return;
         if (!result.IsHit) return;
 
-        var entries = context.SourceAction.StatusEffectsOnHit;
+        var entries = new List<StatusEffectChanceEntry>();
+        if (context.SourceAction?.StatusEffectsOnHit != null)
+        {
+            entries.AddRange(context.SourceAction.StatusEffectsOnHit);
+        }
+        if (context.ExtraStatusEffectsOnHit != null && context.ExtraStatusEffectsOnHit.Count > 0)
+        {
+            entries.AddRange(context.ExtraStatusEffectsOnHit);
+        }
         if (entries.Count == 0) return;
 
         var target = context.CurrentTarget;
@@ -236,8 +274,12 @@ public partial class BattleMechanics : Node
 
             float chance = Mathf.Clamp(entry.ChancePercent, 0f, 100f);
             if (chance <= 0f) continue;
-
-            statusManager.TryApplyEffect(entry.Effect, null, chance, _rng);
+            bool hadEffect = statusManager.HasEffect(entry.Effect);
+            bool applied = statusManager.TryApplyEffect(entry.Effect, null, chance, _rng);
+            if (applied && !hadEffect)
+            {
+                _overflowSystem?.ReportUniqueDebuffApplied(context.Initiator, target, entry.Effect);
+            }
         }
     }
 
@@ -246,6 +288,8 @@ public partial class BattleMechanics : Node
     /// </summary>
     public void ApplyCosts(ActionContext context)
     {
+        if (context?.SkipActionCosts == true) return;
+
         // Example: Check for a CostComponent in the action
         // var costComp = context.GetComponent<CostComponent>();
         // if (costComp != null) { ... deduct MP ... }
@@ -267,7 +311,8 @@ public partial class BattleMechanics : Node
                     ActionContext = context,
                     Item = context.SourceItem,
                     Amount = Mathf.RoundToInt(chance),
-                    Multiplier = 1.0f
+                    Multiplier = 1.0f,
+                    OverflowSystem = _overflowSystem
                 };
                 abilityManager.ApplyTrigger(AbilityTrigger.ItemConsume, effectContext);
                 if (effectContext.Cancel)

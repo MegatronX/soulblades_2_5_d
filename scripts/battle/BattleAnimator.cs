@@ -367,6 +367,12 @@ public partial class BattleAnimator : Node
             return;
         }
 
+        if (result.TotalDamage <= 0)
+        {
+            instance.QueueFree();
+            return;
+        }
+
         instance.Configure(target, result.TotalDamage, result.IsCritical, result.IsHeal, rating, result.DamageElements, fallback);
     }
 

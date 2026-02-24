@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DamageTakenModifierStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/DamageTakenModifierStatusEffect.cs" id="1_shell"]
+
+[resource]
+script = ExtResource("1_shell")
+EffectName = "Shell"
+Description = "Reduces incoming magical damage by 33%."
+Polarity = 1
+MinDurationTurns = 3
+MaxDurationTurns = 5
+Filter = 2
+DamageTakenMultiplier = 0.67

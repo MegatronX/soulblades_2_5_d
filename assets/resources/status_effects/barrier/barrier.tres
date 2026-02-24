@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="BarrierStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/BarrierStatusEffect.cs" id="1_barrier"]
+
+[resource]
+script = ExtResource("1_barrier")
+EffectName = "Barrier"
+Description = "Absorbs incoming damage before HP is reduced."
+Polarity = 1
+MinDurationTurns = 3
+MaxDurationTurns = 6
+MaxStacks = 1
+AddStackOnReapply = false
+BarrierOnApply = 500
+BarrierOnReapply = 500
+BarrierCap = 9999

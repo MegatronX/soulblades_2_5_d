@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="PercentDotStackingStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/PercentDotStackingStatusEffect.cs" id="1_poison"]
+
+[resource]
+script = ExtResource("1_poison")
+EffectName = "Poison"
+Description = "Deals end-of-turn max HP damage. Stacks increase tick intensity."
+Polarity = 2
+MinDurationTurns = 3
+MaxDurationTurns = 5
+MaxStacks = 5
+BossMaxStacks = 3
+AddStackOnReapply = true
+RefreshDurationOnReapply = true
+BasePercentNormal = 0.04
+BasePercentBoss = 0.015
+PerStackPercentNormal = 0.01
+PerStackPercentBoss = 0.005
+HealInsteadOfDamage = false

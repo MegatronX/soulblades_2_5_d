@@ -207,8 +207,9 @@ public partial class BattleMenuController : Control
 
         var commands = _currentActionManager.GetCommandsForPage(_currentPageIndex);
         var theme = _currentActionManager.GetPageTheme(_currentPageIndex) ?? _defaultTheme;
-        
-        _primaryMenu.BuildMenu(commands, theme);
+
+        Node actor = _currentActionManager.GetParent();
+        _primaryMenu.BuildMenu(commands, theme, BuildCommandEnabledEvaluator(actor));
         
         if (_pageLabel != null)
             _pageLabel.Text = $"Deck {_currentPageIndex + 1}";
@@ -241,15 +242,19 @@ public partial class BattleMenuController : Control
             // Use the category's specific theme, or fallback to page theme
             var theme = category.Theme ?? _currentActionManager.GetPageTheme(_currentPageIndex) ?? _defaultTheme;
             var isItemsMenu = _currentActionManager != null && _currentActionManager.IsItemsCategory(category);
+            var actor = _currentActionManager.GetParent();
             if (isItemsMenu)
             {
-                var actor = _currentActionManager.GetParent();
                 var itemCommands = BuildItemCommands(actor, out var isEnabled);
-                nextMenu.BuildMenu(itemCommands, theme, isEnabled);
+                nextMenu.BuildMenu(itemCommands, theme, cmd =>
+                {
+                    bool itemEnabled = isEnabled?.Invoke(cmd) ?? true;
+                    return itemEnabled && IsCommandEnabledForActor(cmd, actor);
+                });
             }
             else
             {
-                nextMenu.BuildMenu(new List<BattleCommand>(category.SubCommands), theme);
+                nextMenu.BuildMenu(new List<BattleCommand>(category.SubCommands), theme, BuildCommandEnabledEvaluator(actor));
             }
             
             // Connect signal recursively
@@ -469,6 +474,36 @@ public partial class BattleMenuController : Control
         };
 
         return commands;
+    }
+
+    private System.Func<BattleCommand, bool> BuildCommandEnabledEvaluator(Node actor)
+    {
+        return cmd => IsCommandEnabledForActor(cmd, actor);
+    }
+
+    private bool IsCommandEnabledForActor(BattleCommand command, Node actor)
+    {
+        if (command == null) return false;
+        if (command is ActionData actionData)
+        {
+            return IsActionUsable(actionData, actor, null);
+        }
+
+        if (command is ItemBattleCommand itemCommand)
+        {
+            if (!itemCommand.IsUsable) return false;
+            return IsActionUsable(itemCommand.Action, actor, itemCommand.Item);
+        }
+
+        // Categories and non-action commands remain interactable.
+        return true;
+    }
+
+    private bool IsActionUsable(ActionData action, Node actor, ItemData sourceItem)
+    {
+        if (action == null || actor == null) return false;
+        if (_battleController == null) return true;
+        return _battleController.IsActionAllowedForActor(actor, action, sourceItem, out _);
     }
 
     private async void CloseTopMenu()

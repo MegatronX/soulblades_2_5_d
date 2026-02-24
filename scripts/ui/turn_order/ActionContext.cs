@@ -51,6 +51,21 @@ public partial class ActionContext : RefCounted
     // Store the rating of the last timed hit for UI purposes
     public TimedHitRating LastTimedHitRating { get; set; } = TimedHitRating.Miss;
 
+    // Additional critical chance from runtime effects (e.g. Bleed vulnerability).
+    public float BonusCritChancePercent { get; set; } = 0.0f;
+
+    // Scalar applied to final calculated damage/healing.
+    public float ActionPowerScalar { get; set; } = 1.0f;
+
+    // Runtime adjustment to the selected action's TickCost.
+    public float TickCostAdjustment { get; set; } = 0.0f;
+
+    // Used by follow-up effects (e.g. Echo Cast) to skip duplicate cost application.
+    public bool SkipActionCosts { get; set; } = false;
+
+    // Runtime status payloads applied on hit (e.g. Hexed Edge).
+    public List<StatusEffectChanceEntry> ExtraStatusEffectsOnHit { get; } = new();
+
     /// <summary>
     /// Set to true when an action's target has been redirected to avoid infinite ping-pong.
     /// </summary>
@@ -103,7 +118,12 @@ public partial class ActionContext : RefCounted
         InitialTargets = original.InitialTargets;
         CurrentTarget = currentTarget;
         WasRedirected = original.WasRedirected;
+        BonusCritChancePercent = original.BonusCritChancePercent;
+        ActionPowerScalar = original.ActionPowerScalar;
+        TickCostAdjustment = original.TickCostAdjustment;
+        SkipActionCosts = original.SkipActionCosts;
         ModificationLog = new List<string>(); // Each target gets a fresh log.
+        ExtraStatusEffectsOnHit = new List<StatusEffectChanceEntry>(original.ExtraStatusEffectsOnHit);
 
         // Create deep copies of the runtime components so modifications are isolated per target.
         foreach (var component in original.Components)

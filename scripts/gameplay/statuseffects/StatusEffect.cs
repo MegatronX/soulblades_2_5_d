@@ -114,6 +114,20 @@ public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect
     }
 
     /// <summary>
+    /// Called on the initiator when they start an action.
+    /// </summary>
+    public virtual void OnActionInitiated(ActionContext context, Node owner)
+    {
+    }
+
+    /// <summary>
+    /// Called when an ally of the owner initiates an action.
+    /// </summary>
+    public virtual void OnAllyActionInitiated(ActionContext context, Node initiator, Node owner)
+    {
+    }
+
+    /// <summary>
     /// Called during the global broadcast phase (before targeting is finalized).
     /// Use for effects like Storm Drain that can redirect actions.
     /// </summary>
@@ -126,6 +140,13 @@ public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect
     /// Use for effects like Reflect that can redirect or nullify actions.
     /// </summary>
     public virtual void OnActionTargeted(ActionContext context, Node owner)
+    {
+    }
+
+    /// <summary>
+    /// Called after action resolution against this owner.
+    /// </summary>
+    public virtual void OnActionPostExecution(ActionContext context, Node owner, ActionResult result)
     {
     }
 

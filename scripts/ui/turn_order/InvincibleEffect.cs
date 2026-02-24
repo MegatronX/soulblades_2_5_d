@@ -6,7 +6,7 @@ using Godot;
 [GlobalClass]
 public partial class InvincibleEffect : StatusEffect
 {
-    public void OnActionTargeted(ActionContext context, Node owner)
+    public override void OnActionTargeted(ActionContext context, Node owner)
     {
         // Is the owner the final target?
         if (context.CurrentTarget != owner) return;

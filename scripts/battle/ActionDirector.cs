@@ -150,6 +150,12 @@ public partial class ActionDirector : Node
         // Check if any targets want to react to what just happened.
         _battleMechanics.ProcessPostExecution(finalContexts);
 
+        // Process master-context reactions (e.g. Echo Cast) before per-target reactions.
+        foreach (var reaction in masterContext.PendingReactions.ToList())
+        {
+            await ProcessAction(reaction);
+        }
+
         foreach (var ctx in finalContexts)
         {
             foreach (var reaction in ctx.PendingReactions)

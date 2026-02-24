@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="ShockStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/ShockStatusEffect.cs" id="1_shock"]
+
+[resource]
+script = ExtResource("1_shock")
+EffectName = "Shock"
+Description = "Reduces speed and weakens the next MP restore received."
+Polarity = 2
+MinDurationTurns = 3
+MaxDurationTurns = 5
+MaxShockStacks = 3
+BaseSpeedPenalty = 0.2
+AdditionalSpeedPenaltyPerStack = 0.05
+BaseMpRestorePenalty = 0.3
+AdditionalMpRestorePenaltyPerStack = 0.1
+MaxMpRestorePenalty = 0.5

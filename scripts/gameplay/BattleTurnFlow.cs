@@ -8,13 +8,15 @@ public sealed class BattleTurnFlow
     private readonly ActionDirector _actionDirector;
     private readonly BattleCamera _battleCamera;
     private readonly GlobalEventBus _eventBus;
+    private readonly OverflowSystem _overflowSystem;
 
-    public BattleTurnFlow(TurnManager turnManager, ActionDirector actionDirector, BattleCamera battleCamera, GlobalEventBus eventBus)
+    public BattleTurnFlow(TurnManager turnManager, ActionDirector actionDirector, BattleCamera battleCamera, GlobalEventBus eventBus, OverflowSystem overflowSystem = null)
     {
         _turnManager = turnManager;
         _actionDirector = actionDirector;
         _battleCamera = battleCamera;
         _eventBus = eventBus;
+        _overflowSystem = overflowSystem;
     }
 
     public TurnManager.TurnData ActiveTurn { get; private set; }
@@ -30,7 +32,11 @@ public sealed class BattleTurnFlow
         var context = new ActionContext(action, actor.Combatant, targets, sourceItem);
         await _actionDirector.ProcessAction(context);
 
-        _turnManager.CommitTurn(actor, action.TickCost, _actionDirector);
+        float resolvedTickCost = action.TickCost + context.TickCostAdjustment;
+        resolvedTickCost = Mathf.Max(-TurnManager.TickThreshold + 1f, resolvedTickCost);
+
+        _turnManager.CommitTurn(actor, resolvedTickCost, _actionDirector);
+        _overflowSystem?.NotifyTurnCommitted(actor.Combatant);
 
         _eventBus?.EmitSignal(GlobalEventBus.SignalName.TurnCommitted);
 

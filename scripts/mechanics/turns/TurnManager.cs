@@ -42,7 +42,9 @@ public partial class TurnManager : Node
             StatusEffects = combatant.GetNodeOrNull<StatusEffectManager>("StatusEffectManager");
             TickValue = -1; // Not yet calculated
             Counter = 0;
-            SimStats = new SimulatedStats(Stats); // Always create a base simulation
+            // Live turn-state must read directly from StatsComponent so runtime stat changes
+            // (e.g. Haste/Slow, buffs, debuffs) immediately affect turn calculations.
+            SimStats = null;
         }
 
         // A copy constructor for creating simulation instances.
@@ -106,6 +108,13 @@ public partial class TurnManager : Node
         public ActionPreview()
         {
         }
+    }
+
+    private struct SimulatedStatChange
+    {
+        public StatType Stat;
+        public int Additive;
+        public float Multiplier;
     }
 
     /// <summary>
@@ -205,6 +214,9 @@ public partial class TurnManager : Node
 
             foreach (var effect in kvp.Value)
             {
+                if (effect == null) continue;
+
+                ApplyStatusEffectToSimulation(simTarget.SimStats, effect);
                 simTarget.SimEffects.Add(new SimulatedStatusEffect
                 {
                     Data = effect,
@@ -217,28 +229,8 @@ public partial class TurnManager : Node
         // This advances all counters and applies the action cost to the actor.
         CommitTurn(simActor, preview.ActionTickCost, simulation);
 
-        // Tick down simulated status effects for the actor (simulating OnTurnEnd)
-        if (simActor.SimEffects != null)
-        {
-            for (int k = simActor.SimEffects.Count - 1; k >= 0; k--)
-            {
-                simActor.SimEffects[k].RemainingTurns--;
-                if (simActor.SimEffects[k].RemainingTurns <= 0)
-                {
-                    if (simActor.SimEffects[k].Data is StatModifierEffect statMod)
-                    {
-                        foreach (var entry in statMod.StatMultipliers)
-                        {
-                            if (entry == null) continue;
-                            if (entry.Multiplier == 0) continue;
-                            float effective = entry.Multiplier <= 0f ? 1.0f : entry.Multiplier;
-                            simActor.SimStats.ApplyModifier(entry.Stat, 0, 1.0f / effective);
-                        }
-                    }
-                    simActor.SimEffects.RemoveAt(k);
-                }
-            }
-        }
+        // Tick down simulated status effects for the actor (simulating OnTurnEnd).
+        TickDownSimulatedEffects(simActor);
 
         // --- Step 4: Generate the *rest* of the turn order from this new simulation state. ---
         // We ask for one less turn because we've already added the actor.
@@ -315,30 +307,9 @@ public partial class TurnManager : Node
                 turnsGenerated++;
             }
 
-            // Tick down simulated status effects for the actor
+            // Tick down simulated status effects for the actor.
             // This simulates the "OnTurnEnd" phase where durations decrease.
-            for (int k = next.SimEffects.Count - 1; k >= 0; k--)
-            {
-                next.SimEffects[k].RemainingTurns--;
-                if (next.SimEffects[k].RemainingTurns <= 0)
-                {
-                    // If the expired effect was a StatModifierEffect, revert its changes in the simulation.
-                    // This ensures that temporary speed boosts (Haste) or slows actually expire in the preview.
-                    if (next.SimEffects[k].Data is StatModifierEffect statMod)
-                    {
-                        foreach (var entry in statMod.StatMultipliers)
-                        {
-                            if (entry == null) continue;
-                            if (entry.Multiplier == 0) continue;
-                            float effective = entry.Multiplier <= 0f ? 1.0f : entry.Multiplier;
-                            // Revert the multiplication: New = Old * (1 / Multiplier)
-                            next.SimStats.ApplyModifier(entry.Stat, 0, 1.0f / effective);
-                        }
-                    }
-
-                    next.SimEffects.RemoveAt(k);
-                }
-            }
+            TickDownSimulatedEffects(next);
             
             // Safety break to prevent infinite loops if everyone is blocked forever
             if (turnsGenerated > turnCount * 2 && turnOrder.Count == 0) break;
@@ -373,6 +344,114 @@ public partial class TurnManager : Node
             }
         }
         return next;
+    }
+
+    private static void TickDownSimulatedEffects(TurnData combatant)
+    {
+        if (combatant?.SimEffects == null || combatant.SimStats == null) return;
+
+        for (int i = combatant.SimEffects.Count - 1; i >= 0; i--)
+        {
+            var simEffect = combatant.SimEffects[i];
+            if (simEffect == null) continue;
+
+            simEffect.RemainingTurns--;
+            if (simEffect.RemainingTurns > 0) continue;
+
+            RevertStatusEffectFromSimulation(combatant.SimStats, simEffect.Data);
+            combatant.SimEffects.RemoveAt(i);
+        }
+    }
+
+    private static void ApplyStatusEffectToSimulation(SimulatedStats stats, StatusEffect effect)
+    {
+        if (stats == null || effect == null) return;
+
+        foreach (var change in EnumerateSimulatedStatChanges(effect))
+        {
+            float multiplier = change.Multiplier <= 0f ? 1.0f : change.Multiplier;
+            stats.ApplyModifier(change.Stat, change.Additive, multiplier);
+        }
+    }
+
+    private static void RevertStatusEffectFromSimulation(SimulatedStats stats, StatusEffect effect)
+    {
+        if (stats == null || effect == null) return;
+
+        foreach (var change in EnumerateSimulatedStatChanges(effect))
+        {
+            float multiplier = change.Multiplier <= 0f ? 1.0f : change.Multiplier;
+            float inverseMultiplier = multiplier == 0f ? 1.0f : 1.0f / multiplier;
+            stats.ApplyModifier(change.Stat, -change.Additive, inverseMultiplier);
+        }
+    }
+
+    private static IEnumerable<SimulatedStatChange> EnumerateSimulatedStatChanges(StatusEffect effect)
+    {
+        if (effect == null) yield break;
+
+        // Legacy status type.
+        if (effect is StatModifierEffect legacy && legacy.StatMultipliers != null)
+        {
+            foreach (var entry in legacy.StatMultipliers)
+            {
+                if (entry == null) continue;
+                float multiplier = entry.Multiplier <= 0f ? 1.0f : entry.Multiplier;
+                yield return new SimulatedStatChange
+                {
+                    Stat = entry.Stat,
+                    Additive = 0,
+                    Multiplier = multiplier
+                };
+            }
+        }
+
+        // Current data-driven effect-logic path.
+        if (effect.OnApplyEffects == null) yield break;
+
+        foreach (var logic in effect.OnApplyEffects)
+        {
+            if (logic == null) continue;
+
+            if (logic is StatMultiplierEffectLogic multiplierLogic)
+            {
+                if (multiplierLogic.StatMultipliers == null) continue;
+                foreach (var entry in multiplierLogic.StatMultipliers)
+                {
+                    if (entry == null) continue;
+                    float multiplier = entry.Multiplier <= 0f ? 1.0f : entry.Multiplier;
+                    yield return new SimulatedStatChange
+                    {
+                        Stat = entry.Stat,
+                        Additive = 0,
+                        Multiplier = multiplier
+                    };
+                }
+                continue;
+            }
+
+            if (logic is ModifyStat_EffectLogic modifyLogic)
+            {
+                int additive = 0;
+                float multiplier = 1.0f;
+                if (modifyLogic.ModificationType == ModifierType.Additive)
+                {
+                    additive = Mathf.RoundToInt(modifyLogic.Value);
+                }
+                else if (modifyLogic.ModificationType == ModifierType.Multiplicative)
+                {
+                    multiplier = modifyLogic.Value <= 0f ? 1.0f : modifyLogic.Value;
+                }
+
+                if (additive == 0 && Mathf.IsEqualApprox(multiplier, 1.0f)) continue;
+                yield return new SimulatedStatChange
+                {
+                    Stat = modifyLogic.StatToModify,
+                    Additive = additive,
+                    Multiplier = multiplier
+                };
+            }
+        }
     }
 
 

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="DamageTakenModifierStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/DamageTakenModifierStatusEffect.cs" id="1_sunder_ii"]
+
+[resource]
+script = ExtResource("1_sunder_ii")
+EffectName = "Sunder II"
+Description = "Target takes 40% more physical damage."
+Polarity = 2
+MinDurationTurns = 2
+MaxDurationTurns = 4
+Filter = 1
+DamageTakenMultiplier = 1.4

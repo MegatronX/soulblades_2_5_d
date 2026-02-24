@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="BerserkStatusEffect" load_steps=4 format=3 uid="uid://bb7yako2hvoxw"]
+
+[ext_resource type="Script" uid="uid://ctno2gwljlrcr" path="res://scripts/gameplay/statuseffects/BerserkStatusEffect.cs" id="1_berserk"]
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_yniqy"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_p68jx"]
+
+[resource]
+script = ExtResource("1_berserk")
+AttackMultiplier = 1.33
+SpeedMultiplier = 1.2
+DefenseMultiplier = 0.85
+EffectName = "Berserk"
+Description = "Increases offense and speed, but forces physical attacks."
+MinDurationTurns = 5
+MaxDurationTurns = 10

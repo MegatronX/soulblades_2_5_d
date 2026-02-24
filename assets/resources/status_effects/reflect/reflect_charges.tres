@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ReflectChargesStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/ReflectChargesStatusEffect.cs" id="1_reflect_charges"]
+
+[resource]
+script = ExtResource("1_reflect_charges")
+EffectName = "Reflect (Charges)"
+Description = "Reflects targeted spells until charges are consumed."
+Polarity = 0
+MinDurationTurns = 3
+MaxDurationTurns = 6
+InitialCharges = 1
+MaxCharges = 3
