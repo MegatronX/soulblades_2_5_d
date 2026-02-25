@@ -60,6 +60,12 @@ public partial class ActionContext : RefCounted
     // Runtime adjustment to the selected action's TickCost.
     public float TickCostAdjustment { get; set; } = 0.0f;
 
+    // Runtime tuning offsets for timed-hit window placement.
+    // These are additive to authored TimedHitSettings values and intended for preview/sandbox tuning.
+    public float TimedHitActionOffsetSeconds { get; set; } = 0.0f;
+    public float TimedHitCharacterOffsetSeconds { get; set; } = 0.0f;
+    public Dictionary<int, float> TimedHitWindowOffsetSeconds { get; } = new();
+
     // Used by follow-up effects (e.g. Echo Cast) to skip duplicate cost application.
     public bool SkipActionCosts { get; set; } = false;
 
@@ -121,6 +127,12 @@ public partial class ActionContext : RefCounted
         BonusCritChancePercent = original.BonusCritChancePercent;
         ActionPowerScalar = original.ActionPowerScalar;
         TickCostAdjustment = original.TickCostAdjustment;
+        TimedHitActionOffsetSeconds = original.TimedHitActionOffsetSeconds;
+        TimedHitCharacterOffsetSeconds = original.TimedHitCharacterOffsetSeconds;
+        foreach (var kvp in original.TimedHitWindowOffsetSeconds)
+        {
+            TimedHitWindowOffsetSeconds[kvp.Key] = kvp.Value;
+        }
         SkipActionCosts = original.SkipActionCosts;
         ModificationLog = new List<string>(); // Each target gets a fresh log.
         ExtraStatusEffectsOnHit = new List<StatusEffectChanceEntry>(original.ExtraStatusEffectsOnHit);
@@ -133,6 +145,16 @@ public partial class ActionContext : RefCounted
     }
 
     public T GetComponent<T>() where T : ActionComponent => Components.OfType<T>().FirstOrDefault();
+
+    public float ResolveTimedHitOffsetSeconds(int windowIndex)
+    {
+        float offset = TimedHitActionOffsetSeconds + TimedHitCharacterOffsetSeconds;
+        if (TimedHitWindowOffsetSeconds.TryGetValue(windowIndex, out float specific))
+        {
+            offset += specific;
+        }
+        return offset;
+    }
 
     public ActionResult GetResult(Node target)
     {

@@ -13,19 +13,28 @@ public partial class BattleAnimator : Node
     [Export] private PackedScene _timedHitUIScene;
     [Export] private PackedScene _perfectHitVfxScene;
     [Export] private PackedScene _damageNumberScene;
+
+    [ExportGroup("Timed Feedback")]
+    [Export] private bool _showTimedFeedbackText = true;
+    [Export] private int _timedFeedbackFontSize = 22;
+    [Export] private float _timedFeedbackLifetimeSeconds = 0.45f;
+    [Export] private float _timedFeedbackRisePixels = 26f;
+    [Export] private Vector3 _timedFeedbackWorldOffset = new Vector3(0f, 1.9f, 0f);
+    [Export] private Vector2 _timedFeedbackScreenFallback = new Vector2(0.5f, 0.42f);
     
     [ExportGroup("Death VFX Defaults")]
     [Export] private PackedScene _defaultDeathVfx;
     [Export] private PackedScene _fireDeathVfx;
 
     [Signal]
-    public delegate void TimedHitWindowOpenedEventHandler(TimedHitSettings settings, ActionContext context, float timeToHit);
+    public delegate void TimedHitWindowOpenedEventHandler(TimedHitSettings settings, ActionContext context, float timeToHit, int windowIndex);
 
     [Signal]
     public delegate void TimedHitWindowClosedEventHandler();
 
     // Map context to UI to handle multiple simultaneous windows
     private Dictionary<(ActionContext, TimedHitSettings), TimedHitUI> _activeUIs = new();
+    private readonly List<Task> _pendingImpactVfxWaiters = new();
 
     private ScreenEffects _screenEffects;
 
@@ -61,6 +70,11 @@ public partial class BattleAnimator : Node
             {
                 character.AnimationPlayer.Play(animName);
                 waitTime = (float)character.AnimationPlayer.GetAnimation(animName).Length;
+                float speedScale = Mathf.Abs(character.AnimationPlayer.SpeedScale);
+                if (speedScale > 0.001f)
+                {
+                    waitTime /= speedScale;
+                }
             }
         }
 
@@ -82,6 +96,18 @@ public partial class BattleAnimator : Node
         var settings = context.SourceAction.VisualSettings;
         var character = context.Initiator as BaseCharacter;
         var timedHitList = context.SourceAction.TimedHitSettings;
+        _pendingImpactVfxWaiters.Clear();
+        float executionAnimationDuration = 0f;
+        string executionAnimationName = settings?.ExecutionAnimation ?? "Attack";
+        bool hasExecutionAnimation = character?.AnimationPlayer != null
+            && !string.IsNullOrEmpty(executionAnimationName)
+            && character.AnimationPlayer.HasAnimation(executionAnimationName);
+        if (hasExecutionAnimation)
+        {
+            float animLength = (float)character.AnimationPlayer.GetAnimation(executionAnimationName).Length;
+            float animSpeed = Mathf.Abs(character.AnimationPlayer.SpeedScale);
+            executionAnimationDuration = animSpeed > 0.001f ? animLength / animSpeed : animLength;
+        }
 
         Vector3 originalPos = Vector3.Zero;
         bool moved = false;
@@ -115,51 +141,70 @@ public partial class BattleAnimator : Node
         // Only calculate delay for player characters. Enemies should attack immediately.
         if (context.Initiator.IsInGroup(GameGroups.PlayerCharacters) && timedHitList != null)
         {
-            foreach (var hit in timedHitList)
+            for (int i = 0; i < timedHitList.Count; i++)
             {
-                float requiredHeadStart = hit.VisualShrinkDuration - hit.TimingOffset;
+                var hit = timedHitList[i];
+                float impactWithoutDelay = ResolveTimedHitImpactTime(
+                    context,
+                    hit,
+                    settings,
+                    globalDelay: 0f,
+                    executionAnimationDuration,
+                    i);
+                float requiredHeadStart = hit.VisualShrinkDuration - impactWithoutDelay;
                 if (requiredHeadStart > maxPreAnimDelay) maxPreAnimDelay = requiredHeadStart;
             }
         }
 
-        // 2. Play Execution Animation (e.g. "Attack")
-        if (character != null && character.AnimationPlayer != null)
+        // 2. Handle Timed Hits (Concurrent)
+        // Start timed-hit timelines before the execution pre-delay so windows can open prior to strike/cast impact.
+        var hitTasks = new List<Task>();
+        if (timedHitList != null && timedHitList.Count > 0)
         {
-            string animName = settings?.ExecutionAnimation ?? "Attack";
-            // Only play if defined and exists (Magic might not have an execution anim, just windup)
-            if (!string.IsNullOrEmpty(animName) && character.AnimationPlayer.HasAnimation(animName))
+            for (int i = 0; i < timedHitList.Count; i++)
             {
-                // If we need to wait for UI to spin up, do it before playing animation
-                if (maxPreAnimDelay > 0)
-                {
-                    await ToSignal(GetTree().CreateTimer(maxPreAnimDelay), SceneTreeTimer.SignalName.Timeout);
-                }
-                character.AnimationPlayer.Play(animName);
+                var hitSetting = timedHitList[i];
+                // We pass the maxPreAnimDelay so the handler knows "Time 0" is actually shifted
+                hitTasks.Add(HandleSingleTimedHit(
+                    context,
+                    targetContexts,
+                    hitSetting,
+                    i,
+                    settings,
+                    maxPreAnimDelay,
+                    executionAnimationDuration,
+                    _pendingImpactVfxWaiters));
             }
         }
 
-        // 3. Spawn Travel VFX (Run in parallel so delays don't block impact timing)
+        // 3. Play Execution Animation (e.g. "Attack")
+        if (hasExecutionAnimation)
+        {
+            // If we need to wait for UI to spin up, do it before playing animation
+            if (maxPreAnimDelay > 0)
+            {
+                await ToSignal(GetTree().CreateTimer(maxPreAnimDelay), SceneTreeTimer.SignalName.Timeout);
+            }
+            character.AnimationPlayer.Play(executionAnimationName);
+        }
+
+        // 4. Spawn Travel VFX (Run in parallel so delays don't block impact timing)
         if (settings?.TravelVfx != null && context.Initiator is Node3D initiator3D)
         {
             _ = PlayTravelVfxSequence(settings, initiator3D, targetContexts);
         }
 
-        // 4. Handle Timed Hits (Concurrent)
-        var hitTasks = new List<Task>();
-        if (timedHitList != null && timedHitList.Count > 0)
+        // 5. Wait for timed-hit timelines, or run fallback impact timing if no windows exist.
+        if (hitTasks.Count > 0)
         {
-            foreach (var hitSetting in timedHitList)
-            {
-                // We pass the maxPreAnimDelay so the handler knows "Time 0" is actually shifted
-                hitTasks.Add(HandleSingleTimedHit(context, targetContexts, hitSetting, maxPreAnimDelay));
-            }
             await Task.WhenAll(hitTasks);
         }
         else
         {
             // Fallback if no timed hits defined: just wait a default duration and trigger impact once
-            await ToSignal(GetTree().CreateTimer(0.5f), SceneTreeTimer.SignalName.Timeout);
-            TriggerImpact(context, targetContexts, spawnVfx: true);
+            float fallbackImpactDelay = Mathf.Max(0.5f, (settings?.TravelDelay ?? 0f) + (settings?.TravelDuration ?? 0f));
+            await ToSignal(GetTree().CreateTimer(fallbackImpactDelay), SceneTreeTimer.SignalName.Timeout);
+            TriggerImpact(context, targetContexts, spawnVfx: true, impactVfxWaiters: _pendingImpactVfxWaiters);
         }
 
         // 7. Return to Original Position
@@ -175,13 +220,25 @@ public partial class BattleAnimator : Node
         }
     }
 
-    private async Task HandleSingleTimedHit(ActionContext context, List<ActionContext> targetContexts, TimedHitSettings hitSettings, float globalDelay)
+    private async Task HandleSingleTimedHit(
+        ActionContext context,
+        List<ActionContext> targetContexts,
+        TimedHitSettings hitSettings,
+        int windowIndex,
+        VisualActionSettings visualSettings,
+        float globalDelay,
+        float executionAnimationDuration,
+        List<Task> impactVfxWaiters)
     {
-        var visualSettings = context.SourceAction.VisualSettings;
-        
         // Calculate absolute times relative to the start of this method (t=0)
         // We add globalDelay because the animation (and thus the "TimingOffset") starts after that delay.
-        float impactTime = hitSettings.TimingOffset + globalDelay;
+        float impactTime = ResolveTimedHitImpactTime(
+            context,
+            hitSettings,
+            visualSettings,
+            globalDelay,
+            executionAnimationDuration,
+            windowIndex);
         float uiDuration = hitSettings.VisualShrinkDuration;
         float uiStartTime = impactTime - uiDuration;
         
@@ -195,7 +252,7 @@ public partial class BattleAnimator : Node
         TimedHitUI localUI = null;
         events.Add((uiStartTime, () => 
         {
-            localUI = SpawnTimedHitUI(hitSettings, context, targetContexts, uiDuration);
+            localUI = SpawnTimedHitUI(hitSettings, context, targetContexts, uiDuration, windowIndex);
         }));
 
         // Event: Spawn VFX (if prewarm is used, otherwise TriggerImpact handles it)
@@ -207,7 +264,11 @@ public partial class BattleAnimator : Node
                 {
                     if (targetCtx.CurrentTarget is Node3D target3D)
                     {
-                        SpawnVfx(visualSettings.ImpactVfx, target3D, visualSettings.ImpactVfxOffset, parent: false);
+                        var vfx = SpawnVfx(visualSettings.ImpactVfx, target3D, visualSettings.ImpactVfxOffset, parent: false);
+                        if (vfx is OneShotVfx oneShotVfx && impactVfxWaiters != null)
+                        {
+                            impactVfxWaiters.Add(oneShotVfx.CompletionTask);
+                        }
                     }
                 }
             }));
@@ -217,7 +278,7 @@ public partial class BattleAnimator : Node
         events.Add((impactTime, () => 
         {
             // Trigger impact logic (Animation + VFX if not prewarmed)
-            TriggerImpact(context, targetContexts, spawnVfx: vfxPrewarm <= 0);
+            TriggerImpact(context, targetContexts, spawnVfx: vfxPrewarm <= 0, impactVfxWaiters);
             
             if (localUI != null)
             {
@@ -246,7 +307,7 @@ public partial class BattleAnimator : Node
         await ToSignal(GetTree().CreateTimer(0.2f), SceneTreeTimer.SignalName.Timeout);
     }
 
-    private TimedHitUI SpawnTimedHitUI(TimedHitSettings settings, ActionContext context, List<ActionContext> targetContexts, float duration)
+    private TimedHitUI SpawnTimedHitUI(TimedHitSettings settings, ActionContext context, List<ActionContext> targetContexts, float duration, int windowIndex)
     {
         // Only show timed hits for player characters
         if (!context.Initiator.IsInGroup(GameGroups.PlayerCharacters))
@@ -272,11 +333,41 @@ public partial class BattleAnimator : Node
             _activeUIs[(context, settings)] = uiInstance;
         }
 
-        EmitSignal(SignalName.TimedHitWindowOpened, settings, context, duration);
+        EmitSignal(SignalName.TimedHitWindowOpened, settings, context, duration, windowIndex);
         return uiInstance;
     }
 
-    private void TriggerImpact(ActionContext context, List<ActionContext> targetContexts, bool spawnVfx)
+    private static float ResolveTimedHitImpactTime(
+        ActionContext context,
+        TimedHitSettings hitSettings,
+        VisualActionSettings visualSettings,
+        float globalDelay,
+        float executionAnimationDuration,
+        int windowIndex)
+    {
+        if (hitSettings == null) return Mathf.Max(0f, globalDelay);
+
+        float timelineAnchor = hitSettings.AnchorPoint switch
+        {
+            TimedHitAnchorPoint.TravelStart => visualSettings?.TravelDelay ?? 0f,
+            TimedHitAnchorPoint.TravelEnd => (visualSettings?.TravelDelay ?? 0f) + (visualSettings?.TravelDuration ?? 0f),
+            _ => 0f
+        };
+
+        float authoredOffset = hitSettings.OffsetMode switch
+        {
+            TimedHitOffsetMode.NormalizedExecutionAnimation => executionAnimationDuration > 0.001f
+                ? Mathf.Max(0f, hitSettings.TimingOffsetNormalized) * executionAnimationDuration
+                : hitSettings.TimingOffset,
+            _ => hitSettings.TimingOffset
+        };
+
+        float runtimeOffset = context?.ResolveTimedHitOffsetSeconds(windowIndex) ?? 0f;
+        float impactTime = globalDelay + timelineAnchor + authoredOffset + runtimeOffset;
+        return Mathf.Max(0f, impactTime);
+    }
+
+    private void TriggerImpact(ActionContext context, List<ActionContext> targetContexts, bool spawnVfx, List<Task> impactVfxWaiters = null)
     {
         var visualSettings = context.SourceAction.VisualSettings;
         var camera = GetViewport().GetCamera3D() as BattleCamera;
@@ -291,7 +382,11 @@ public partial class BattleAnimator : Node
             // 1. Spawn Impact VFX
             if (spawnVfx && visualSettings?.ImpactVfx != null && target is Node3D target3D)
             {
-                SpawnVfx(visualSettings.ImpactVfx, target3D, visualSettings.ImpactVfxOffset, parent: false);
+                var vfx = SpawnVfx(visualSettings.ImpactVfx, target3D, visualSettings.ImpactVfxOffset, parent: false);
+                if (vfx is OneShotVfx oneShotVfx && impactVfxWaiters != null)
+                {
+                    impactVfxWaiters.Add(oneShotVfx.CompletionTask);
+                }
             }
 
             // 2. Play Hit/Dodge Animation
@@ -350,6 +445,17 @@ public partial class BattleAnimator : Node
 
         // Wait a moment for reactions to settle
         await ToSignal(GetTree().CreateTimer(0.5f), SceneTreeTimer.SignalName.Timeout);
+
+        // Ensure impact/reaction VFX lifetimes complete before allowing turn progression.
+        if (_pendingImpactVfxWaiters.Count > 0)
+        {
+            var waiters = _pendingImpactVfxWaiters.Where(t => t != null).ToArray();
+            _pendingImpactVfxWaiters.Clear();
+            if (waiters.Length > 0)
+            {
+                await Task.WhenAll(waiters);
+            }
+        }
     }
 
     private void SpawnDamageNumber(Node target, ActionResult result, TimedHitRating rating)
@@ -560,6 +666,99 @@ public partial class BattleAnimator : Node
         }
     }
 
+    public void PlayTimedTimingFeedback(TimedHitRating rating, ActionContext context, TimedHitSettings settings, float signedOffsetSeconds)
+    {
+        if (!_showTimedFeedbackText) return;
+
+        TimedHitTimingBand band = TimedHitFeedback.Classify(rating, signedOffsetSeconds);
+        string label = TimedHitFeedback.GetLabel(band);
+        Color color = TimedHitFeedback.GetColor(band);
+
+        if (context != null && settings != null
+            && _activeUIs.TryGetValue((context, settings), out var ui)
+            && IsInstanceValid(ui))
+        {
+            ui.ShowTimingFeedback(label, color);
+            return;
+        }
+
+        SpawnFloatingTimedFeedback(context, label, color);
+    }
+
+    private void SpawnFloatingTimedFeedback(ActionContext context, string text, Color color)
+    {
+        var label = new Label
+        {
+            Text = text,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            MouseFilter = Control.MouseFilterEnum.Ignore,
+            TopLevel = true
+        };
+        label.AddThemeFontSizeOverride("font_size", Mathf.Max(10, _timedFeedbackFontSize));
+
+        Vector2 boxSize = new Vector2(240f, 30f);
+        label.Size = boxSize;
+        label.Modulate = color;
+
+        AddChild(label);
+
+        Vector2 center = ResolveTimedFeedbackScreenCenter(context);
+        label.Position = center - (boxSize * 0.5f);
+
+        float lifetime = Mathf.Max(0.1f, _timedFeedbackLifetimeSeconds);
+        var tween = CreateTween();
+        tween.SetParallel(true);
+        tween.TweenProperty(label, "position", label.Position + new Vector2(0f, -_timedFeedbackRisePixels), lifetime)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        tween.TweenProperty(label, "modulate:a", 0.0f, lifetime)
+            .SetTrans(Tween.TransitionType.Sine).SetEase(Tween.EaseType.Out);
+        tween.Finished += () =>
+        {
+            if (IsInstanceValid(label))
+            {
+                label.QueueFree();
+            }
+        };
+    }
+
+    private Vector2 ResolveTimedFeedbackScreenCenter(ActionContext context)
+    {
+        var viewport = GetViewport();
+        Vector2 viewportSize = viewport?.GetVisibleRect().Size ?? new Vector2(1920f, 1080f);
+        Vector2 fallback = new Vector2(
+            viewportSize.X * Mathf.Clamp(_timedFeedbackScreenFallback.X, 0f, 1f),
+            viewportSize.Y * Mathf.Clamp(_timedFeedbackScreenFallback.Y, 0f, 1f));
+
+        Node worldTarget = context?.CurrentTarget;
+        if (worldTarget == null && context?.InitialTargets != null && context.InitialTargets.Count > 0)
+        {
+            worldTarget = context.InitialTargets[0];
+        }
+        if (worldTarget == null)
+        {
+            worldTarget = context?.Initiator;
+        }
+        if (worldTarget is not Node3D target3D || !IsInstanceValid(target3D))
+        {
+            return fallback;
+        }
+
+        var camera = viewport?.GetCamera3D();
+        if (camera == null)
+        {
+            return fallback;
+        }
+
+        Vector3 worldPos = target3D.GlobalPosition + _timedFeedbackWorldOffset;
+        if (camera.IsPositionBehind(worldPos))
+        {
+            return fallback;
+        }
+
+        return camera.UnprojectPosition(worldPos);
+    }
+
     private Vector3? CalculateApproachPosition(Node3D initiator, List<ActionContext> targets, VisualActionSettings settings)
     {
         if (targets.Count == 0) return null;
@@ -647,8 +846,17 @@ public partial class BattleAnimator : Node
         
         await ToSignal(tween, Tween.SignalName.Finished);
 
-        // Return to Idle
+        // Return to the character's resolved idle state (Idle/Injured/etc.).
+        var visualState = character.GetNodeOrNull<CharacterVisualStateController>(CharacterVisualStateController.NodeName);
+        if (visualState != null)
+        {
+            visualState.PlayResolvedIdleAnimation();
+            return;
+        }
+
         if (character.AnimationPlayer != null && character.AnimationPlayer.HasAnimation("Idle"))
+        {
             character.AnimationPlayer.Play("Idle");
+        }
     }
 }

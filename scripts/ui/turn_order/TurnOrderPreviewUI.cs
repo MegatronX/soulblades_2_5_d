@@ -23,11 +23,14 @@ public partial class TurnOrderPreviewUI : Control
     [Export] private LayoutOrientation _orientation = LayoutOrientation.Vertical;
     [Export] private float _cardSpacing = 110f;
     [Export] private bool _debugCompareOrders = false;
+    [Export] private bool _includeBlockedTurns = true;
 
     private TurnManager _turnManager;
     private readonly List<TurnOrderCard> _cards = new();
     private List<TurnManager.TurnData> _currentTurnOrder;
     private bool _isAnimating = false;
+    private List<TurnManager.TurnData> _pendingNewOrder;
+    private List<TurnManager.TurnData> _pendingOldOrder;
     private readonly List<TurnOrderCard> _debugCards = new();
     private HashSet<Node> _highlightedCombatants = new();
 
@@ -62,7 +65,7 @@ public partial class TurnOrderPreviewUI : Control
         );
 
         // Initial population of the turn order.
-        _currentTurnOrder = _turnManager.GenerateTurnOrder(10, false);
+        _currentTurnOrder = _turnManager.GenerateTurnOrder(10, _includeBlockedTurns);
         _ = AnimateToOrder(_currentTurnOrder, isInitialLoad: true);
     }
 
@@ -91,7 +94,7 @@ public partial class TurnOrderPreviewUI : Control
         var actingTurnData = _turnManager.GetCombatants().FirstOrDefault(c => c.Combatant == actingCombatantNode);
         if (actingTurnData == null) return;
 
-        var previewTurnOrder = _turnManager.PreviewAction(10, actingTurnData, actionPreview);
+        var previewTurnOrder = _turnManager.PreviewAction(10, actingTurnData, actionPreview, _includeBlockedTurns);
         _ = AnimateToOrder(previewTurnOrder, _currentTurnOrder);
     }
 
@@ -102,7 +105,7 @@ public partial class TurnOrderPreviewUI : Control
 
     private void OnTurnCommitted()
     {
-        var newOrder = _turnManager.GenerateTurnOrder(10);
+        var newOrder = _turnManager.GenerateTurnOrder(10, _includeBlockedTurns);
         var oldOrder = _currentTurnOrder; // Keep a reference to the old order
 
         _currentTurnOrder = newOrder; // Now update the current state
@@ -112,7 +115,7 @@ public partial class TurnOrderPreviewUI : Control
 
     private void OnCombatantsChanged()
     {
-        var newOrder = _turnManager.GenerateTurnOrder(10);
+        var newOrder = _turnManager.GenerateTurnOrder(10, _includeBlockedTurns);
         // A combatant change should trigger a general re-sort, not the special "commit" animation.
         _currentTurnOrder = newOrder;
         _ = AnimateToOrder(_currentTurnOrder);
@@ -127,7 +130,14 @@ public partial class TurnOrderPreviewUI : Control
 
     private async Task AnimateToOrder(List<TurnManager.TurnData> newOrder, List<TurnManager.TurnData> oldOrder = null, bool isInitialLoad = false)
     {
-        if (_isAnimating && !isInitialLoad) return;
+        if (_isAnimating && !isInitialLoad)
+        {
+            // Coalesce rapid updates (e.g. fast target cycling) and render the latest
+            // requested order after the current tween finishes.
+            _pendingNewOrder = newOrder;
+            _pendingOldOrder = oldOrder;
+            return;
+        }
 
         // Optimization: Check if the new order is identical to the current display
         if (!isInitialLoad && _cards.Count == newOrder.Count)
@@ -255,6 +265,15 @@ public partial class TurnOrderPreviewUI : Control
         }
         await ToSignal(moveTween, Tween.SignalName.Finished);
         _isAnimating = false;
+
+        if (_pendingNewOrder != null)
+        {
+            var queuedNewOrder = _pendingNewOrder;
+            var queuedOldOrder = _pendingOldOrder;
+            _pendingNewOrder = null;
+            _pendingOldOrder = null;
+            await AnimateToOrder(queuedNewOrder, queuedOldOrder);
+        }
     }
 
     private void UpdateDebugCards(List<TurnManager.TurnData> order)

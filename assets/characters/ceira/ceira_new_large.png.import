@@ -2,20 +2,21 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://d2hs72wbue50s"
-path="res://.godot/imported/ceira_new_1.png-3abca06828e06ab753b90b47ec79fb8c.ctex"
+uid="uid://brg76gaavke5l"
+path.s3tc="res://.godot/imported/ceira_new_large.png-94031687eff50fd4e7e083ba4cf0230a.s3tc.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc"],
+"vram_texture": true
 }
 
 [deps]
 
-source_file="res://assets/characters/ceira/ceira_new_1.png"
-dest_files=["res://.godot/imported/ceira_new_1.png-3abca06828e06ab753b90b47ec79fb8c.ctex"]
+source_file="res://assets/characters/ceira/ceira_new_large.png"
+dest_files=["res://.godot/imported/ceira_new_large.png-94031687eff50fd4e7e083ba4cf0230a.s3tc.ctex"]
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -23,7 +24,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=false
+mipmaps/generate=true
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

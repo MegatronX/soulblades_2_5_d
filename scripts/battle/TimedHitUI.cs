@@ -16,18 +16,28 @@ public partial class TimedHitUI : Control
     [Export] public Color MissColor { get; set; } = Colors.Red;
     [Export] public float StartScale { get; set; } = 6.0f;
 
+    [ExportGroup("Timing Feedback")]
+    [Export] public bool ShowTimingFeedbackText { get; set; } = true;
+    [Export] public int TimingFeedbackFontSize { get; set; } = 20;
+    [Export] public Vector2 TimingFeedbackOffset { get; set; } = new Vector2(0f, -44f);
+    [Export] public float TimingFeedbackHoldSeconds { get; set; } = 0.12f;
+    [Export] public float TimingFeedbackFadeSeconds { get; set; } = 0.25f;
+    
     private float _duration;
     private float _elapsed;
     private bool _active;
     
     private Node3D _target3D;
     private Vector3 _targetOffset;
+    private Label _timingFeedbackLabel;
+    private Tween _timingFeedbackTween;
 
     public override void _Ready()
     {
         // Ensure pivots are centered for scaling
         if (_staticRing != null) _staticRing.PivotOffset = _staticRing.Size / 2;
         if (_collapsingRing != null) _collapsingRing.PivotOffset = _collapsingRing.Size / 2;
+        EnsureTimingFeedbackLabel();
         
         Hide();
         SetProcess(false);
@@ -53,6 +63,7 @@ public partial class TimedHitUI : Control
         if (_collapsingRing != null) _collapsingRing.Scale = new Vector2(StartScale, StartScale); // Start large
         if (_collapsingRing != null) _collapsingRing.Modulate = CollapsingRingColor; // Reset color
         if (_collapsingParticles != null) _collapsingParticles.Emitting = true;
+        ResetTimingFeedbackLabel();
 
         // Pulse static ring to make it more visible
         if (_staticRing != null)
@@ -76,6 +87,29 @@ public partial class TimedHitUI : Control
         var tween = CreateTween();
         tween.TweenProperty(this, "modulate:a", 0.0f, 0.2f);
         tween.Finished += QueueFree;
+    }
+
+    public void ShowTimingFeedback(string text, Color color)
+    {
+        if (!ShowTimingFeedbackText) return;
+        EnsureTimingFeedbackLabel();
+        if (_timingFeedbackLabel == null) return;
+
+        _timingFeedbackLabel.Text = text;
+        _timingFeedbackLabel.Modulate = color;
+        _timingFeedbackLabel.Position = TimingFeedbackOffset;
+        _timingFeedbackLabel.Visible = true;
+
+        _timingFeedbackTween?.Kill();
+        _timingFeedbackTween = CreateTween();
+        _timingFeedbackTween.TweenInterval(Mathf.Max(0f, TimingFeedbackHoldSeconds));
+        _timingFeedbackTween.TweenProperty(
+            _timingFeedbackLabel,
+            "modulate:a",
+            0.0f,
+            Mathf.Max(0.05f, TimingFeedbackFadeSeconds))
+            .SetTrans(Tween.TransitionType.Sine)
+            .SetEase(Tween.EaseType.Out);
     }
 
     public override void _Process(double delta)
@@ -129,5 +163,40 @@ public partial class TimedHitUI : Control
             Vector2 screenPos = camera.UnprojectPosition(worldPos);
             GlobalPosition = screenPos - (Size / 2); // Center the control on the target
         }
+    }
+
+    private void EnsureTimingFeedbackLabel()
+    {
+        if (_timingFeedbackLabel != null && IsInstanceValid(_timingFeedbackLabel))
+        {
+            return;
+        }
+
+        _timingFeedbackLabel = new Label
+        {
+            Name = "TimingFeedbackLabel",
+            HorizontalAlignment = HorizontalAlignment.Center,
+            VerticalAlignment = VerticalAlignment.Center,
+            MouseFilter = MouseFilterEnum.Ignore,
+            Visible = false,
+            Size = new Vector2(220f, 28f),
+            Position = TimingFeedbackOffset
+        };
+        _timingFeedbackLabel.AddThemeFontSizeOverride("font_size", Mathf.Max(10, TimingFeedbackFontSize));
+        AddChild(_timingFeedbackLabel);
+    }
+
+    private void ResetTimingFeedbackLabel()
+    {
+        if (_timingFeedbackLabel == null || !IsInstanceValid(_timingFeedbackLabel))
+        {
+            return;
+        }
+
+        _timingFeedbackTween?.Kill();
+        _timingFeedbackLabel.Visible = false;
+        _timingFeedbackLabel.Text = string.Empty;
+        _timingFeedbackLabel.Modulate = Colors.White;
+        _timingFeedbackLabel.Position = TimingFeedbackOffset;
     }
 }

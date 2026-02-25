@@ -19,4 +19,5 @@ EffectName = "Bleed"
 Description = "Deals turn-end bleed damage and boosts crit chance against the target."
 MinDurationTurns = 3
 MaxDurationTurns = 5
+ForceInjuredIdleAnimation = true
 Polarity = 2

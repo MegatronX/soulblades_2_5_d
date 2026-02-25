@@ -15,4 +15,5 @@ EffectName = "Burn"
 Description = "Deals end-of-turn fire damage and reduces healing received."
 MinDurationTurns = 3
 MaxDurationTurns = 5
+ForceInjuredIdleAnimation = true
 Polarity = 2

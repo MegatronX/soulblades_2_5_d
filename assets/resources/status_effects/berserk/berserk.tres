@@ -13,3 +13,6 @@ EffectName = "Berserk"
 Description = "Increases offense and speed, but forces physical attacks."
 MinDurationTurns = 5
 MaxDurationTurns = 10
+ApplyTintWhileActive = true
+ActiveTintColor = Color(1, 0.55, 0.55, 1)
+ActiveTintStrength = 0.55

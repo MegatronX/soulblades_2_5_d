@@ -51,6 +51,10 @@ public partial class ActionDirector : Node
                 () => _timedHitManager.TimedHitResolved += OnTimedHitResolved,
                 () => _timedHitManager.TimedHitResolved -= OnTimedHitResolved
             );
+            this.Subscribe(
+                () => _timedHitManager.TimedHitResolvedDetailed += OnTimedHitResolvedDetailed,
+                () => _timedHitManager.TimedHitResolvedDetailed -= OnTimedHitResolvedDetailed
+            );
         }
     }
 
@@ -85,21 +89,21 @@ public partial class ActionDirector : Node
     public async Task ProcessAction(ActionContext masterContext)
     {
         CurrentContext = masterContext;
+        var speedFeedbackLocks = new List<CharacterVisualStateController>();
         try {
         // --- Phase 0: Cleanup ---
         // Ensure we don't have any references to freed objects (e.g. enemies killed in previous turns)
-        _allCombatants.RemoveAll(c => !GodotObject.IsInstanceValid(c));
+        PruneInvalidCombatants();
+        LockSpeedFeedbackForAction(masterContext, speedFeedbackLocks);
 
         // --- Phase 1: OnInitiated Hooks ---
         // These hooks modify the master context before it's copied for each target.
         // Ideal for "outgoing" effects like "Charge Up" or ally buffs like "Commander's Aura".
-        // We need to find allies for the mechanics engine
-        var allies = _allCombatants.Where(c => c != masterContext.Initiator && IsAlly(c, masterContext.Initiator));
-        _battleMechanics.ProcessInitiation(masterContext, allies);
+        ApplyInitiationModifiers(masterContext);
 
         // --- Phase 2: Global Interception Hooks ---
         // This is for global effects like "Storm Drain" that can hijack an action.
-        _battleMechanics.ProcessGlobalMods(masterContext, _allCombatants);
+        ApplyGlobalModifiers(masterContext);
 
         // --- Phase 2.5: Animation Windup ---
         if (_battleAnimator != null)
@@ -145,6 +149,7 @@ public partial class ActionDirector : Node
         {
             await _battleAnimator.PlayReaction(finalContexts);
         }
+        UnlockSpeedFeedback(speedFeedbackLocks);
 
         // --- Phase 8: Reactions (Counter Attacks) ---
         // Check if any targets want to react to what just happened.
@@ -181,18 +186,52 @@ public partial class ActionDirector : Node
         eventBus.EmitSignal(GlobalEventBus.SignalName.ActionExecuted, masterContext);
         }
         finally {
+            UnlockSpeedFeedback(speedFeedbackLocks);
             CurrentContext = null;
         }
     }
 
-    private void OnTimedHitWindowOpened(TimedHitSettings settings, ActionContext context, float timeToHit)
+    private void OnTimedHitWindowOpened(TimedHitSettings settings, ActionContext context, float timeToHit, int windowIndex)
     {
-        _timedHitManager?.StartWindow(settings, context, timeToHit);
+        _timedHitManager?.StartWindow(settings, context, timeToHit, windowIndex);
     }
 
     private void OnTimedHitResolved(TimedHitRating rating, ActionContext context, TimedHitSettings settings)
     {
         _battleAnimator?.PlayTimedHitEffect(rating, context, settings);
+    }
+
+    private void OnTimedHitResolvedDetailed(
+        TimedHitRating rating,
+        ActionContext context,
+        TimedHitSettings settings,
+        float signedOffsetSeconds,
+        float absoluteOffsetSeconds,
+        int windowIndex)
+    {
+        _battleAnimator?.PlayTimedTimingFeedback(rating, context, settings, signedOffsetSeconds);
+    }
+
+    public ActionContext BuildPreviewContext(ActionData action, Node initiator, IEnumerable<Node> targets, ItemData sourceItem = null)
+    {
+        if (action == null || initiator == null) return null;
+
+        PruneInvalidCombatants();
+        var targetList = targets?
+            .Where(t => t != null && GodotObject.IsInstanceValid(t))
+            .ToList() ?? new List<Node>();
+
+        var context = new ActionContext(action, initiator, targetList, sourceItem);
+        ApplyInitiationModifiers(context);
+        ApplyGlobalModifiers(context);
+        return context;
+    }
+
+    public float ResolveTickCost(ActionContext context)
+    {
+        if (context?.SourceAction == null) return 0f;
+        float resolvedTickCost = context.SourceAction.TickCost + context.TickCostAdjustment;
+        return Mathf.Max(-TurnManager.TickThreshold + 1f, resolvedTickCost);
     }
 
     /// <summary>
@@ -229,5 +268,60 @@ public partial class ActionDirector : Node
     private bool IsAlly(Node a, Node b)
     {
         return a.IsInGroup(GameGroups.PlayerCharacters) == b.IsInGroup(GameGroups.PlayerCharacters);
+    }
+
+    private void ApplyInitiationModifiers(ActionContext context)
+    {
+        if (context == null || context.Initiator == null || _battleMechanics == null) return;
+
+        var allies = _allCombatants.Where(c => c != context.Initiator && IsAlly(c, context.Initiator));
+        _battleMechanics.ProcessInitiation(context, allies);
+    }
+
+    private void ApplyGlobalModifiers(ActionContext context)
+    {
+        if (context == null || _battleMechanics == null) return;
+        _battleMechanics.ProcessGlobalMods(context, _allCombatants);
+    }
+
+    private void PruneInvalidCombatants()
+    {
+        _allCombatants.RemoveAll(c => !GodotObject.IsInstanceValid(c));
+    }
+
+    private void LockSpeedFeedbackForAction(ActionContext context, List<CharacterVisualStateController> lockedControllers)
+    {
+        if (lockedControllers == null) return;
+
+        var seen = new HashSet<CharacterVisualStateController>();
+
+        void LockNode(Node node)
+        {
+            if (node == null || !GodotObject.IsInstanceValid(node)) return;
+            var visualController = node.GetNodeOrNull<CharacterVisualStateController>(CharacterVisualStateController.NodeName);
+            if (visualController == null) return;
+            if (!seen.Add(visualController)) return;
+
+            visualController.PushSpeedFeedbackLock();
+            lockedControllers.Add(visualController);
+        }
+
+        LockNode(context?.Initiator);
+        foreach (var combatant in _allCombatants)
+        {
+            LockNode(combatant);
+        }
+    }
+
+    private static void UnlockSpeedFeedback(List<CharacterVisualStateController> lockedControllers)
+    {
+        if (lockedControllers == null || lockedControllers.Count == 0) return;
+
+        foreach (var controller in lockedControllers)
+        {
+            controller?.PopSpeedFeedbackLock();
+        }
+
+        lockedControllers.Clear();
     }
 }

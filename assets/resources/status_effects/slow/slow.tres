@@ -15,4 +15,5 @@ Description = "Reduces speed by 50%."
 Polarity = 2
 MinDurationTurns = 2
 MaxDurationTurns = 4
+ForceInjuredIdleAnimation = true
 StatMultipliers = Array[ExtResource("2_slow")]([SubResource("Resource_slow_speed")])

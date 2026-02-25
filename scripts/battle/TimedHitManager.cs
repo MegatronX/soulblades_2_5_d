@@ -18,6 +18,15 @@ public partial class TimedHitManager : Node
     [Signal]
     public delegate void TimedHitResolvedEventHandler(TimedHitRating rating, ActionContext context, TimedHitSettings settings);
 
+    [Signal]
+    public delegate void TimedHitResolvedDetailedEventHandler(
+        TimedHitRating rating,
+        ActionContext context,
+        TimedHitSettings settings,
+        float signedOffsetSeconds,
+        float absoluteOffsetSeconds,
+        int windowIndex);
+
     [Export] private float _difficultyMultiplier = 1.0f; // Higher = tighter windows
 
     // Base window sizes in seconds (half-width, so +/- this amount)
@@ -30,6 +39,7 @@ public partial class TimedHitManager : Node
         public TimedHitSettings Settings;
         public ActionContext Context;
         public float TimeRemaining;
+        public int WindowIndex;
     }
     private List<ActiveWindow> _activeWindows = new();
 
@@ -38,13 +48,14 @@ public partial class TimedHitManager : Node
         SetProcess(false);
     }
 
-    public void StartWindow(TimedHitSettings settings, ActionContext context, float timeToHit)
+    public void StartWindow(TimedHitSettings settings, ActionContext context, float timeToHit, int windowIndex = -1)
     {
         var window = new ActiveWindow
         {
             Settings = settings,
             Context = context,
-            TimeRemaining = timeToHit
+            TimeRemaining = timeToHit,
+            WindowIndex = windowIndex
         };
         _activeWindows.Add(window);
         SetProcess(true);
@@ -67,7 +78,7 @@ public partial class TimedHitManager : Node
 
             if (window.TimeRemaining < -BaseGoodWindow)
             {
-                ResolveHit(window, TimedHitRating.Miss);
+                ResolveHit(window, TimedHitRating.Miss, window.TimeRemaining);
                 _activeWindows.RemoveAt(i);
             }
         }
@@ -98,7 +109,7 @@ public partial class TimedHitManager : Node
         if (bestCandidate != null)
         {
             TimedHitRating rating = CalculateRating(bestDiff);
-            ResolveHit(bestCandidate, rating);
+            ResolveHit(bestCandidate, rating, bestCandidate.TimeRemaining);
             _activeWindows.Remove(bestCandidate);
         }
     }
@@ -115,11 +126,19 @@ public partial class TimedHitManager : Node
         return TimedHitRating.Miss;
     }
 
-    private void ResolveHit(ActiveWindow window, TimedHitRating rating)
+    private void ResolveHit(ActiveWindow window, TimedHitRating rating, float signedOffsetSeconds)
     {
         GD.Print($"Timed Hit Result: {rating}");
 
         EmitSignal(SignalName.TimedHitResolved, (int)rating, window.Context, window.Settings);
+        EmitSignal(
+            SignalName.TimedHitResolvedDetailed,
+            (int)rating,
+            window.Context,
+            window.Settings,
+            signedOffsetSeconds,
+            Mathf.Abs(signedOffsetSeconds),
+            window.WindowIndex);
         
         // Store rating in context for UI
         window.Context.LastTimedHitRating = rating;

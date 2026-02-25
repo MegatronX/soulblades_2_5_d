@@ -15,3 +15,6 @@ EffectName = "Berserk (Frenzy)"
 Description = "Increases offense and speed, then auto-selects basic attack."
 MinDurationTurns = 2
 MaxDurationTurns = 4
+ApplyTintWhileActive = true
+ActiveTintColor = Color(1, 0.55, 0.55, 1)
+ActiveTintStrength = 0.55

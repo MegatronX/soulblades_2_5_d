@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 
 /// <summary>
 /// A data-driven status effect that applies a modifier to a specific stat.
@@ -57,5 +58,21 @@ public partial class StatModifierEffect : StatusEffect
 
         stats.RemoveAllModifiersFromSource(this);
         GD.Print($"{EffectName} has worn off for {owner.Name}.");
+    }
+
+    public override IEnumerable<TurnPreviewStatDelta> GetTurnPreviewStatDeltas()
+    {
+        foreach (var delta in base.GetTurnPreviewStatDeltas())
+        {
+            yield return delta;
+        }
+
+        if (StatMultipliers == null) yield break;
+
+        foreach (var entry in StatMultipliers)
+        {
+            if (entry == null) continue;
+            yield return new TurnPreviewStatDelta(entry.Stat, 0, entry.Multiplier);
+        }
     }
 }

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="MirrorImagesStatusEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/MirrorImagesStatusEffect.cs" id="1_mirror_images"]
+
+[resource]
+script = ExtResource("1_mirror_images")
+EffectName = "Mirror Images"
+Description = "Doubles evasion and creates deceptive after-images."
+Polarity = 1
+MinDurationTurns = 2
+MaxDurationTurns = 4
+EnableMirrorImages = true
+MirrorImageCount = 4
+MirrorImageAlpha = 0.2
+MirrorImageSpread = 0.08
+MirrorImageDriftSpeed = 2.4
+EvasionMultiplier = 2.0

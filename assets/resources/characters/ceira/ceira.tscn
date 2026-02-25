@@ -87,7 +87,7 @@ AnimationPlayer = NodePath("AnimationPlayer")
 offset = Vector2(0, 64)
 shaded = true
 alpha_cut = 1
-texture_filter = 0
+texture_filter = 1
 texture = ExtResource("2_2nsdi")
 hframes = 10
 frame = 9
@@ -116,3 +116,6 @@ metadata/_custom_type_script = "uid://cvvakp7v5sci0"
 [node name="ActionManager" parent="." index="7"]
 RootPages = Array[ExtResource("10_mvujd")]([ExtResource("11_7vds4")])
 LearnedActions = Array[ExtResource("6_oq1o5")]([ExtResource("7_rs81e"), ExtResource("8_tnjsy")])
+
+[node name="CharacterVisualStateController" parent="." index="8"]
+metadata/_custom_type_script = "uid://bq5fpjepk1edx"

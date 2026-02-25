@@ -1,0 +1,486 @@
+[gd_scene load_steps=7 format=3 uid="uid://k17834ct33ew"]
+
+[ext_resource type="Script" uid="uid://drt5nogwnk210" path="res://scripts/ui/battle/CharacterPresentationSandboxController.cs" id="1_controller"]
+[ext_resource type="PackedScene" uid="uid://cg40606sv55" path="res://assets/resources/characters/ceira/ceira.tscn" id="2_ceira"]
+[ext_resource type="PackedScene" uid="uid://cikngvbkfdkqo" path="res://assets/resources/characters/goblin_lv5/goblin_lv5_animated.tscn" id="3_goblin"]
+[ext_resource type="PackedScene" uid="uid://7vqyqph1fwuk" path="res://assets/resources/characters/CharacterTemplate.tscn" id="4_template"]
+[ext_resource type="Resource" uid="uid://cf0sodp0rftil" path="res://assets/resources/characters/ceira/ceira_starting_stats.tres" id="5_stats"]
+[ext_resource type="PackedScene" uid="uid://ck3m0yb0b67jn" path="res://assets/scenes/battle/ui/BattlePartyStatusRow.tscn" id="6_status_row"]
+
+[node name="CharacterPresentationSandboxScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_controller")
+CharacterSceneLibrary = Array[PackedScene]([ExtResource("2_ceira"), ExtResource("3_goblin"), ExtResource("4_template")])
+DefaultCharacterScene = ExtResource("2_ceira")
+FallbackBaseStats = ExtResource("5_stats")
+PartyStatusRowScene = ExtResource("6_status_row")
+FocusCameraDistance = 2.8
+FocusCameraHeightOffset = 0.95
+FocusCameraLookHeight = 0.95
+FocusCameraZoomStep = 0.7000000000000001
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0470588, 0.054902, 0.0745098, 1)
+
+[node name="SandboxWorld" type="Node3D" parent="."]
+
+[node name="CharacterAnchor" type="Node3D" parent="SandboxWorld"]
+
+[node name="Camera3D" type="Camera3D" parent="SandboxWorld"]
+transform = Transform3D(1, 0, 0, 0, 0.98722726, 0.15931821, 0, -0.15931821, 0.98722726, 0, 2.2, 4.2)
+current = true
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SandboxWorld"]
+transform = Transform3D(0.6967067, -0.51459974, 0.4997868, 0, 0.6967067, 0.7173561, -0.7173561, -0.4997868, 0.48540023, 0, 5, 0)
+light_energy = 1.1
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PreviewToolbar" type="HBoxContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 8.0
+offset_right = -10.0
+offset_bottom = 40.0
+grow_horizontal = 2
+theme_override_constants/separation = 8
+
+[node name="ToggleUiButton" type="Button" parent="UI/PreviewToolbar"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+tooltip_text = "Hide/show editing panels so you can directly inspect the character sprite and animations. In focus mode, use mouse wheel to zoom."
+text = "Focus Character View"
+
+[node name="TogglePreviewWindowButton" type="Button" parent="UI/PreviewToolbar"]
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+tooltip_text = "Open/close a secondary preview window that renders the live character scene."
+text = "Open Character Window"
+
+[node name="MainSplit" type="HSplitContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 46.0
+grow_horizontal = 2
+grow_vertical = 2
+split_offset = 560
+
+[node name="LeftPanel" type="VBoxContainer" parent="UI/MainSplit"]
+custom_minimum_size = Vector2(550, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="CharacterPanel" type="PanelContainer" parent="UI/MainSplit/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftPanel/CharacterPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftPanel/CharacterPanel/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Character"
+
+[node name="CharacterSceneSelect" type="OptionButton" parent="UI/MainSplit/LeftPanel/CharacterPanel/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RespawnCharacterButton" type="Button" parent="UI/MainSplit/LeftPanel/CharacterPanel/Body"]
+layout_mode = 2
+tooltip_text = "Spawn selected character scene into the preview world."
+text = "Respawn Character"
+
+[node name="StatusPanel" type="PanelContainer" parent="UI/MainSplit/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftPanel/StatusPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftPanel/StatusPanel/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Status Effects"
+
+[node name="StatusSelect" type="OptionButton" parent="UI/MainSplit/LeftPanel/StatusPanel/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StatusButtonRow" type="HBoxContainer" parent="UI/MainSplit/LeftPanel/StatusPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ApplyStatusButton" type="Button" parent="UI/MainSplit/LeftPanel/StatusPanel/Body/StatusButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Apply selected status at 100% chance."
+text = "Apply"
+
+[node name="RemoveStatusButton" type="Button" parent="UI/MainSplit/LeftPanel/StatusPanel/Body/StatusButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Remove selected status if active."
+text = "Remove"
+
+[node name="ClearStatusesButton" type="Button" parent="UI/MainSplit/LeftPanel/StatusPanel/Body/StatusButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Remove all active statuses."
+text = "Clear All"
+
+[node name="ActiveStatusList" type="ItemList" parent="UI/MainSplit/LeftPanel/StatusPanel/Body"]
+custom_minimum_size = Vector2(0, 84)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="AbilityPanel" type="PanelContainer" parent="UI/MainSplit/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftPanel/AbilityPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftPanel/AbilityPanel/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Abilities"
+
+[node name="AbilitySelect" type="OptionButton" parent="UI/MainSplit/LeftPanel/AbilityPanel/Body"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="AbilityButtonRow" type="HBoxContainer" parent="UI/MainSplit/LeftPanel/AbilityPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EquipAbilityButton" type="Button" parent="UI/MainSplit/LeftPanel/AbilityPanel/Body/AbilityButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Equip"
+
+[node name="UnequipAbilityButton" type="Button" parent="UI/MainSplit/LeftPanel/AbilityPanel/Body/AbilityButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Unequip"
+
+[node name="UnequipAllAbilitiesButton" type="Button" parent="UI/MainSplit/LeftPanel/AbilityPanel/Body/AbilityButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Unequip All"
+
+[node name="AbilityTriggerRow" type="HBoxContainer" parent="UI/MainSplit/LeftPanel/AbilityPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AbilityTriggerSelect" type="OptionButton" parent="UI/MainSplit/LeftPanel/AbilityPanel/Body/AbilityTriggerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TriggerAbilityButton" type="Button" parent="UI/MainSplit/LeftPanel/AbilityPanel/Body/AbilityTriggerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Invoke selected trigger on currently equipped abilities."
+text = "Trigger"
+
+[node name="EquippedAbilityList" type="ItemList" parent="UI/MainSplit/LeftPanel/AbilityPanel/Body"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="EquipmentPanel" type="PanelContainer" parent="UI/MainSplit/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftPanel/EquipmentPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftPanel/EquipmentPanel/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Equipment"
+
+[node name="EquipmentControlRow" type="HBoxContainer" parent="UI/MainSplit/LeftPanel/EquipmentPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EquipmentSlotSelect" type="OptionButton" parent="UI/MainSplit/LeftPanel/EquipmentPanel/Body/EquipmentControlRow"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EquipmentItemSelect" type="OptionButton" parent="UI/MainSplit/LeftPanel/EquipmentPanel/Body/EquipmentControlRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EquipmentButtonRow" type="HBoxContainer" parent="UI/MainSplit/LeftPanel/EquipmentPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EquipItemButton" type="Button" parent="UI/MainSplit/LeftPanel/EquipmentPanel/Body/EquipmentButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Equip Item"
+
+[node name="UnequipSlotButton" type="Button" parent="UI/MainSplit/LeftPanel/EquipmentPanel/Body/EquipmentButtonRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Unequip Slot"
+
+[node name="EquippedItemsList" type="ItemList" parent="UI/MainSplit/LeftPanel/EquipmentPanel/Body"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+allow_reselect = true
+
+[node name="UtilityPanel" type="PanelContainer" parent="UI/MainSplit/LeftPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/LeftPanel/UtilityPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Utility"
+
+[node name="SetRow" type="HBoxContainer" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SetHpSpin" type="SpinBox" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/SetRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+max_value = 99999.0
+
+[node name="SetHpButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/SetRow"]
+layout_mode = 2
+text = "Set HP"
+
+[node name="SetMpSpin" type="SpinBox" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/SetRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+max_value = 99999.0
+
+[node name="SetMpButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/SetRow"]
+layout_mode = 2
+text = "Set MP"
+
+[node name="DeltaRow" type="HBoxContainer" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DeltaSpin" type="SpinBox" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/DeltaRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+min_value = 1.0
+max_value = 9999.0
+value = 30.0
+
+[node name="DamageButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/DeltaRow"]
+layout_mode = 2
+text = "Damage"
+
+[node name="HealButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/DeltaRow"]
+layout_mode = 2
+text = "Heal"
+
+[node name="GainMpButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/DeltaRow"]
+layout_mode = 2
+text = "MP+"
+
+[node name="SpendMpButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/DeltaRow"]
+layout_mode = 2
+text = "MP-"
+
+[node name="ChargeRow" type="HBoxContainer" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ChargeSpin" type="SpinBox" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/ChargeRow"]
+custom_minimum_size = Vector2(130, 0)
+layout_mode = 2
+max_value = 99.0
+value = 1.0
+
+[node name="AddChargeButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/ChargeRow"]
+layout_mode = 2
+text = "Charge+"
+
+[node name="SpendChargeButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/ChargeRow"]
+layout_mode = 2
+text = "Charge-"
+
+[node name="SetChargeButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/ChargeRow"]
+layout_mode = 2
+text = "Set Charge"
+
+[node name="TurnRow" type="HBoxContainer" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TurnStartButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/TurnRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Turn Start"
+
+[node name="TurnEndButton" type="Button" parent="UI/MainSplit/LeftPanel/UtilityPanel/Body/TurnRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Turn End"
+
+[node name="RightPanel" type="VBoxContainer" parent="UI/MainSplit"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="StatusRowPanel" type="PanelContainer" parent="UI/MainSplit/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/RightPanel/StatusRowPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/RightPanel/StatusRowPanel/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "BattlePartyStatusRow Preview"
+
+[node name="RowHost" type="Control" parent="UI/MainSplit/RightPanel/StatusRowPanel/Body"]
+custom_minimum_size = Vector2(0, 170)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DetailedStatsPanel" type="PanelContainer" parent="UI/MainSplit/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/RightPanel/DetailedStatsPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/RightPanel/DetailedStatsPanel/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Detailed Stats"
+
+[node name="DetailedStatsLabel" type="RichTextLabel" parent="UI/MainSplit/RightPanel/DetailedStatsPanel/Body"]
+custom_minimum_size = Vector2(0, 280)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+scroll_following = true
+
+[node name="ComponentTreePanel" type="PanelContainer" parent="UI/MainSplit/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/RightPanel/ComponentTreePanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/RightPanel/ComponentTreePanel/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Scene Components"
+
+[node name="ComponentTreeLabel" type="RichTextLabel" parent="UI/MainSplit/RightPanel/ComponentTreePanel/Body"]
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+scroll_following = true
+
+[node name="LogPanel" type="PanelContainer" parent="UI/MainSplit/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainSplit/RightPanel/LogPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainSplit/RightPanel/LogPanel/Body"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 17
+text = "Log"
+
+[node name="LogLabel" type="RichTextLabel" parent="UI/MainSplit/RightPanel/LogPanel/Body"]
+custom_minimum_size = Vector2(0, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+scroll_following = true
+
+[node name="FloatingStatsPanel" type="PanelContainer" parent="UI"]
+visible = false
+layout_mode = 0
+offset_left = 100.0
+offset_top = 100.0
+offset_right = 302.0
+offset_bottom = 228.0
+mouse_filter = 2
+
+[node name="FloatingStatsLabel" type="Label" parent="UI/FloatingStatsPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "Floating Stats"
+autowrap_mode = 2
+
+[node name="CharacterPreviewWindow" type="Window" parent="."]
+title = "Character Preview"
+size = Vector2i(560, 760)
+visible = false
+
+[node name="SubViewportContainer" type="SubViewportContainer" parent="CharacterPreviewWindow"]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="CharacterPreviewWindow/SubViewportContainer"]
+handle_input_locally = false
+size = Vector2i(560, 760)
+render_target_update_mode = 0
+
+[node name="PreviewCamera3D" type="Camera3D" parent="CharacterPreviewWindow/SubViewportContainer/SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 0.990216, 0.13954312, 0, -0.13954312, 0.990216, 0, 2.1, 5.3)
+current = true

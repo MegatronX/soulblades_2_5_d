@@ -1,4 +1,5 @@
 using Godot;
+using System.Collections.Generic;
 
 /// <summary>
 /// Base class for all Status Effect resources. A status effect is a temporary
@@ -6,7 +7,7 @@ using Godot;
 /// or trigger effects at different points in the battle flow.
 /// </summary>
 [GlobalClass]
-public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect, IPrioritizedModifier
+public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect, IPrioritizedModifier, ITurnPreviewStatDeltaProvider
 {
     [Export]
     public string EffectName { get; private set; }
@@ -63,6 +64,37 @@ public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect
     [Export]
     public ShaderMaterial PersistentShader { get; private set; }
 
+    [ExportGroup("Visual State Overrides")]
+    [Export]
+    public bool ForceInjuredIdleAnimation { get; private set; } = false;
+    
+    [Export]
+    public float ScaleMultiplier { get; private set; } = 1.0f;
+
+    [Export]
+    public bool ApplyTintWhileActive { get; private set; } = false;
+
+    [Export]
+    public Color ActiveTintColor { get; private set; } = Colors.White;
+
+    [Export(PropertyHint.Range, "0,1,0.01")]
+    public float ActiveTintStrength { get; private set; } = 0.35f;
+
+    [Export]
+    public bool EnableMirrorImages { get; private set; } = false;
+
+    [Export(PropertyHint.Range, "1,8,1")]
+    public int MirrorImageCount { get; private set; } = 3;
+
+    [Export(PropertyHint.Range, "0,1,0.01")]
+    public float MirrorImageAlpha { get; private set; } = 0.2f;
+
+    [Export(PropertyHint.Range, "0,0.5,0.001")]
+    public float MirrorImageSpread { get; private set; } = 0.06f;
+
+    [Export(PropertyHint.Range, "0,8,0.01")]
+    public float MirrorImageDriftSpeed { get; private set; } = 1.8f;
+
     [Export]
     public StatusEffectPolarity Polarity { get; set; } = StatusEffectPolarity.Neutral;
 
@@ -70,8 +102,6 @@ public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect
     [Export]
     public int Priority { get; private set; } = 0;
 
-    [Export]
-    public float ScaleMultiplier { get; private set; } = 1.0f;
 
     [ExportGroup("Turn Control")]
     [Export]
@@ -170,5 +200,36 @@ public partial class StatusEffect : Resource, IActionModifier, IPersistentEffect
             if (effect == null) continue;
             callback?.Invoke(effect);
         }
+    }
+
+    public virtual IEnumerable<TurnPreviewStatDelta> GetTurnPreviewStatDeltas()
+    {
+        if (OnApplyEffects == null || OnApplyEffects.Count == 0) yield break;
+
+        foreach (var effect in OnApplyEffects)
+        {
+            if (effect is not ITurnPreviewStatDeltaProvider provider) continue;
+            foreach (var delta in provider.GetTurnPreviewStatDeltas())
+            {
+                if (delta.IsNoOp) continue;
+                yield return delta;
+            }
+        }
+    }
+
+    public bool TryGetActiveTint(out Color tintColor, out float strength)
+    {
+        tintColor = ActiveTintColor;
+        strength = Mathf.Clamp(ActiveTintStrength, 0f, 1f);
+        return ApplyTintWhileActive && strength > 0f;
+    }
+
+    public bool TryGetMirrorImageConfig(out int count, out float alpha, out float spread, out float driftSpeed)
+    {
+        count = Mathf.Clamp(MirrorImageCount, 1, 8);
+        alpha = Mathf.Clamp(MirrorImageAlpha, 0f, 1f);
+        spread = Mathf.Max(0f, MirrorImageSpread);
+        driftSpeed = Mathf.Max(0f, MirrorImageDriftSpeed);
+        return EnableMirrorImages && count > 0 && alpha > 0f;
     }
 }

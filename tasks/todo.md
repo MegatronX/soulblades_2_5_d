@@ -213,3 +213,210 @@
 
 ## Review
 - [ ] Confirm Haste preview now reorders cards before commit.
+
+---
+
+# Turn Preview Architecture Cleanup
+
+## Plan
+- [x] Unify blocked-turn visibility policy between initial, preview, and post-commit turn-order generation.
+- [x] Extract preview assembly from `TargetSelectionController` into shared `ActionPreviewBuilder`.
+- [x] Reuse runtime action preparation in preview flow via `ActionDirector` (initiation/global modifiers + tick-cost resolution).
+- [x] Replace `TurnManager` status concrete-type checks with explicit preview stat-delta contracts.
+- [x] Run compile verification.
+
+## Review
+- [ ] Confirm Stop/Haste previews remain in sync with committed turn order.
+
+---
+
+# Turn Preview Rapid-Target Coalescing
+
+## Plan
+- [x] Fix dropped preview updates when rapid target changes occur during in-flight turn-order animation.
+- [x] Coalesce queued preview requests so latest target state is rendered after current tween completes.
+- [x] Run compile verification and retest rapid target switching.
+
+## Review
+- [ ] Confirm no stale/older preview state when cycling targets quickly.
+
+---
+
+# Action VFX Orientation and Timing
+
+## Plan
+- [x] Ensure OneShot VFX sprite-based effects can face the camera reliably.
+- [x] Ensure action flow waits for impact/reaction OneShot VFX completion before ending the action.
+- [x] Run compile verification and retest with `Haste.tscn` on enemy targets.
+
+## Review
+- [ ] Confirm Haste impact sprite appears front-facing to camera.
+- [ ] Confirm next turn does not begin before impact/reaction VFX finishes.
+
+---
+
+# Character Visual State Controller
+
+## Plan
+- [x] Move status/stat-driven visual responsibilities out of `BaseCharacter` into a dedicated controller node.
+- [x] Add status-level visual metadata for persistent tint and injured-idle overrides.
+- [x] Add speed-to-animation playback scaling driven by effective `Speed` stat changes.
+- [x] Defer speed-feedback playback updates while an action sequence is animating, then apply pending speed after reaction finishes.
+- [x] Add idle animation switching (`Idle` <-> `Injured`) based on HP threshold and debilitating status flags.
+- [x] Wire battle animation return-to-idle to resolve through the visual controller.
+- [x] Add baseline status-resource tuning values for Berserk tint + debilitating injured-idle behavior.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: Haste/Slow/Shock visibly alter animation playback speed.
+- [ ] Confirm runtime: Speed feedback no longer pops mid-action; updates apply after reaction phase.
+- [ ] Confirm runtime: Berserk applies red tint while active and clears on expiry.
+- [ ] Confirm runtime: Poison/Burn/Bleed/Slow/Shock switch idle to `Injured` (if animation exists) and restore when cleared.
+- [ ] Confirm runtime: HP < 25% switches to `Injured` and returns above threshold.
+
+---
+
+# Timed Hit Authoring Sandbox
+
+## Plan
+- [x] Extend timed-hit runtime model to support richer timing anchors and speed-safe offset interpretation.
+- [x] Add timed-hit resolution telemetry (signed early/late error + window index) for tuning feedback.
+- [x] Add runtime offset hooks on `ActionContext` for per-action/per-character tuning overrides.
+- [x] Build a dedicated timed-hit sandbox scene/controller using real action execution pipeline (`ActionDirector`/`BattleAnimator`/`TimedHitManager`).
+- [x] Add editor controls for selecting actor/target/action, triggering action, choosing window index, and adjusting action/character offsets.
+- [x] Add optional controls for key action VFX timing knobs (travel delay/duration, impact prewarm) used during tuning runs.
+- [x] Add “commit tuned offset” action to write selected window timing back to action resource.
+- [x] Run compile verification and document tuning workflow.
+
+## Review
+- [ ] Confirm multiple timed windows can be tuned and logged independently.
+- [ ] Confirm magic timing can anchor to travel start/end and remains stable under speed changes.
+- [ ] Confirm per-character tuning offset applies without mutating base resources until committed.
+
+---
+
+# Character Presentation Sandbox
+
+## Plan
+- [x] Add a dedicated single-character presentation sandbox scene/controller.
+- [x] Support character respawn from scene library and ensure required components (stats/status/ability/equipment/visual).
+- [x] Wire status testing controls (apply/remove/clear + active status list).
+- [x] Wire ability testing controls (equip/unequip/trigger + equipped list).
+- [x] Wire equipment testing controls (slot selection + equip/unequip + equipped slot list).
+- [x] Bind the character to `BattlePartyStatusRow` and keep row updated through runtime changes.
+- [x] Add an on-character floating stat panel plus a detailed side stat breakdown panel.
+- [x] Add utility controls for HP/MP/charge and turn start/end to inspect presentation changes quickly.
+- [x] Compile and verify scene/script wiring.
+
+## Review
+- [ ] Confirm status, ability, and equipment operations update visuals + row + stat panels in the sandbox.
+- [ ] Confirm floating stat panel tracks the character in-world and remains readable.
+
+---
+
+# Character Preview Window Input Blocking
+
+## Plan
+- [x] Reproduce/trace why sandbox UI buttons became non-clickable after preview-window changes.
+- [x] Guard preview-window usage so embedded subwindow mode cannot open a blocking window.
+- [x] Set project subwindow mode to detached (`embed_subwindows=false`) for true secondary-window behavior.
+- [x] Run compile verification.
+
+## Review
+- [x] Build passes with no new errors.
+- [ ] Confirm runtime: buttons remain clickable in `CharacterPresentationSandboxScene` and detached preview opens as its own OS window after restart.
+
+---
+
+# Character Focus View Visibility + Zoom
+
+## Plan
+- [x] Investigate why `Focus Character View` can show a gray/empty view instead of the character.
+- [x] Add explicit sandbox focus-camera control (force camera current + immediate framing on focus/respawn).
+- [x] Add mouse-wheel zoom in focus mode for quick sprite inspection.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: entering focus view shows the character consistently.
+- [ ] Confirm runtime: mouse wheel zooms in/out while in focus view.
+
+---
+
+# Character Focus Camera Ghosting + Zoom Reliability
+
+## Plan
+- [x] Investigate focus-view visual ghosting/after-image artifacts.
+- [x] Make zoom handling deterministic by consuming wheel input in `_Input` instead of `_UnhandledInput`.
+- [x] Reduce camera drift by defaulting focus follow interpolation to immediate placement.
+- [x] Restrict focus-camera follow updates to focus mode only.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: focus view no longer shows ghosting/distortion.
+- [ ] Confirm runtime: scroll zoom responds consistently.
+
+---
+
+# Timed Window Timing-Band Feedback
+
+## Plan
+- [x] Add a shared timing-band mapper for signed timing offsets:
+  - [x] `Early`
+  - [x] `Great (Early)`
+  - [x] `Perfect`
+  - [x] `Great (Late)`
+  - [x] `Late`
+- [x] Hook `TimedHitResolvedDetailed` into battle presentation flow.
+- [x] Show faint timing text on timed-window resolution (including misses), with fallback when ring UI is absent.
+- [x] Keep behavior scoped to actions that actually open timed windows.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: labels appear for both on-time and missed inputs and feel readable/non-intrusive.
+
+---
+
+# Ceira Sprite Frame Drift Investigation
+
+## Plan
+- [x] Audit Ceira sprite scene/import settings for pixel-stability issues.
+- [x] Disable mipmaps + VRAM compression on `ceira_new_1.png` import.
+- [x] Force nearest filtering on Ceira `Sprite3D`.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: idle loop no longer exhibits subtle per-frame drift/shimmer and reduced 9->0 loop pop.
+
+---
+
+# Mini Status Visual Shrink
+
+## Plan
+- [x] Implement status-driven sprite scale modifier in `CharacterVisualStateController`.
+- [x] Use existing `StatusEffect.ScaleMultiplier` as the data-driven visual hook.
+- [x] Set Mini status resource to apply shrink scaling.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: applying Mini shrinks afflicted sprite; removal restores base size.
+
+---
+
+# Mirror Images Status Effect
+
+## Plan
+- [x] Add a new `MirrorImagesStatusEffect` gameplay rule that doubles evasion by reducing incoming action accuracy.
+- [x] Extend status visual metadata with mirror-image presentation parameters.
+- [x] Implement mirror-image ghost sprite rendering in `CharacterVisualStateController`.
+- [x] Add a new `Mirror Images` status resource with tuned defaults.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: applying Mirror Images shows multiple translucent after-image sprites and removal fully cleans up visuals.

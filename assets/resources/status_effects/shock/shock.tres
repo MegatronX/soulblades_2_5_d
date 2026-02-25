@@ -15,3 +15,4 @@ AdditionalSpeedPenaltyPerStack = 0.05
 BaseMpRestorePenalty = 0.3
 AdditionalMpRestorePenaltyPerStack = 0.1
 MaxMpRestorePenalty = 0.5
+ForceInjuredIdleAnimation = true

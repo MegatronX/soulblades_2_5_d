@@ -1,4 +1,5 @@
 using Godot;
+using System.Threading.Tasks;
 
 /// <summary>
 /// A utility script for VFX scenes (like explosions or hits) that should play once and then destroy themselves.
@@ -6,10 +7,18 @@ using Godot;
 /// </summary>
 public partial class OneShotVfx : Node3D
 {
+    [Signal]
+    public delegate void PlaybackFinishedEventHandler();
+
     [Export] public bool RandomizeRotation { get; set; } = false;
+    [Export] public bool ForceSpriteBillboard { get; set; } = true;
     [Export] public AnimationPlayer _animationPlayer {get; set; } = null;
     [Export] public GpuParticles3D _particles {get; set; } = null;
     [Export] public AnimatedSprite3D _animatedSprite {get; set; } = null;
+    
+    private bool _didFinish = false;
+    private readonly TaskCompletionSource<bool> _completionSource = new();
+    public Task CompletionTask => _completionSource.Task;
 
 
     public override void _Ready()
@@ -23,7 +32,7 @@ public partial class OneShotVfx : Node3D
         if (animPlayer != null)
         {
             // Hook into the finished signal to clean up
-            animPlayer.AnimationFinished += (animName) => QueueFree();
+            animPlayer.AnimationFinished += (animName) => FinishPlayback();
 
             // If not autoplaying, play the first animation found
             if (!animPlayer.IsPlaying())
@@ -40,7 +49,12 @@ public partial class OneShotVfx : Node3D
         var animatedSprite = _animatedSprite ?? GetNodeOrNull<AnimatedSprite3D>("AnimatedSprite3D");
         if (animatedSprite != null)
         {
-            animatedSprite.AnimationFinished += QueueFree;
+            if (ForceSpriteBillboard)
+            {
+                animatedSprite.Billboard = BaseMaterial3D.BillboardModeEnum.Enabled;
+            }
+
+            animatedSprite.AnimationFinished += FinishPlayback;
             if (!animatedSprite.IsPlaying())
             {
                 animatedSprite.Play();
@@ -53,11 +67,25 @@ public partial class OneShotVfx : Node3D
         {
             particles.OneShot = true;
             particles.Emitting = true;
-            particles.Finished += QueueFree;
+            particles.Finished += FinishPlayback;
             return;
         }
         
         // Fallback safety: destroy after 1 second if no controller found
-        GetTree().CreateTimer(1.0f).Timeout += QueueFree;
+        GetTree().CreateTimer(1.0f).Timeout += FinishPlayback;
+    }
+
+    public override void _ExitTree()
+    {
+        _completionSource.TrySetResult(true);
+    }
+
+    private void FinishPlayback()
+    {
+        if (_didFinish) return;
+        _didFinish = true;
+        EmitSignal(SignalName.PlaybackFinished);
+        _completionSource.TrySetResult(true);
+        QueueFree();
     }
 }

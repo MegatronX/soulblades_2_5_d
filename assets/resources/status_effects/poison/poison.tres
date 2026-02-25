@@ -18,3 +18,4 @@ BasePercentBoss = 0.015
 PerStackPercentNormal = 0.01
 PerStackPercentBoss = 0.005
 HealInsteadOfDamage = false
+ForceInjuredIdleAnimation = true

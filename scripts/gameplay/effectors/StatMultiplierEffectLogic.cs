@@ -4,7 +4,7 @@ using Godot;
 /// Applies one or more multiplicative stat modifiers to the target.
 /// </summary>
 [GlobalClass]
-public partial class StatMultiplierEffectLogic : EffectLogic
+public partial class StatMultiplierEffectLogic : EffectLogic, ITurnPreviewStatDeltaProvider
 {
     [Export]
     public Godot.Collections.Array<StatMultiplierEntry> StatMultipliers { get; private set; } = new();
@@ -39,5 +39,16 @@ public partial class StatMultiplierEffectLogic : EffectLogic
         if (stats == null) return;
 
         stats.RemoveAllModifiersFromSource(this);
+    }
+
+    public System.Collections.Generic.IEnumerable<TurnPreviewStatDelta> GetTurnPreviewStatDeltas()
+    {
+        if (StatMultipliers == null) yield break;
+
+        foreach (var entry in StatMultipliers)
+        {
+            if (entry == null) continue;
+            yield return new TurnPreviewStatDelta(entry.Stat, 0, entry.Multiplier);
+        }
     }
 }

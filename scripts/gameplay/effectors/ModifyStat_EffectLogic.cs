@@ -4,7 +4,7 @@ using Godot;
 /// An EffectLogic that applies a stat modification to the target.
 /// </summary>
 [GlobalClass]
-public partial class ModifyStat_EffectLogic : EffectLogic
+public partial class ModifyStat_EffectLogic : EffectLogic, ITurnPreviewStatDeltaProvider
 {
     [Export]
     public StatType StatToModify { get; private set; }
@@ -31,5 +31,23 @@ public partial class ModifyStat_EffectLogic : EffectLogic
         if (statsComponent == null) return;
 
         statsComponent.RemoveAllModifiersFromSource(this);
+    }
+
+    public System.Collections.Generic.IEnumerable<TurnPreviewStatDelta> GetTurnPreviewStatDeltas()
+    {
+        if (ModificationType == ModifierType.Additive)
+        {
+            int additive = Mathf.RoundToInt(Value);
+            if (additive != 0)
+            {
+                yield return new TurnPreviewStatDelta(StatToModify, additive, 1.0f);
+            }
+            yield break;
+        }
+
+        if (ModificationType == ModifierType.Multiplicative)
+        {
+            yield return new TurnPreviewStatDelta(StatToModify, 0, Value);
+        }
     }
 }

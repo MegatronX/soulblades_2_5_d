@@ -32,8 +32,7 @@ public sealed class BattleTurnFlow
         var context = new ActionContext(action, actor.Combatant, targets, sourceItem);
         await _actionDirector.ProcessAction(context);
 
-        float resolvedTickCost = action.TickCost + context.TickCostAdjustment;
-        resolvedTickCost = Mathf.Max(-TurnManager.TickThreshold + 1f, resolvedTickCost);
+        float resolvedTickCost = _actionDirector.ResolveTickCost(context);
 
         _turnManager.CommitTurn(actor, resolvedTickCost, _actionDirector);
         _overflowSystem?.NotifyTurnCommitted(actor.Combatant);

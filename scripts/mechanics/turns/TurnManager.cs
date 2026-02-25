@@ -110,13 +110,6 @@ public partial class TurnManager : Node
         }
     }
 
-    private struct SimulatedStatChange
-    {
-        public StatType Stat;
-        public int Additive;
-        public float Multiplier;
-    }
-
     /// <summary>
     /// The number of ticks required to get a turn.
     /// </summary>
@@ -174,7 +167,7 @@ public partial class TurnManager : Node
     /// <param name="actor">The combatant who is hypothetically taking the action.</param>
     /// <param name="preview">The details of the hypothetical action.</param>
     /// <returns>A list of TurnData objects representing the predicted turn order.</returns>
-    public List<TurnData> PreviewAction(int turnCount, TurnData actor, ActionPreview preview)
+    public List<TurnData> PreviewAction(int turnCount, TurnData actor, ActionPreview preview, bool includeBlocked = true)
     {
         if (turnCount < 1) return new List<TurnData>();
 
@@ -188,7 +181,10 @@ public partial class TurnManager : Node
         var currentTurnSnapshot = new TurnData(actor);
         currentTurnSnapshot.Counter -= TickThreshold;
         currentTurnSnapshot.TickValue = currentTurnSnapshot.Counter;
-        previewTurnOrder.Add(currentTurnSnapshot);
+        if (includeBlocked || !currentTurnSnapshot.IsBlocked)
+        {
+            previewTurnOrder.Add(currentTurnSnapshot);
+        }
 
         // --- Step 3: Find the simulated actor and apply the action's cost and effects. ---
         var simActor = simulation.FirstOrDefault(c => c.Combatant == actor.Combatant);
@@ -234,7 +230,8 @@ public partial class TurnManager : Node
 
         // --- Step 4: Generate the *rest* of the turn order from this new simulation state. ---
         // We ask for one less turn because we've already added the actor.
-        var subsequentTurns = GenerateTurnOrder(turnCount - 1, simulation);
+        int remainingTurns = Mathf.Max(0, turnCount - previewTurnOrder.Count);
+        var subsequentTurns = GenerateTurnOrder(remainingTurns, simulation, 0f, includeBlocked);
         previewTurnOrder.AddRange(subsequentTurns);
 
         return previewTurnOrder;
@@ -386,71 +383,14 @@ public partial class TurnManager : Node
         }
     }
 
-    private static IEnumerable<SimulatedStatChange> EnumerateSimulatedStatChanges(StatusEffect effect)
+    private static IEnumerable<TurnPreviewStatDelta> EnumerateSimulatedStatChanges(StatusEffect effect)
     {
-        if (effect == null) yield break;
+        if (effect is not ITurnPreviewStatDeltaProvider provider) yield break;
 
-        // Legacy status type.
-        if (effect is StatModifierEffect legacy && legacy.StatMultipliers != null)
+        foreach (var delta in provider.GetTurnPreviewStatDeltas())
         {
-            foreach (var entry in legacy.StatMultipliers)
-            {
-                if (entry == null) continue;
-                float multiplier = entry.Multiplier <= 0f ? 1.0f : entry.Multiplier;
-                yield return new SimulatedStatChange
-                {
-                    Stat = entry.Stat,
-                    Additive = 0,
-                    Multiplier = multiplier
-                };
-            }
-        }
-
-        // Current data-driven effect-logic path.
-        if (effect.OnApplyEffects == null) yield break;
-
-        foreach (var logic in effect.OnApplyEffects)
-        {
-            if (logic == null) continue;
-
-            if (logic is StatMultiplierEffectLogic multiplierLogic)
-            {
-                if (multiplierLogic.StatMultipliers == null) continue;
-                foreach (var entry in multiplierLogic.StatMultipliers)
-                {
-                    if (entry == null) continue;
-                    float multiplier = entry.Multiplier <= 0f ? 1.0f : entry.Multiplier;
-                    yield return new SimulatedStatChange
-                    {
-                        Stat = entry.Stat,
-                        Additive = 0,
-                        Multiplier = multiplier
-                    };
-                }
-                continue;
-            }
-
-            if (logic is ModifyStat_EffectLogic modifyLogic)
-            {
-                int additive = 0;
-                float multiplier = 1.0f;
-                if (modifyLogic.ModificationType == ModifierType.Additive)
-                {
-                    additive = Mathf.RoundToInt(modifyLogic.Value);
-                }
-                else if (modifyLogic.ModificationType == ModifierType.Multiplicative)
-                {
-                    multiplier = modifyLogic.Value <= 0f ? 1.0f : modifyLogic.Value;
-                }
-
-                if (additive == 0 && Mathf.IsEqualApprox(multiplier, 1.0f)) continue;
-                yield return new SimulatedStatChange
-                {
-                    Stat = modifyLogic.StatToModify,
-                    Additive = additive,
-                    Multiplier = multiplier
-                };
-            }
+            if (delta.IsNoOp) continue;
+            yield return delta;
         }
     }
 

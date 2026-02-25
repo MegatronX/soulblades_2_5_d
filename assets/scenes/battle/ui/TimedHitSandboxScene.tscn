@@ -1,0 +1,311 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/battle/TimedHitSandboxController.cs" id="1_controller"]
+[ext_resource type="PackedScene" path="res://assets/resources/characters/ceira/ceira.tscn" id="2_ceira"]
+[ext_resource type="PackedScene" path="res://assets/resources/characters/goblin_lv5/goblin_lv5_animated.tscn" id="3_goblin"]
+[ext_resource type="PackedScene" path="res://assets/resources/characters/CharacterTemplate.tscn" id="4_template"]
+[ext_resource type="Resource" path="res://assets/resources/characters/ceira/ceira_starting_stats.tres" id="5_stats"]
+[ext_resource type="Script" path="res://scripts/battle/ActionDirector.cs" id="6_action_director"]
+[ext_resource type="Script" path="res://scripts/battle/mechanics/BattleMechanics.cs" id="7_mechanics"]
+[ext_resource type="Script" path="res://scripts/battle/BattleAnimator.cs" id="8_animator"]
+[ext_resource type="Script" path="res://scripts/battle/TimedHitManager.cs" id="9_timed_hit"]
+[ext_resource type="PackedScene" path="res://assets/scenes/battle/TimedHitUIStandard.tscn" id="10_timed_hit_ui"]
+[ext_resource type="PackedScene" path="res://assets/scenes/battle/DamageNumber.tscn" id="11_damage_number"]
+
+[node name="TimedHitSandboxScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_controller")
+CharacterSceneLibrary = Array[PackedScene]([ExtResource("2_ceira"), ExtResource("3_goblin"), ExtResource("4_template")])
+DefaultActorScene = ExtResource("2_ceira")
+DefaultTargetScene = ExtResource("3_goblin")
+FallbackBaseStats = ExtResource("5_stats")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0431373, 0.0470588, 0.0666667, 1)
+
+[node name="SandboxWorld" type="Node3D" parent="."]
+
+[node name="PlayerAnchor" type="Node3D" parent="SandboxWorld"]
+position = Vector3(-2.5, 0, 0)
+
+[node name="EnemyAnchor" type="Node3D" parent="SandboxWorld"]
+position = Vector3(2.5, 0, 0)
+
+[node name="Camera3D" type="Camera3D" parent="SandboxWorld"]
+current = true
+position = Vector3(0, 3.6, 10)
+rotation = Vector3(-0.25, 0, 0)
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SandboxWorld"]
+position = Vector3(0, 5, 0)
+rotation = Vector3(-0.8, 0.8, 0)
+light_energy = 1.15
+
+[node name="ActionDirector" type="Node" parent="." node_paths=PackedStringArray("_battleMechanics", "_battleAnimator", "_timedHitManager")]
+script = ExtResource("6_action_director")
+_battleMechanics = NodePath("BattleMechanics")
+_battleAnimator = NodePath("BattleAnimator")
+_timedHitManager = NodePath("TimedHitManager")
+
+[node name="BattleMechanics" type="Node" parent="ActionDirector"]
+script = ExtResource("7_mechanics")
+
+[node name="BattleAnimator" type="Node" parent="ActionDirector"]
+script = ExtResource("8_animator")
+_timedHitUIScene = ExtResource("10_timed_hit_ui")
+_damageNumberScene = ExtResource("11_damage_number")
+
+[node name="TimedHitManager" type="Node" parent="ActionDirector"]
+script = ExtResource("9_timed_hit")
+
+[node name="UI" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 14
+theme_override_constants/margin_top = 14
+theme_override_constants/margin_right = 14
+theme_override_constants/margin_bottom = 14
+
+[node name="MainRow" type="HBoxContainer" parent="UI"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="LeftPanel" type="VBoxContainer" parent="UI/MainRow"]
+custom_minimum_size = Vector2(600, 0)
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="CharacterPanel" type="PanelContainer" parent="UI/MainRow/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainRow/LeftPanel/CharacterPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainRow/LeftPanel/CharacterPanel/Body"]
+layout_mode = 2
+text = "Character Setup"
+
+[node name="ActorRow" type="HBoxContainer" parent="UI/MainRow/LeftPanel/CharacterPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActorSceneSelect" type="OptionButton" parent="UI/MainRow/LeftPanel/CharacterPanel/Body/ActorRow"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RespawnActorButton" type="Button" parent="UI/MainRow/LeftPanel/CharacterPanel/Body/ActorRow"]
+layout_mode = 2
+text = "Respawn Actor"
+
+[node name="TargetRow" type="HBoxContainer" parent="UI/MainRow/LeftPanel/CharacterPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TargetSceneSelect" type="OptionButton" parent="UI/MainRow/LeftPanel/CharacterPanel/Body/TargetRow"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RespawnTargetButton" type="Button" parent="UI/MainRow/LeftPanel/CharacterPanel/Body/TargetRow"]
+layout_mode = 2
+text = "Respawn Target"
+
+[node name="RespawnBothButton" type="Button" parent="UI/MainRow/LeftPanel/CharacterPanel/Body"]
+layout_mode = 2
+text = "Respawn Both"
+
+[node name="ActionPanel" type="PanelContainer" parent="UI/MainRow/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainRow/LeftPanel/ActionPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainRow/LeftPanel/ActionPanel/Body"]
+layout_mode = 2
+text = "Action Runner"
+
+[node name="ActionRow" type="HBoxContainer" parent="UI/MainRow/LeftPanel/ActionPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActionSelect" type="OptionButton" parent="UI/MainRow/LeftPanel/ActionPanel/Body/ActionRow"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="WindowSelect" type="OptionButton" parent="UI/MainRow/LeftPanel/ActionPanel/Body/ActionRow"]
+custom_minimum_size = Vector2(180, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ActionButtonsRow" type="HBoxContainer" parent="UI/MainRow/LeftPanel/ActionPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="RefreshActionsButton" type="Button" parent="UI/MainRow/LeftPanel/ActionPanel/Body/ActionButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Refresh Actions"
+
+[node name="RunActionButton" type="Button" parent="UI/MainRow/LeftPanel/ActionPanel/Body/ActionButtonsRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Run Action"
+
+[node name="TuningPanel" type="PanelContainer" parent="UI/MainRow/LeftPanel"]
+layout_mode = 2
+
+[node name="Body" type="VBoxContainer" parent="UI/MainRow/LeftPanel/TuningPanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainRow/LeftPanel/TuningPanel/Body"]
+layout_mode = 2
+text = "Timing Tuning"
+
+[node name="TimingOffsetRow" type="HBoxContainer" parent="UI/MainRow/LeftPanel/TuningPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ActionOffsetSpin" type="SpinBox" parent="UI/MainRow/LeftPanel/TuningPanel/Body/TimingOffsetRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+min_value = -5.0
+max_value = 5.0
+step = 0.01
+tooltip_text = "Action-wide timing offset (seconds) applied to every timed window for this run."
+
+[node name="CharacterOffsetSpin" type="SpinBox" parent="UI/MainRow/LeftPanel/TuningPanel/Body/TimingOffsetRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+min_value = -5.0
+max_value = 5.0
+step = 0.01
+tooltip_text = "Character-specific timing offset (seconds) for this run."
+
+[node name="WindowOffsetSpin" type="SpinBox" parent="UI/MainRow/LeftPanel/TuningPanel/Body/TimingOffsetRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+min_value = -5.0
+max_value = 5.0
+step = 0.01
+tooltip_text = "Selected-window timing offset (seconds) for this run."
+
+[node name="VfxOffsetRow" type="HBoxContainer" parent="UI/MainRow/LeftPanel/TuningPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TravelDelayOffsetSpin" type="SpinBox" parent="UI/MainRow/LeftPanel/TuningPanel/Body/VfxOffsetRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+min_value = -5.0
+max_value = 5.0
+step = 0.01
+tooltip_text = "Delta applied to VisualSettings.TravelDelay for this run."
+
+[node name="TravelDurationOffsetSpin" type="SpinBox" parent="UI/MainRow/LeftPanel/TuningPanel/Body/VfxOffsetRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+min_value = -5.0
+max_value = 5.0
+step = 0.01
+tooltip_text = "Delta applied to VisualSettings.TravelDuration for this run."
+
+[node name="ImpactPrewarmOffsetSpin" type="SpinBox" parent="UI/MainRow/LeftPanel/TuningPanel/Body/VfxOffsetRow"]
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+min_value = -5.0
+max_value = 5.0
+step = 0.01
+tooltip_text = "Delta applied to VisualSettings.ImpactVfxPrewarm for this run."
+
+[node name="CommitRow" type="HBoxContainer" parent="UI/MainRow/LeftPanel/TuningPanel/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CommitWindowOffsetButton" type="Button" parent="UI/MainRow/LeftPanel/TuningPanel/Body/CommitRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Commit Window Offset"
+tooltip_text = "Write action/window timing delta (Action+Window offset) into selected action resource."
+
+[node name="CommitVisualTimingButton" type="Button" parent="UI/MainRow/LeftPanel/TuningPanel/Body/CommitRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Commit Visual Timing"
+tooltip_text = "Write travel/prewarm timing deltas into selected action resource."
+
+[node name="ResetOffsetsButton" type="Button" parent="UI/MainRow/LeftPanel/TuningPanel/Body/CommitRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reset Offsets"
+
+[node name="RightPanel" type="VBoxContainer" parent="UI/MainRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 10
+
+[node name="StatePanel" type="PanelContainer" parent="UI/MainRow/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Body" type="VBoxContainer" parent="UI/MainRow/RightPanel/StatePanel"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainRow/RightPanel/StatePanel/Body"]
+layout_mode = 2
+text = "Run State"
+
+[node name="SummaryLabel" type="Label" parent="UI/MainRow/RightPanel/StatePanel/Body"]
+layout_mode = 2
+autowrap_mode = 2
+text = "Summary"
+
+[node name="TimingLabel" type="Label" parent="UI/MainRow/RightPanel/StatePanel/Body"]
+layout_mode = 2
+autowrap_mode = 2
+text = "Last Timed Hit: (none)"
+
+[node name="LogPanel" type="PanelContainer" parent="UI/MainRow/RightPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="Body" type="VBoxContainer" parent="UI/MainRow/RightPanel/LogPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="Header" type="Label" parent="UI/MainRow/RightPanel/LogPanel/Body"]
+layout_mode = 2
+text = "Timing Log"
+
+[node name="LogLabel" type="RichTextLabel" parent="UI/MainRow/RightPanel/LogPanel/Body"]
+custom_minimum_size = Vector2(0, 260)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = false
+scroll_following = true
+text = ""
