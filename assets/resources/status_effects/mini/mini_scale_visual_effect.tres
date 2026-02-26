@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="ScaleBattleVisualEffect" load_steps=2 format=3 uid="uid://yo1t7a3igidv"]
+
+[ext_resource type="Script" uid="uid://d31q8snae0oth" path="res://scripts/gameplay/visuals/effects/ScaleBattleVisualEffect.cs" id="1_mini_scale"]
+
+[resource]
+script = ExtResource("1_mini_scale")
+ScaleMultiplier = 0.333

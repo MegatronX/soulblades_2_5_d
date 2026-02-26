@@ -1382,12 +1382,14 @@ public partial class StatusSandboxController : Control
         foreach (var modifier in GetOrderedModifiersFrom(context.Initiator))
         {
             modifier.OnActionInitiated(context, context.Initiator);
+            DispatchModifierVisualEvent(modifier, BattleVisualEventType.ActionInitiated, context.Initiator, context);
         }
 
         var allies = GetAlliesOf(context.Initiator);
         foreach (var entry in GetOrderedModifiersFromMany(allies))
         {
             entry.Modifier.OnAllyActionInitiated(context, context.Initiator, entry.Owner);
+            DispatchModifierVisualEvent(entry.Modifier, BattleVisualEventType.AllyActionInitiated, entry.Owner, context, relatedNode: context.Initiator);
         }
     }
 
@@ -1396,6 +1398,7 @@ public partial class StatusSandboxController : Control
         foreach (var entry in GetOrderedModifiersFromMany(GetAllCombatants()))
         {
             entry.Modifier.OnActionBroadcast(context, entry.Owner);
+            DispatchModifierVisualEvent(entry.Modifier, BattleVisualEventType.ActionBroadcast, entry.Owner, context);
         }
     }
 
@@ -1418,6 +1421,7 @@ public partial class StatusSandboxController : Control
             foreach (var entry in GetOrderedModifiersFromMany(owners))
             {
                 entry.Modifier.OnActionTargeted(context, entry.Owner);
+                DispatchModifierVisualEvent(entry.Modifier, BattleVisualEventType.ActionTargeted, entry.Owner, context);
             }
 
             finalContexts.Add(context);
@@ -1525,6 +1529,7 @@ public partial class StatusSandboxController : Control
             foreach (var modifier in GetActionModifiersFrom(target))
             {
                 modifier.OnActionPostExecution(context, target, result);
+                DispatchModifierVisualEvent(modifier, BattleVisualEventType.ActionPostExecution, target, context, result);
             }
         }
     }
@@ -1590,6 +1595,75 @@ public partial class StatusSandboxController : Control
     private static int GetModifierPriority(IActionModifier modifier)
     {
         return modifier is IPrioritizedModifier prioritized ? prioritized.Priority : 0;
+    }
+
+    private void DispatchModifierVisualEvent(
+        IActionModifier modifier,
+        BattleVisualEventType eventType,
+        Node owner,
+        ActionContext actionContext,
+        ActionResult actionResult = null,
+        Node relatedNode = null)
+    {
+        if (modifier == null || owner == null) return;
+
+        if (modifier is StatusEffect statusEffect)
+        {
+            var statusManager = GetStatusManager(owner);
+            var statusInstance = statusManager?.GetEffectInstance(statusEffect);
+            BattleVisualEffectRunner.DispatchStatusEvent(
+                statusEffect,
+                eventType,
+                owner,
+                statusManager,
+                statusInstance,
+                actionContext: actionContext,
+                actionResult: actionResult,
+                relatedNode: relatedNode);
+        }
+
+        if (modifier is AbilityEffect abilityEffect)
+        {
+            var ability = ResolveAbilityOwningEffect(owner, abilityEffect);
+            var abilityContext = new AbilityEffectContext(owner, AbilityTrigger.None)
+            {
+                Ability = ability,
+                ActionContext = actionContext,
+                ActionResult = actionResult
+            };
+
+            BattleVisualEffectRunner.DispatchAbilityEffectEvent(
+                abilityEffect,
+                ability,
+                eventType,
+                owner,
+                abilityContext,
+                actionContext,
+                actionResult,
+                relatedNode);
+        }
+    }
+
+    private static Ability ResolveAbilityOwningEffect(Node owner, AbilityEffect effect)
+    {
+        if (owner == null || effect == null) return null;
+
+        var abilityManager = owner.GetNodeOrNull<AbilityManager>(AbilityManager.NodeName);
+        if (abilityManager == null) return null;
+
+        foreach (var ability in abilityManager.GetEquippedAbilities())
+        {
+            if (ability?.TriggeredEffects == null) continue;
+            for (int i = 0; i < ability.TriggeredEffects.Count; i++)
+            {
+                if (ability.TriggeredEffects[i] == effect)
+                {
+                    return ability;
+                }
+            }
+        }
+
+        return null;
     }
 
     private IEnumerable<Node> GetAllCombatants()

@@ -34,3 +34,35 @@
 - For Sprite3D pixel-art sheets, avoid mipmaps + VRAM compression and use nearest filtering; compressed+mipmapped imports commonly produce subtle frame shimmer/drift even when source frames are aligned.
 - Reuse existing status visual metadata before adding bespoke logic; if a generic field like `ScaleMultiplier` exists, hook it into visual state controller once and drive per-status behavior from resources.
 - When adding new status visuals (e.g., mirror after-images), keep them in `CharacterVisualStateController` with data-driven status fields so effect resources control tuning without custom per-character code.
+- When status/ability visual behaviors start expanding, move to composable visual-effect resources with lifecycle/action hook dispatch at existing runtime call sites (`StatusEffectManager`, `BattleMechanics`, `AbilityManager`) instead of bloating base data classes or routing gameplay hooks through the global bus.
+- Keep gameplay systems presentation-agnostic: `BattleMechanics`, `StatusEffectManager`, and `AbilityManager` should emit generic hook payloads (`BattleHookEvent`) while `ActionDirector` (or a presentation router) translates them into visual dispatch.
+- For Sprite3D mirror/after-image effects, account for source `alpha_cut` and depth behavior; clone sprites should disable alpha cut and use explicit depth/sorting offsets or they can appear invisible despite being spawned.
+- When exporting polymorphic visual-effect lists in Godot resources, store them as `Array<Resource>` and cast at dispatch time; typed custom-resource arrays can deserialize inconsistently and silently drop behavior.
+- When introducing a composable visual-effect system, remove legacy parallel visual fields quickly after migration; dual-path visual logic causes drift, harder debugging, and inconsistent status presentation.
+- For generated Sprite3D visual clones, always inherit `VisualInstance3D.Layers` and critical sprite render flags (`Transparent`, alpha-cut mode, render priority); otherwise clones can exist but be camera-invisible.
+- When a persistent visual effect is logically active but visually subtle/unreliable (e.g., after-images), add a shader-based fallback visual layer so players always get clear feedback.
+- For Godot 4 `shader_type spatial`, do not use `TEXTURE` directly; declare an explicit sampler uniform (e.g., `texture_albedo`) and bind textures from runtime sprite data when needed.
+- For Godot signal wrappers in C#, avoid unconditional `-=` on engine signals (`Window.CloseRequested`, etc.); use `IsConnected` + `Disconnect`/`Connect` with `Callable` to prevent runtime "disconnect nonexistent connection" errors.
+- For afterimage shaders, do not keep `ALPHA = base.a`; include displaced-sample alpha in output or the effect collapses into a plain tint with no visible duplicate silhouettes.
+- Match spatial `render_mode` tokens to the exact Godot version in use (`depth_prepass_alpha` vs invalid variants); one bad token hard-fails resource loading at scene startup.
+- Sprite shader offsets are still clipped by the sprite quad; to let effects extend beyond frame bounds, expand geometry in `vertex()` and remap UVs back to original content space.
+- For pixel-art Sprite3D status visuals, prefer real duplicate sprites for “beyond frame” afterimages; shader-quad expansion can introduce perceived scale/jitter artifacts unless the atlas pipeline is carefully controlled.
+- A shader on a single `Sprite3D` cannot draw outside that sprite’s mesh bounds; for out-of-bounds afterimages, use separate ghost drawables instead of forcing base-sprite shader expansion.
+- To keep base sprites unchanged while allowing out-of-bounds shader trails, render the shader on a synchronized enlarged overlay sprite (separate drawable) and keep base material untouched.
+- Treat shader expansion settings as effect budget, not literal world-scale multipliers; damp conversion from expansion params to overlay scale to avoid oversized duplicate silhouettes.
+- Enlarging an overlay sprite alone is insufficient; remap shader UVs back into source content space (via `overlay_scale`) so trails can use the added margins instead of scaling the base sprite.
+- For mirror/afterimage readability, prefer static multi-layer offsets (front/back overlays) over time-driven UV wobble; animated UV direction often reads as jitter on pixel sprites.
+- For billboard Sprite3D overlay effects, avoid camera-space forward/right position offsets; keep overlays transform-locked to source and use sprite pixel offsets to prevent Y drift and perspective jitter.
+- For mirrored ghost overlays, avoid `ghost_alpha - base_alpha` style subtraction as the primary alpha path; it can slice silhouettes in half when layers are offset. Prefer full displaced-silhouette alpha with only light center suppression.
+- For Mirror Images-style effects, favor deterministic clone sprites with pixel-space offsets over animated camera-space offsets; this avoids clipping artifacts and subpixel jitter in pixel-art Sprite3D workflows.
+- When cloning sprite ghosts, apply offset/tint logic at `SpriteBase3D` level (not only `Sprite3D`) so AnimatedSprite3D-based characters still show visible duplicates.
+- For trailing afterimages, derive trail direction from sprite mirroring (`FlipH`/`FlipV`) instead of symmetric spread so ghosts consistently appear behind facing direction.
+- If designers report spread/drift/alpha tuning has weak impact, verify those fields are actually consumed in runtime math (especially drift speed) and avoid aggressive clamp/multiplier combinations that flatten parameter response.
+- Avoid making all afterimage clones render strictly behind source with low-contrast white-pass; this can make effects visually disappear even when counts/alpha are high. Keep at least one near clone in front and use explicit tint contrast.
+- When designers are tuning visuals iteratively, move hardcoded coefficients (offsets, alpha/tint curves, layering) into exported resource fields early to avoid compile-time iteration loops.
+- For trailing ghost effects, include an explicit distance pulse control (amplitude/frequency/phase/min scale) rather than overloading drift offsets; this gives clear, tunable “in/out from core” motion.
+- Keep pulse timing independent from drift timing; coupling pulse phase to drift speed can make in/out movement appear nonresponsive to pulse-specific tuning.
+- For vertical status visuals like Float, apply sprite lift via offset (negative Y) in the shared visual controller and restore base offsets when the effect ends; this avoids per-status transform hacks.
+- For hover/bob visuals, expose waveform selection in resource data instead of hardcoding `sin`; designers often need different feel curves without recompiling.
+- For formula-driven equipment scaling, pass an extensible runtime context object instead of long parameter lists so future formulas can consume new battle data without signature churn.
+- When equipment can override commands (e.g., weapon replacing `Attack`), refresh overrides centrally on equip/unequip and clear fallback explicitly to avoid stale menu state.

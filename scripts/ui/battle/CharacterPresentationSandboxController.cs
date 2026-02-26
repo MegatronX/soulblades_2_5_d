@@ -72,12 +72,27 @@ public partial class CharacterPresentationSandboxController : Control
     [Export(PropertyHint.Range, "0.05,2.0,0.05")]
     public float FocusCameraZoomStep { get; set; } = 0.55f;
 
+    [ExportGroup("Focus Lighting")]
+    [Export]
+    public bool BoostLightingInFocusView { get; set; } = true;
+
+    [Export(PropertyHint.Range, "0.0,8.0,0.05")]
+    public float FocusViewDirectionalLightEnergy { get; set; } = 2.2f;
+
+    [Export]
+    public bool UseFocusFillLight { get; set; } = true;
+
+    [Export(PropertyHint.Range, "0.0,8.0,0.05")]
+    public float FocusFillLightEnergy { get; set; } = 1.4f;
+
     private const string PreviewWindowToggleTooltip = "Open/close a secondary preview window that renders the live character scene.";
     private const string PreviewWindowDisabledTooltip = "Detached preview requires Display > Window > Subwindows > Embed Subwindows = false. Restart after changing project settings.";
 
     private Node3D _characterAnchor;
     private Camera3D _sandboxCamera;
     private ColorRect _backdrop;
+    private DirectionalLight3D _directionalLight;
+    private OmniLight3D _focusFillLight;
     private Control _mainSplit;
     private Button _toggleUiButton;
     private Button _togglePreviewWindowButton;
@@ -139,6 +154,7 @@ public partial class CharacterPresentationSandboxController : Control
     private BattlePartyStatusRow _partyStatusRow;
     private ChargeSystem _chargeSystem;
     private float _focusCameraDistanceCurrent;
+    private float _baseDirectionalLightEnergy = -1f;
 
     private readonly List<PackedScene> _characterOptions = new();
     private readonly List<StatusEffect> _statusOptions = new();
@@ -190,7 +206,11 @@ public partial class CharacterPresentationSandboxController : Control
         }
         if (_characterPreviewWindow != null)
         {
-            _characterPreviewWindow.CloseRequested -= OnPreviewWindowCloseRequested;
+            var closeCallable = Callable.From(OnPreviewWindowCloseRequested);
+            if (_characterPreviewWindow.IsConnected(Window.SignalName.CloseRequested, closeCallable))
+            {
+                _characterPreviewWindow.Disconnect(Window.SignalName.CloseRequested, closeCallable);
+            }
         }
     }
 
@@ -237,6 +257,8 @@ public partial class CharacterPresentationSandboxController : Control
         _characterAnchor = GetNodeOrNull<Node3D>("SandboxWorld/CharacterAnchor");
         _sandboxCamera = GetNodeOrNull<Camera3D>("SandboxWorld/Camera3D");
         _backdrop = GetNodeOrNull<ColorRect>("Backdrop");
+        _directionalLight = GetNodeOrNull<DirectionalLight3D>("SandboxWorld/DirectionalLight3D");
+        _focusFillLight = GetNodeOrNull<OmniLight3D>("SandboxWorld/FocusFillLight3D");
         _mainSplit = GetNodeOrNull<Control>("UI/MainSplit");
         _toggleUiButton = GetNodeOrNull<Button>("UI/PreviewToolbar/ToggleUiButton");
         _togglePreviewWindowButton = GetNodeOrNull<Button>("UI/PreviewToolbar/TogglePreviewWindowButton");
@@ -300,6 +322,22 @@ public partial class CharacterPresentationSandboxController : Control
         _focusCameraDistanceCurrent = FocusCameraDistance;
         ClampFocusCameraDistance();
         EnsureSandboxCameraCurrent();
+        InitializeFocusLighting();
+        ApplyFocusLightingState();
+    }
+
+    private void InitializeFocusLighting()
+    {
+        if (_directionalLight != null && _baseDirectionalLightEnergy < 0f)
+        {
+            _baseDirectionalLightEnergy = _directionalLight.LightEnergy;
+        }
+
+        if (_focusFillLight != null)
+        {
+            _focusFillLight.LightEnergy = Mathf.Max(0f, FocusFillLightEnergy);
+            _focusFillLight.Visible = false;
+        }
     }
 
     private void EnsureSystems()
@@ -575,8 +613,11 @@ public partial class CharacterPresentationSandboxController : Control
         _respawnCharacterButton?.Connect(Button.SignalName.Pressed, Callable.From(RespawnCharacter));
         if (_characterPreviewWindow != null)
         {
-            _characterPreviewWindow.CloseRequested -= OnPreviewWindowCloseRequested;
-            _characterPreviewWindow.CloseRequested += OnPreviewWindowCloseRequested;
+            var closeCallable = Callable.From(OnPreviewWindowCloseRequested);
+            if (!_characterPreviewWindow.IsConnected(Window.SignalName.CloseRequested, closeCallable))
+            {
+                _characterPreviewWindow.Connect(Window.SignalName.CloseRequested, closeCallable);
+            }
         }
 
         _applyStatusButton?.Connect(Button.SignalName.Pressed, Callable.From(ApplySelectedStatus));
@@ -625,7 +666,29 @@ public partial class CharacterPresentationSandboxController : Control
             PositionFocusCameraImmediate();
         }
 
+        ApplyFocusLightingState();
         UpdatePanelToggleButtonText();
+    }
+
+    private void ApplyFocusLightingState()
+    {
+        if (_directionalLight != null && BoostLightingInFocusView)
+        {
+            if (_baseDirectionalLightEnergy < 0f)
+            {
+                _baseDirectionalLightEnergy = _directionalLight.LightEnergy;
+            }
+
+            _directionalLight.LightEnergy = _panelsVisible
+                ? _baseDirectionalLightEnergy
+                : Mathf.Max(_baseDirectionalLightEnergy, FocusViewDirectionalLightEnergy);
+        }
+
+        if (_focusFillLight != null)
+        {
+            _focusFillLight.LightEnergy = Mathf.Max(0f, FocusFillLightEnergy);
+            _focusFillLight.Visible = !_panelsVisible && UseFocusFillLight;
+        }
     }
 
     private void UpdatePanelToggleButtonText()
@@ -1383,6 +1446,20 @@ public partial class CharacterPresentationSandboxController : Control
             ? $"Applied status '{effect.EffectName}'."
             : $"Status '{effect.EffectName}' did not apply.");
 
+        if (effect.VisualEffects != null && effect.VisualEffects.Count > 0)
+        {
+            var visualTypes = effect.VisualEffects
+                .Select(v => v?.GetType().Name ?? "(null)")
+                .ToArray();
+            Log($"Status visual effects: {effect.VisualEffects.Count} [{string.Join(", ", visualTypes)}]");
+        }
+
+        var visualController = _character?.GetNodeOrNull<CharacterVisualStateController>(CharacterVisualStateController.NodeName);
+        visualController?.RefreshAllVisualState(playIdleIfPossible: true);
+        if (applied && effect is MirrorImagesStatusEffect)
+        {
+            Log($"Mirror ghost sprites active: {visualController?.GetActiveMirrorGhostCount() ?? 0}");
+        }
         RefreshAll();
     }
 
@@ -1401,6 +1478,8 @@ public partial class CharacterPresentationSandboxController : Control
             ? $"Removed status '{effect.EffectName}'."
             : $"Status '{effect.EffectName}' not active.");
 
+        _character?.GetNodeOrNull<CharacterVisualStateController>(CharacterVisualStateController.NodeName)
+            ?.RefreshAllVisualState(playIdleIfPossible: true);
         RefreshAll();
     }
 
@@ -1420,6 +1499,8 @@ public partial class CharacterPresentationSandboxController : Control
         }
 
         Log("Cleared all statuses.");
+        _character?.GetNodeOrNull<CharacterVisualStateController>(CharacterVisualStateController.NodeName)
+            ?.RefreshAllVisualState(playIdleIfPossible: true);
         RefreshAll();
     }
 

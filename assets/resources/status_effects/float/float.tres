@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="FloatStatusEffect" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="FloatStatusEffect" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/statuseffects/FloatStatusEffect.cs" id="1_float"]
+[ext_resource type="Resource" path="res://assets/resources/status_effects/float/float_hover_visual_effect.tres" id="2_float_hover_visual"]
 
 [resource]
 script = ExtResource("1_float")
@@ -9,5 +10,6 @@ Description = "Reduces earth damage and can ignore ground hazard ticks."
 Polarity = 1
 MinDurationTurns = 3
 MaxDurationTurns = 5
+VisualEffects = Array[Resource]([ExtResource("2_float_hover_visual")])
 EarthDamageTakenMultiplier = 0.67
 IgnoreGroundHazardTicks = true

@@ -1,21 +1,21 @@
-[gd_resource type="Resource" script_class="PercentDotStackingStatusEffect" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="PercentDotStackingStatusEffect" load_steps=5 format=3 uid="uid://bgg1k4xr3ms1s"]
 
-[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/PercentDotStackingStatusEffect.cs" id="1_poison"]
+[ext_resource type="Script" uid="uid://m1hlhi0iy3i1" path="res://scripts/gameplay/statuseffects/PercentDotStackingStatusEffect.cs" id="1_poison"]
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_saiad"]
+[ext_resource type="Resource" path="res://assets/resources/status_effects/visuals/force_injured_idle_visual_effect.tres" id="2_force_injured"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_powah"]
 
 [resource]
 script = ExtResource("1_poison")
-EffectName = "Poison"
-Description = "Deals end-of-turn max HP damage. Stacks increase tick intensity."
-Polarity = 2
-MinDurationTurns = 3
-MaxDurationTurns = 5
-MaxStacks = 5
-BossMaxStacks = 3
-AddStackOnReapply = true
-RefreshDurationOnReapply = true
 BasePercentNormal = 0.04
 BasePercentBoss = 0.015
 PerStackPercentNormal = 0.01
 PerStackPercentBoss = 0.005
-HealInsteadOfDamage = false
-ForceInjuredIdleAnimation = true
+MaxStacks = 5
+BossMaxStacks = 3
+EffectName = "Poison"
+Description = "Deals end-of-turn max HP damage. Stacks increase tick intensity."
+MinDurationTurns = 3
+MaxDurationTurns = 5
+VisualEffects = Array[Resource]([ExtResource("2_force_injured")])
+Polarity = 2

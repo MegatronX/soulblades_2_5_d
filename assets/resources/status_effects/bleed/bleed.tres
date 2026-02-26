@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="BleedStatusEffect" load_steps=4 format=3 uid="uid://d0ybw3g1elmr"]
+[gd_resource type="Resource" script_class="BleedStatusEffect" load_steps=5 format=3 uid="uid://d0ybw3g1elmr"]
 
 [ext_resource type="Script" uid="uid://wriuoibjqex7" path="res://scripts/gameplay/statuseffects/BleedStatusEffect.cs" id="1_bleed"]
 [ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_rljyu"]
 [ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_wwkto"]
+[ext_resource type="Resource" path="res://assets/resources/status_effects/visuals/force_injured_idle_visual_effect.tres" id="3_force_injured"]
 
 [resource]
 script = ExtResource("1_bleed")
@@ -19,5 +20,5 @@ EffectName = "Bleed"
 Description = "Deals turn-end bleed damage and boosts crit chance against the target."
 MinDurationTurns = 3
 MaxDurationTurns = 5
-ForceInjuredIdleAnimation = true
+VisualEffects = Array[Resource]([ExtResource("3_force_injured")])
 Polarity = 2

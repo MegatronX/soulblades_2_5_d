@@ -1,9 +1,10 @@
-[gd_resource type="Resource" script_class="BerserkAutoAttackStatusEffect" load_steps=5 format=3 uid="uid://nufhhe0oua8c"]
+[gd_resource type="Resource" script_class="BerserkAutoAttackStatusEffect" load_steps=6 format=3 uid="uid://nufhhe0oua8c"]
 
 [ext_resource type="Script" uid="uid://24yrhhaoaajm" path="res://scripts/gameplay/statuseffects/BerserkAutoAttackStatusEffect.cs" id="1_berserk_auto"]
 [ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="2_5n7yg"]
 [ext_resource type="Resource" uid="uid://djr07cuyi6m66" path="res://assets/resources/actions/Attack.tres" id="2_attack"]
 [ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="3_qohp0"]
+[ext_resource type="Resource" path="res://assets/resources/status_effects/berserk/berserk_tint_visual_effect.tres" id="4_berserk_tint"]
 
 [resource]
 script = ExtResource("1_berserk_auto")
@@ -15,6 +16,4 @@ EffectName = "Berserk (Frenzy)"
 Description = "Increases offense and speed, then auto-selects basic attack."
 MinDurationTurns = 2
 MaxDurationTurns = 4
-ApplyTintWhileActive = true
-ActiveTintColor = Color(1, 0.55, 0.55, 1)
-ActiveTintStrength = 0.55
+VisualEffects = Array[Resource]([ExtResource("4_berserk_tint")])

@@ -1,0 +1,7 @@
+[gd_resource type="Resource" script_class="ForceInjuredIdleBattleVisualEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/visuals/effects/ForceInjuredIdleBattleVisualEffect.cs" id="1_force_injured"]
+
+[resource]
+script = ExtResource("1_force_injured")
+TriggerMask = 1

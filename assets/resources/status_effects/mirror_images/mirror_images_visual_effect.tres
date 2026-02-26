@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="MirrorImagesBattleVisualEffect" load_steps=2 format=3 uid="uid://ib6vucbpjhft"]
+
+[ext_resource type="Script" uid="uid://ds706s8prkt4p" path="res://scripts/gameplay/visuals/effects/MirrorImagesBattleVisualEffect.cs" id="1_mirror_visual"]
+
+[resource]
+script = ExtResource("1_mirror_visual")
+MirrorImageCount = 7
+MirrorImageAlpha = 0.75
+MirrorImageSpread = 0.5
+MirrorImageDriftSpeed = 8.0
+TrailYBase = 0.02
+WorldYOffsetScale = 0.15
+DriftXAmplitude = 0.139
+DriftYAmplitude = 0.01
+InOutPulseAmplitude = 0.36
+InOutPulseFrequency = 2.13
+InOutPulseIndexStep = 0.9
+InOutMinScale = 0.35

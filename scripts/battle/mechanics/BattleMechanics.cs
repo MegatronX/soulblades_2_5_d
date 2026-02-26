@@ -12,8 +12,14 @@ public partial class BattleMechanics : Node
 {
     [Export] private CalculationStrategy _defaultStrategy;
     [Export] private OverflowSystem _overflowSystem;
+    [Export] private BattlefieldEffectManager _battlefieldEffectManager;
     
     private IRandomNumberGenerator _rng;
+
+    /// <summary>
+    /// Emitted when gameplay modifier hooks occur. Systems can subscribe to react (visuals, telemetry, etc.).
+    /// </summary>
+    public event System.Action<BattleHookEvent> HookEventRaised;
 
     public override void _Ready()
     {
@@ -21,6 +27,10 @@ public partial class BattleMechanics : Node
         if (_overflowSystem == null)
         {
             _overflowSystem = GetTree()?.CurrentScene?.FindChild("OverflowSystem", true, false) as OverflowSystem;
+        }
+        if (_battlefieldEffectManager == null)
+        {
+            _battlefieldEffectManager = GetTree()?.CurrentScene?.FindChild(BattlefieldEffectManager.NodeName, true, false) as BattlefieldEffectManager;
         }
     }
 
@@ -34,10 +44,20 @@ public partial class BattleMechanics : Node
     /// </summary>
     public void ProcessInitiation(ActionContext context, IEnumerable<Node> allies)
     {
+        if (context != null)
+        {
+            context.BattleMechanics = this;
+        }
+
         // A. Initiator Modifiers (e.g. "Charge Up")
         foreach (var modifier in GetOrderedModifiersFrom(context.Initiator))
         {
             modifier.OnActionInitiated(context, context.Initiator);
+            RaiseModifierHookEvent(
+                modifier,
+                BattleHookEventType.ActionInitiated,
+                context.Initiator,
+                context);
         }
 
         // B. Ally Modifiers (e.g. "Commander's Aura")
@@ -46,6 +66,23 @@ public partial class BattleMechanics : Node
         foreach (var entry in orderedAllyModifiers)
         {
             entry.Modifier.OnAllyActionInitiated(context, context.Initiator, entry.Owner);
+            RaiseModifierHookEvent(
+                entry.Modifier,
+                BattleHookEventType.AllyActionInitiated,
+                entry.Owner,
+                context,
+                relatedNode: context.Initiator);
+        }
+
+        // C. Battlefield Modifiers
+        foreach (var entry in GetOrderedBattlefieldModifiers())
+        {
+            entry.Modifier.OnActionInitiated(context, entry.Owner);
+            RaiseModifierHookEvent(
+                entry.Modifier,
+                BattleHookEventType.ActionInitiated,
+                entry.Owner,
+                context);
         }
     }
 
@@ -55,10 +92,18 @@ public partial class BattleMechanics : Node
     public void ProcessGlobalMods(ActionContext context, IEnumerable<Node> allCombatants)
     {
         // Global Interception (e.g. "Storm Drain")
-        var orderedModifiers = GetOrderedModifiersFromMany(allCombatants);
+        var orderedModifiers = GetOrderedModifiersFromMany(allCombatants)
+            .Concat(GetOrderedBattlefieldModifiers())
+            .OrderByDescending(entry => GetModifierPriority(entry.Modifier))
+            .ToList();
         foreach (var entry in orderedModifiers)
         {
             entry.Modifier.OnActionBroadcast(context, entry.Owner);
+            RaiseModifierHookEvent(
+                entry.Modifier,
+                BattleHookEventType.ActionBroadcast,
+                entry.Owner,
+                context);
         }
     }
 
@@ -74,6 +119,7 @@ public partial class BattleMechanics : Node
             // A. Create context for this target
             var targetContext = new ActionContext(masterContext, originalTarget);
             targetContext.Stage = ActionStage.Targeting;
+            targetContext.BattleMechanics = this;
 
             // B. Target Modifiers (e.g. "Resist", "Reflect")
             // C. Target Ally Modifiers (e.g. "Cover")
@@ -81,10 +127,18 @@ public partial class BattleMechanics : Node
             // For simplicity here, we iterate all and check alliance, or pass in a lookup.
             // Assuming we can filter allies from allCombatants:
             var targetAllies = GetAlliesOf(originalTarget, allCombatants);
-            var orderedTargetModifiers = GetOrderedModifiersFromMany(new[] { originalTarget }.Concat(targetAllies));
+            var orderedTargetModifiers = GetOrderedModifiersFromMany(new[] { originalTarget }.Concat(targetAllies))
+                .Concat(GetOrderedBattlefieldModifiers())
+                .OrderByDescending(entry => GetModifierPriority(entry.Modifier))
+                .ToList();
             foreach (var entry in orderedTargetModifiers)
             {
                 entry.Modifier.OnActionTargeted(targetContext, entry.Owner);
+                RaiseModifierHookEvent(
+                    entry.Modifier,
+                    BattleHookEventType.ActionTargeted,
+                    entry.Owner,
+                    targetContext);
             }
 
             finalContexts.Add(targetContext);
@@ -101,6 +155,7 @@ public partial class BattleMechanics : Node
         foreach (var ctx in contexts)
         {
             ctx.Stage = ActionStage.Calculating;
+            ctx.BattleMechanics = this;
             var strategy = ctx.SourceAction.CalculationStrategy ?? _defaultStrategy;
             if (strategy == null) continue;
 
@@ -132,6 +187,7 @@ public partial class BattleMechanics : Node
         foreach (var ctx in contexts)
         {
             ctx.Stage = ActionStage.Finalized;
+            ctx.BattleMechanics = this;
             var strategy = ctx.SourceAction.CalculationStrategy ?? _defaultStrategy;
             var result = ctx.GetResult(ctx.CurrentTarget);
 
@@ -349,10 +405,22 @@ public partial class BattleMechanics : Node
             if (stats != null && stats.CurrentHP <= 0) continue;
 
             var result = ctx.GetResult(target);
-            
-            foreach (var modifier in GetActionModifiersFrom(target))
+
+            var orderedPostModifiers = GetActionModifiersFrom(target)
+                .Concat(GetBattlefieldActionModifiers())
+                .OrderByDescending(GetModifierPriority)
+                .ToList();
+
+            foreach (var modifier in orderedPostModifiers)
             {
-                modifier.OnActionPostExecution(ctx, target, result);
+                var modifierOwner = ResolveModifierOwner(modifier, target);
+                modifier.OnActionPostExecution(ctx, modifierOwner, result);
+                RaiseModifierHookEvent(
+                    modifier,
+                    BattleHookEventType.ActionPostExecution,
+                    modifierOwner,
+                    ctx,
+                    result);
             }
         }
     }
@@ -380,6 +448,16 @@ public partial class BattleMechanics : Node
         }
 
         return modifiers;
+    }
+
+    private IEnumerable<IActionModifier> GetBattlefieldActionModifiers()
+    {
+        if (_battlefieldEffectManager == null)
+        {
+            return Enumerable.Empty<IActionModifier>();
+        }
+
+        return _battlefieldEffectManager.GetActionModifiers().OfType<IActionModifier>().ToList();
     }
 
     private IEnumerable<IActionModifier> GetOrderedModifiersFrom(Node owner)
@@ -414,9 +492,135 @@ public partial class BattleMechanics : Node
             .ToList();
     }
 
+    private IEnumerable<ModifierEntry> GetOrderedBattlefieldModifiers()
+    {
+        if (_battlefieldEffectManager == null)
+        {
+            return Enumerable.Empty<ModifierEntry>();
+        }
+
+        return GetBattlefieldActionModifiers()
+            .Select(modifier => new ModifierEntry { Modifier = modifier, Owner = _battlefieldEffectManager })
+            .OrderByDescending(entry => GetModifierPriority(entry.Modifier))
+            .ToList();
+    }
+
     private static int GetModifierPriority(IActionModifier modifier)
     {
         return modifier is IPrioritizedModifier prioritized ? prioritized.Priority : 0;
+    }
+
+    private void RaiseModifierHookEvent(
+        IActionModifier modifier,
+        BattleHookEventType eventType,
+        Node owner,
+        ActionContext actionContext,
+        ActionResult actionResult = null,
+        Node relatedNode = null)
+    {
+        if (modifier == null || owner == null) return;
+
+        var hookEvent = new BattleHookEvent
+        {
+            EventType = eventType,
+            Owner = owner,
+            RelatedNode = relatedNode,
+            ActionContext = actionContext,
+            ActionResult = actionResult,
+            Modifier = modifier,
+        };
+
+        if (modifier is StatusEffect statusEffect)
+        {
+            var statusManager = owner.GetNodeOrNull<StatusEffectManager>(StatusEffectManager.NodeName);
+            var statusInstance = statusManager?.GetEffectInstance(statusEffect);
+
+            hookEvent = new BattleHookEvent
+            {
+                EventType = eventType,
+                Owner = owner,
+                RelatedNode = relatedNode,
+                ActionContext = actionContext,
+                ActionResult = actionResult,
+                Modifier = modifier,
+                StatusEffect = statusEffect,
+                StatusManager = statusManager,
+                StatusInstance = statusInstance,
+            };
+        }
+
+        if (modifier is AbilityEffect abilityEffect)
+        {
+            var ability = ResolveAbilityOwningEffect(owner, abilityEffect);
+            var abilityContext = new AbilityEffectContext(owner, AbilityTrigger.None)
+            {
+                Ability = ability,
+                ActionContext = actionContext,
+                ActionResult = actionResult
+            };
+
+            hookEvent = new BattleHookEvent
+            {
+                EventType = eventType,
+                Owner = owner,
+                RelatedNode = relatedNode,
+                ActionContext = actionContext,
+                ActionResult = actionResult,
+                Modifier = modifier,
+                Ability = ability,
+                AbilityEffect = abilityEffect,
+                AbilityContext = abilityContext,
+            };
+        }
+
+        if (modifier is BattlefieldEffect battlefieldEffect)
+        {
+            hookEvent = new BattleHookEvent
+            {
+                EventType = eventType,
+                Owner = owner,
+                RelatedNode = relatedNode,
+                ActionContext = actionContext,
+                ActionResult = actionResult,
+                Modifier = modifier,
+                BattlefieldEffect = battlefieldEffect,
+                BattlefieldEffectManager = _battlefieldEffectManager
+            };
+        }
+
+        HookEventRaised?.Invoke(hookEvent);
+    }
+
+    private Node ResolveModifierOwner(IActionModifier modifier, Node defaultOwner)
+    {
+        if (modifier is BattlefieldEffect && _battlefieldEffectManager != null)
+        {
+            return _battlefieldEffectManager;
+        }
+
+        return defaultOwner;
+    }
+
+    private static Ability ResolveAbilityOwningEffect(Node owner, AbilityEffect effect)
+    {
+        if (owner == null || effect == null) return null;
+
+        var abilityManager = owner.GetNodeOrNull<AbilityManager>(AbilityManager.NodeName);
+        if (abilityManager == null) return null;
+
+        foreach (var ability in abilityManager.GetEquippedAbilities())
+        {
+            if (ability?.TriggeredEffects == null) continue;
+            for (int i = 0; i < ability.TriggeredEffects.Count; i++)
+            {
+                if (ability.TriggeredEffects[i] == effect)
+                {
+                    return ability;
+                }
+            }
+        }
+
+        return null;
     }
 
     private IEnumerable<Node> GetAlliesOf(Node character, IEnumerable<Node> allCombatants)

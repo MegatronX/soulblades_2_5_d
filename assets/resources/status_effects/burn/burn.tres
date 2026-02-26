@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="BurnStatusEffect" load_steps=4 format=3 uid="uid://ddr40r2u6n4qo"]
+[gd_resource type="Resource" script_class="BurnStatusEffect" load_steps=5 format=3 uid="uid://ddr40r2u6n4qo"]
 
 [ext_resource type="Script" uid="uid://cvj716esendp7" path="res://scripts/gameplay/statuseffects/BurnStatusEffect.cs" id="1_burn"]
 [ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_vhx24"]
 [ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_resij"]
+[ext_resource type="Resource" path="res://assets/resources/status_effects/visuals/force_injured_idle_visual_effect.tres" id="3_force_injured"]
 
 [resource]
 script = ExtResource("1_burn")
@@ -15,5 +16,5 @@ EffectName = "Burn"
 Description = "Deals end-of-turn fire damage and reduces healing received."
 MinDurationTurns = 3
 MaxDurationTurns = 5
-ForceInjuredIdleAnimation = true
+VisualEffects = Array[Resource]([ExtResource("3_force_injured")])
 Polarity = 2

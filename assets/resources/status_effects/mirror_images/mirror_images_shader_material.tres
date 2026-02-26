@@ -1,0 +1,11 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/mirror_images_afterimage.gdshader" id="1_mirror_shader"]
+
+[resource]
+shader = ExtResource("1_mirror_shader")
+shader_parameter/ghost_tint = Color(0.6, 0.82, 1, 1)
+shader_parameter/ghost_strength = 1.0
+shader_parameter/ghost_offset = 0.016
+shader_parameter/ghost_expansion = 0.35
+shader_parameter/overlay_scale = 1.0

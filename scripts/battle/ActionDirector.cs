@@ -19,6 +19,8 @@ public partial class ActionDirector : Node
     
     // In a real implementation, this would be populated with the characters in the battle.
     private List<Node> _allCombatants = new();
+    private readonly HashSet<StatusEffectManager> _subscribedStatusManagers = new();
+    private readonly HashSet<AbilityManager> _subscribedAbilityManagers = new();
     
     public ActionContext CurrentContext { get; private set; }
 
@@ -56,6 +58,20 @@ public partial class ActionDirector : Node
                 () => _timedHitManager.TimedHitResolvedDetailed -= OnTimedHitResolvedDetailed
             );
         }
+        if (_battleMechanics != null)
+        {
+            this.Subscribe(
+                () => _battleMechanics.HookEventRaised += OnBattleHookEvent,
+                () => _battleMechanics.HookEventRaised -= OnBattleHookEvent
+            );
+        }
+
+        SubscribeAllCombatantHooks();
+    }
+
+    public override void _ExitTree()
+    {
+        UnsubscribeAllCombatantHooks();
     }
 
     public void SetRNG(IRandomNumberGenerator rng)
@@ -65,8 +81,13 @@ public partial class ActionDirector : Node
 
     public void Initialize(IEnumerable<Node> combatants)
     {
+        UnsubscribeAllCombatantHooks();
         _allCombatants.Clear();
-        _allCombatants.AddRange(combatants);
+        if (combatants != null)
+        {
+            _allCombatants.AddRange(combatants.Where(c => c != null && GodotObject.IsInstanceValid(c)));
+        }
+        SubscribeAllCombatantHooks();
     }
 
     public void RegisterCombatant(Node combatant)
@@ -74,11 +95,13 @@ public partial class ActionDirector : Node
         if (!_allCombatants.Contains(combatant))
         {
             _allCombatants.Add(combatant);
+            SubscribeCombatantHooks(combatant);
         }
     }
 
     public void RemoveCombatant(Node combatant)
     {
+        UnsubscribeCombatantHooks(combatant);
         _allCombatants.Remove(combatant);
     }
 
@@ -286,7 +309,14 @@ public partial class ActionDirector : Node
 
     private void PruneInvalidCombatants()
     {
-        _allCombatants.RemoveAll(c => !GodotObject.IsInstanceValid(c));
+        for (int i = _allCombatants.Count - 1; i >= 0; i--)
+        {
+            var combatant = _allCombatants[i];
+            if (combatant != null && GodotObject.IsInstanceValid(combatant)) continue;
+            UnsubscribeCombatantHooks(combatant);
+            _allCombatants.RemoveAt(i);
+        }
+        PruneInvalidHookSubscriptions();
     }
 
     private void LockSpeedFeedbackForAction(ActionContext context, List<CharacterVisualStateController> lockedControllers)
@@ -323,5 +353,152 @@ public partial class ActionDirector : Node
         }
 
         lockedControllers.Clear();
+    }
+
+    private void SubscribeAllCombatantHooks()
+    {
+        foreach (var combatant in _allCombatants)
+        {
+            SubscribeCombatantHooks(combatant);
+        }
+    }
+
+    private void SubscribeCombatantHooks(Node combatant)
+    {
+        if (combatant == null || !GodotObject.IsInstanceValid(combatant)) return;
+
+        var statusManager = combatant.GetNodeOrNull<StatusEffectManager>(StatusEffectManager.NodeName);
+        if (statusManager != null && _subscribedStatusManagers.Add(statusManager))
+        {
+            statusManager.HookEventRaised += OnBattleHookEvent;
+        }
+
+        var abilityManager = combatant.GetNodeOrNull<AbilityManager>(AbilityManager.NodeName);
+        if (abilityManager != null && _subscribedAbilityManagers.Add(abilityManager))
+        {
+            abilityManager.HookEventRaised += OnBattleHookEvent;
+        }
+    }
+
+    private void UnsubscribeCombatantHooks(Node combatant)
+    {
+        if (combatant == null || !GodotObject.IsInstanceValid(combatant)) return;
+
+        var statusManager = combatant.GetNodeOrNull<StatusEffectManager>(StatusEffectManager.NodeName);
+        if (statusManager != null && _subscribedStatusManagers.Remove(statusManager))
+        {
+            statusManager.HookEventRaised -= OnBattleHookEvent;
+        }
+
+        var abilityManager = combatant.GetNodeOrNull<AbilityManager>(AbilityManager.NodeName);
+        if (abilityManager != null && _subscribedAbilityManagers.Remove(abilityManager))
+        {
+            abilityManager.HookEventRaised -= OnBattleHookEvent;
+        }
+    }
+
+    private void UnsubscribeAllCombatantHooks()
+    {
+        foreach (var statusManager in _subscribedStatusManagers.ToList())
+        {
+            if (statusManager == null || !GodotObject.IsInstanceValid(statusManager)) continue;
+            statusManager.HookEventRaised -= OnBattleHookEvent;
+        }
+        _subscribedStatusManagers.Clear();
+
+        foreach (var abilityManager in _subscribedAbilityManagers.ToList())
+        {
+            if (abilityManager == null || !GodotObject.IsInstanceValid(abilityManager)) continue;
+            abilityManager.HookEventRaised -= OnBattleHookEvent;
+        }
+        _subscribedAbilityManagers.Clear();
+    }
+
+    private void PruneInvalidHookSubscriptions()
+    {
+        foreach (var statusManager in _subscribedStatusManagers.ToList())
+        {
+            if (statusManager != null && GodotObject.IsInstanceValid(statusManager)) continue;
+            _subscribedStatusManagers.Remove(statusManager);
+        }
+
+        foreach (var abilityManager in _subscribedAbilityManagers.ToList())
+        {
+            if (abilityManager != null && GodotObject.IsInstanceValid(abilityManager)) continue;
+            _subscribedAbilityManagers.Remove(abilityManager);
+        }
+    }
+
+    private void OnBattleHookEvent(BattleHookEvent hookEvent)
+    {
+        if (hookEvent == null) return;
+        if (!TryMapHookToVisualEvent(hookEvent.EventType, out var visualEventType)) return;
+
+        if (hookEvent.StatusEffect != null)
+        {
+            BattleVisualEffectRunner.DispatchStatusEvent(
+                hookEvent.StatusEffect,
+                visualEventType,
+                hookEvent.Owner,
+                hookEvent.StatusManager,
+                hookEvent.StatusInstance,
+                hookEvent.ActionDirector,
+                hookEvent.ActionContext,
+                hookEvent.ActionResult,
+                hookEvent.RelatedNode);
+        }
+
+        if (hookEvent.AbilityEffect != null)
+        {
+            BattleVisualEffectRunner.DispatchAbilityEffectEvent(
+                hookEvent.AbilityEffect,
+                hookEvent.Ability,
+                visualEventType,
+                hookEvent.Owner,
+                hookEvent.AbilityContext,
+                hookEvent.ActionContext,
+                hookEvent.ActionResult,
+                hookEvent.RelatedNode);
+        }
+    }
+
+    private static bool TryMapHookToVisualEvent(BattleHookEventType hookType, out BattleVisualEventType visualType)
+    {
+        visualType = BattleVisualEventType.Persistent;
+        switch (hookType)
+        {
+            case BattleHookEventType.StatusApplied:
+                visualType = BattleVisualEventType.StatusApplied;
+                return true;
+            case BattleHookEventType.StatusRemoved:
+                visualType = BattleVisualEventType.StatusRemoved;
+                return true;
+            case BattleHookEventType.TurnStart:
+                visualType = BattleVisualEventType.TurnStart;
+                return true;
+            case BattleHookEventType.TurnEnd:
+                visualType = BattleVisualEventType.TurnEnd;
+                return true;
+            case BattleHookEventType.ActionInitiated:
+                visualType = BattleVisualEventType.ActionInitiated;
+                return true;
+            case BattleHookEventType.AllyActionInitiated:
+                visualType = BattleVisualEventType.AllyActionInitiated;
+                return true;
+            case BattleHookEventType.ActionBroadcast:
+                visualType = BattleVisualEventType.ActionBroadcast;
+                return true;
+            case BattleHookEventType.ActionTargeted:
+                visualType = BattleVisualEventType.ActionTargeted;
+                return true;
+            case BattleHookEventType.ActionPostExecution:
+                visualType = BattleVisualEventType.ActionPostExecution;
+                return true;
+            case BattleHookEventType.AbilityTriggered:
+                visualType = BattleVisualEventType.AbilityTriggered;
+                return true;
+            default:
+                return false;
+        }
     }
 }

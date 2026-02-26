@@ -1,17 +1,15 @@
-[gd_resource type="Resource" script_class="MirrorImagesStatusEffect" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="MirrorImagesStatusEffect" load_steps=5 format=3 uid="uid://dki1t7rywell5"]
 
-[ext_resource type="Script" path="res://scripts/gameplay/statuseffects/MirrorImagesStatusEffect.cs" id="1_mirror_images"]
+[ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_8uqxi"]
+[ext_resource type="Script" uid="uid://ck7bejrd5gxbx" path="res://scripts/gameplay/statuseffects/MirrorImagesStatusEffect.cs" id="1_mirror_images"]
+[ext_resource type="Resource" uid="uid://ib6vucbpjhft" path="res://assets/resources/status_effects/mirror_images/mirror_images_visual_effect.tres" id="2_mirror_visual"]
+[ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_s1i31"]
 
 [resource]
 script = ExtResource("1_mirror_images")
 EffectName = "Mirror Images"
 Description = "Doubles evasion and creates deceptive after-images."
-Polarity = 1
 MinDurationTurns = 2
 MaxDurationTurns = 4
-EnableMirrorImages = true
-MirrorImageCount = 4
-MirrorImageAlpha = 0.2
-MirrorImageSpread = 0.08
-MirrorImageDriftSpeed = 2.4
-EvasionMultiplier = 2.0
+VisualEffects = Array[Resource]([ExtResource("2_mirror_visual")])
+Polarity = 1

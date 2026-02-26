@@ -27,6 +27,10 @@ public abstract partial class AbilityEffect : Resource, IPrioritizedModifier
     [Export]
     public bool RequireExplicitTrigger { get; private set; } = true;
 
+    [ExportGroup("Visual Effects")]
+    [Export]
+    public Godot.Collections.Array<Resource> VisualEffects { get; private set; } = new();
+
     public bool Matches(AbilityTrigger trigger)
     {
         return (TriggerMask & trigger) != 0;

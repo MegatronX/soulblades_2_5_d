@@ -22,6 +22,11 @@ public partial class AbilityManager : Node
     [Signal]
     public delegate void ApExperienceChangedEventHandler(int newValue);
 
+    /// <summary>
+    /// Emitted when equipped ability effects trigger runtime hooks.
+    /// </summary>
+    public event System.Action<BattleHookEvent> HookEventRaised;
+
     private Node _owner;
     private int _currentApExperience = 0;
 
@@ -154,6 +159,13 @@ public partial class AbilityManager : Node
                 context.WasTriggered = false;
                 effect.Apply(context);
                 TryPlayTriggerVfx(effect, context);
+                RaiseAbilityHookEvent(
+                    BattleHookEventType.AbilityTriggered,
+                    ability,
+                    effect,
+                    context,
+                    context.ActionContext,
+                    context.ActionResult);
             }
         }
     }
@@ -171,5 +183,30 @@ public partial class AbilityManager : Node
         if (eventBus == null) return;
 
         eventBus.EmitSignal(GlobalEventBus.SignalName.EffectVfxRequested, effect.TriggerVfx, owner, effect.TriggerVfxOffset, effect.AttachTriggerVfxToOwner);
+    }
+
+    private void RaiseAbilityHookEvent(
+        BattleHookEventType eventType,
+        Ability ability,
+        AbilityEffect abilityEffect,
+        AbilityEffectContext abilityContext,
+        ActionContext actionContext = null,
+        ActionResult actionResult = null,
+        Node relatedNode = null)
+    {
+        if (_owner == null || abilityEffect == null) return;
+
+        HookEventRaised?.Invoke(new BattleHookEvent
+        {
+            EventType = eventType,
+            Owner = _owner,
+            RelatedNode = relatedNode,
+            ActionContext = actionContext,
+            ActionResult = actionResult,
+            Modifier = abilityEffect,
+            Ability = ability,
+            AbilityEffect = abilityEffect,
+            AbilityContext = abilityContext
+        });
     }
 }

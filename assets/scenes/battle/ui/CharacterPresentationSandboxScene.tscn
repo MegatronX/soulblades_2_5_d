@@ -43,7 +43,13 @@ current = true
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="SandboxWorld"]
 transform = Transform3D(0.6967067, -0.51459974, 0.4997868, 0, 0.6967067, 0.7173561, -0.7173561, -0.4997868, 0.48540023, 0, 5, 0)
-light_energy = 1.1
+light_energy = 1.35
+
+[node name="FocusFillLight3D" type="OmniLight3D" parent="SandboxWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.35, 2.1)
+visible = false
+light_energy = 1.4
+omni_range = 14.0
 
 [node name="UI" type="Control" parent="."]
 layout_mode = 1

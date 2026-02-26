@@ -72,6 +72,9 @@ public partial class ActionContext : RefCounted
     // Runtime status payloads applied on hit (e.g. Hexed Edge).
     public List<StatusEffectChanceEntry> ExtraStatusEffectsOnHit { get; } = new();
 
+    // Runtime link to mechanics for effect formulas that depend on battle state.
+    public BattleMechanics BattleMechanics { get; set; }
+
     /// <summary>
     /// Set to true when an action's target has been redirected to avoid infinite ping-pong.
     /// </summary>
@@ -124,6 +127,7 @@ public partial class ActionContext : RefCounted
         InitialTargets = original.InitialTargets;
         CurrentTarget = currentTarget;
         WasRedirected = original.WasRedirected;
+        BattleMechanics = original.BattleMechanics;
         BonusCritChancePercent = original.BonusCritChancePercent;
         ActionPowerScalar = original.ActionPowerScalar;
         TickCostAdjustment = original.TickCostAdjustment;

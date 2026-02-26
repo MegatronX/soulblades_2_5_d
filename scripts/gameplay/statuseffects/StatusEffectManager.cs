@@ -18,6 +18,11 @@ public partial class StatusEffectManager : Node
     [Signal]
     public delegate void StatusEffectRemovedEventHandler(StatusEffect effectData, Node owner);
 
+    /// <summary>
+    /// Emitted when status lifecycle hooks occur. Consumers can route to presentation or telemetry.
+    /// </summary>
+    public event System.Action<BattleHookEvent> HookEventRaised;
+
     [ExportGroup("Resistances")]
     [Export]
     public Godot.Collections.Dictionary<string, int> StatusEffectResistances { get; private set; } = new();
@@ -83,6 +88,7 @@ public partial class StatusEffectManager : Node
             bool changed = stacking.OnReapply(this, existing, actionDirector, rng);
             if (changed)
             {
+                RaiseStatusHookEvent(BattleHookEventType.StatusApplied, effectData, existing, actionDirector);
                 EmitSignal(SignalName.StatusEffectApplied, effectData, this.GetParent());
             }
             return changed;
@@ -92,6 +98,7 @@ public partial class StatusEffectManager : Node
         var instance = new StatusEffectInstance(effectData, duration);
         _activeEffects.Add(instance);
         instance.EffectData.OnApply(_owner, actionDirector);
+        RaiseStatusHookEvent(BattleHookEventType.StatusApplied, instance.EffectData, instance, actionDirector);
         if (effectData is StackingStatusEffect newStacking)
         {
             newStacking.OnStacksChanged(_owner, this, instance, actionDirector);
@@ -116,6 +123,7 @@ public partial class StatusEffectManager : Node
     {
         if (instance == null || instance.EffectData == null) return;
         instance.EffectData.OnRemove(_owner, actionDirector);
+        RaiseStatusHookEvent(BattleHookEventType.StatusRemoved, instance.EffectData, instance, actionDirector);
         _activeEffects.Remove(instance);
         GD.Print($"{instance.EffectData.EffectName} has worn off for {_owner.Name}.");
         EmitSignal(SignalName.StatusEffectRemoved, instance.EffectData, this.GetParent());
@@ -301,6 +309,7 @@ public partial class StatusEffectManager : Node
         foreach (var instance in _activeEffects)
         {
             instance.EffectData.OnTurnStart(_owner, actionDirector);
+            RaiseStatusHookEvent(BattleHookEventType.TurnStart, instance.EffectData, instance, actionDirector);
         }
     }
 
@@ -327,6 +336,7 @@ public partial class StatusEffectManager : Node
 
             // Trigger the effect's own end-of-turn logic (e.g., for Regen/Poison).
             instance.EffectData.OnTurnEnd(_owner, actionDirector);
+            RaiseStatusHookEvent(BattleHookEventType.TurnEnd, instance.EffectData, instance, actionDirector);
 
             instance.RemainingTurns--;
             if (instance.RemainingTurns <= 0)
@@ -417,5 +427,31 @@ public partial class StatusEffectManager : Node
             result = Mathf.Max(0, modifier.ModifyIncomingMpRestore(_owner, this, instance, result));
         }
         return result;
+    }
+
+    private void RaiseStatusHookEvent(
+        BattleHookEventType eventType,
+        StatusEffect effectData,
+        StatusEffectInstance instance,
+        ActionDirector actionDirector,
+        ActionContext actionContext = null,
+        ActionResult actionResult = null,
+        Node relatedNode = null)
+    {
+        if (effectData == null || _owner == null) return;
+
+        HookEventRaised?.Invoke(new BattleHookEvent
+        {
+            EventType = eventType,
+            Owner = _owner,
+            RelatedNode = relatedNode,
+            ActionDirector = actionDirector,
+            ActionContext = actionContext,
+            ActionResult = actionResult,
+            Modifier = effectData,
+            StatusEffect = effectData,
+            StatusManager = this,
+            StatusInstance = instance
+        });
     }
 }

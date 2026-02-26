@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="BerserkStatusEffect" load_steps=4 format=3 uid="uid://bb7yako2hvoxw"]
+[gd_resource type="Resource" script_class="BerserkStatusEffect" load_steps=5 format=3 uid="uid://bb7yako2hvoxw"]
 
 [ext_resource type="Script" uid="uid://ctno2gwljlrcr" path="res://scripts/gameplay/statuseffects/BerserkStatusEffect.cs" id="1_berserk"]
 [ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_yniqy"]
 [ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_p68jx"]
+[ext_resource type="Resource" path="res://assets/resources/status_effects/berserk/berserk_tint_visual_effect.tres" id="3_berserk_tint"]
 
 [resource]
 script = ExtResource("1_berserk")
@@ -13,6 +14,4 @@ EffectName = "Berserk"
 Description = "Increases offense and speed, but forces physical attacks."
 MinDurationTurns = 5
 MaxDurationTurns = 10
-ApplyTintWhileActive = true
-ActiveTintColor = Color(1, 0.55, 0.55, 1)
-ActiveTintStrength = 0.55
+VisualEffects = Array[Resource]([ExtResource("3_berserk_tint")])

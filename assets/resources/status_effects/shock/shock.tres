@@ -1,6 +1,7 @@
-[gd_resource type="Resource" script_class="ShockStatusEffect" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="ShockStatusEffect" load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://scripts/gameplay/statuseffects/ShockStatusEffect.cs" id="1_shock"]
+[ext_resource type="Resource" path="res://assets/resources/status_effects/visuals/force_injured_idle_visual_effect.tres" id="2_force_injured"]
 
 [resource]
 script = ExtResource("1_shock")
@@ -15,4 +16,4 @@ AdditionalSpeedPenaltyPerStack = 0.05
 BaseMpRestorePenalty = 0.3
 AdditionalMpRestorePenaltyPerStack = 0.1
 MaxMpRestorePenalty = 0.5
-ForceInjuredIdleAnimation = true
+VisualEffects = Array[Resource]([ExtResource("2_force_injured")])

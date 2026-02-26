@@ -1,8 +1,9 @@
-[gd_resource type="Resource" script_class="MiniStatusEffect" load_steps=4 format=3 uid="uid://61rlaml0nbc1"]
+[gd_resource type="Resource" script_class="MiniStatusEffect" load_steps=5 format=3 uid="uid://61rlaml0nbc1"]
 
 [ext_resource type="Script" uid="uid://m4p02hkl7opc" path="res://scripts/gameplay/statuseffects/MiniStatusEffect.cs" id="1_mini"]
 [ext_resource type="Script" uid="uid://bg8lacp8o3hs1" path="res://scripts/gameplay/statuseffects/StatusEffect.cs" id="1_uqcep"]
 [ext_resource type="Script" uid="uid://bqukvi05s1d6" path="res://scripts/gameplay/effectors/EffectLogic.cs" id="2_scv04"]
+[ext_resource type="Resource" path="res://assets/resources/status_effects/mini/mini_scale_visual_effect.tres" id="3_mini_scale"]
 
 [resource]
 script = ExtResource("1_mini")
@@ -10,4 +11,4 @@ EffectName = "Mini"
 Description = "Boosts evasiveness but lowers outgoing damage."
 MinDurationTurns = 3
 MaxDurationTurns = 7
-ScaleMultiplier = 0.333
+VisualEffects = Array[Resource]([ExtResource("3_mini_scale")])

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="ShaderBattleVisualEffect" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/visuals/effects/ShaderBattleVisualEffect.cs" id="1_shader_visual"]
+[ext_resource type="Material" path="res://assets/resources/status_effects/mirror_images/mirror_images_shader_material.tres" id="2_mirror_shader_material"]
+
+[resource]
+script = ExtResource("1_shader_visual")
+TriggerMask = 1
+ShaderMaterial = ExtResource("2_mirror_shader_material")

@@ -9,6 +9,9 @@ using System.Linq;
 [GlobalClass]
 public partial class EquipmentManager : Node
 {
+    public const string DefaultName = "EquipmentManager";
+    private const string AttackCommandName = "Attack";
+
     [Signal]
     public delegate void EquipmentChangedEventHandler(EquipmentSlot slot, ItemData newItem);
 
@@ -18,11 +21,14 @@ public partial class EquipmentManager : Node
     private readonly List<EquipmentSlot> _slots = new();
     private Node _owner;
     private StatsComponent _statsComponent;
+    private ActionManager _actionManager;
 
     public override void _Ready()
     {
         _owner = GetParent();
         _statsComponent = _owner.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
+        _actionManager = _owner.GetNodeOrNull<ActionManager>(ActionManager.DefaultName)
+            ?? _owner.GetNodeOrNull<ActionManager>("ActionManager");
         // Find all child nodes of type EquipmentSlot and register them.
         foreach (var child in GetChildren())
         {
@@ -31,6 +37,8 @@ public partial class EquipmentManager : Node
                 _slots.Add(slot);
             }
         }
+
+        RefreshCommandOverrides();
     }
 
     /// <summary>
@@ -67,6 +75,7 @@ public partial class EquipmentManager : Node
 
         targetSlot.EquippedItem = itemToEquip;
         ApplyItemModifiers(itemToEquip);
+        RefreshCommandOverrides();
 
         EmitSignal(SignalName.EquipmentChanged, targetSlot, itemToEquip);
         GD.Print($"Equipped '{itemToEquip.ItemName}' to '{targetSlot.Name}' slot.");
@@ -90,6 +99,7 @@ public partial class EquipmentManager : Node
         if (currentItem != null)
         {
             RemoveItemModifiers(currentItem);
+            RefreshCommandOverrides();
             EmitSignal(SignalName.EquipmentChanged, targetSlot, new Variant());
             GD.Print($"Unequipped '{currentItem.ItemName}' from '{targetSlot.Name}' slot.");
             return currentItem;
@@ -137,4 +147,32 @@ public partial class EquipmentManager : Node
     }
 
     public IReadOnlyList<EquipmentSlot> GetSlots() => _slots;
+
+    public ItemData GetEquippedItem(EquipmentSlotType slotType)
+    {
+        var slot = _slots.FirstOrDefault(s => s != null && s.SlotType == slotType);
+        return slot?.EquippedItem;
+    }
+
+    public EquippableComponentData GetEquippedEquippable(EquipmentSlotType slotType)
+    {
+        var equipped = GetEquippedItem(slotType);
+        return equipped?.Components?.OfType<EquippableComponentData>().FirstOrDefault();
+    }
+
+    private void RefreshCommandOverrides()
+    {
+        if (_actionManager == null) return;
+
+        var weapon = GetEquippedEquippable(EquipmentSlotType.Weapon);
+        var attackOverride = weapon?.AttackCommandOverride;
+
+        if (attackOverride == null)
+        {
+            _actionManager.ClearCommandOverride(AttackCommandName);
+            return;
+        }
+
+        _actionManager.SetCommandOverride(AttackCommandName, attackOverride);
+    }
 }

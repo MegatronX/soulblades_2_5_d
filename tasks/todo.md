@@ -1,5 +1,54 @@
 # Status Effects Expansion (Alpha)
 
+---
+
+# Float Hover Visual
+
+## Plan
+- [x] Add a reusable resource-driven hover visual effect type for persistent status/ability visuals.
+- [x] Extend persistent visual state accumulator/controller to support hover lift+bob offsets.
+- [x] Attach hover visual effect to `Float` status resource.
+- [x] Add selectable hover bob waveform in resource data (sine/smooth/triangle/sawtooth).
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+
+---
+
+# Mirror Images Overlay Alignment Fix
+
+## Plan
+- [x] Remove camera-forward/depth positioning from shader overlay sync to prevent Y drift on pitched cameras.
+- [x] Keep overlay transforms locked to source sprite and apply only stable horizontal pixel offsets per layer.
+- [x] Keep expanded overlay render area while avoiding jitter from camera-space offset recomputation.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+
+---
+
+# Mirror Images Clipping/Jitter Cleanup
+
+## Plan
+- [x] Remove Mirror Images shader visual layer from status resource to avoid frame-bound clipping artifacts.
+- [x] Keep Mirror Images on sprite-clone ghosts only.
+- [x] Move ghost placement to deterministic pixel offsets (no camera-space sinusoidal wobble).
+- [x] Apply clone offsets/tint to all `SpriteBase3D` variants and render ghosts mostly behind source.
+- [x] Bias clone placement to trailing direction using `FlipH`/`FlipV` and increase ghost visibility.
+- [x] Add slight Y/Z separation and smooth drift motion; wire `Spread`/`DriftSpeed`/`Alpha` to visibly affect ghost presentation.
+- [x] Rebalance clone visibility: stronger tint/alpha response and mixed front/behind render priority to avoid over-subtle trails.
+- [x] Move mirror trail tuning constants into `MirrorImagesBattleVisualEffect` exports so visual tuning is resource-driven without recompiling.
+- [x] Add configurable in/out pulse controls so trailing mirror images can move toward/away from the core character.
+- [x] Decouple in/out pulse timing from drift speed so pulse movement always responds to pulse frequency tuning.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+
+---
+
 ## Plan
 - [x] Audit existing statuses/resources and map requested list to existing vs missing.
 - [x] Keep existing implementations untouched if already present (`haste`, `stop`, `reflect`).
@@ -420,3 +469,102 @@
 ## Review
 - [x] `dotnet build SoulBlades_2_5_D.sln` passes.
 - [ ] Confirm runtime: applying Mirror Images shows multiple translucent after-image sprites and removal fully cleans up visuals.
+
+---
+
+# Composable Status/Ability Visual Effects Architecture
+
+## Plan
+- [x] Add a generic visual effect resource stack (`BattleVisualEffect`) with event triggers + runtime context.
+- [x] Add a persistent visual state accumulator and wire it into `CharacterVisualStateController`.
+- [x] Route status lifecycle/action hooks to visual effects via `StatusEffectManager` and `BattleMechanics` (not GlobalEventBus).
+- [x] Add ability-effect visual effect support for trigger dispatch + persistent contributions.
+- [x] Implement reusable effects: tint, scale, mirror images, one-shot event VFX.
+- [x] Migrate Mirror Images status resource to the new visual effect list and remove mirror-specific fields from base status.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: Mirror Images still doubles evasion and uses after-image visuals.
+- [ ] Confirm runtime: legacy status visuals (tint/scale/shader) still render as before.
+
+---
+
+# Decouple Mechanics Hook Events From Visual Routing
+
+## Plan
+- [x] Add generic battle hook event types/payloads for modifier and lifecycle hooks.
+- [x] Refactor `BattleMechanics` to emit generic hook events rather than visual dispatch calls.
+- [x] Refactor `StatusEffectManager` and `AbilityManager` lifecycle/trigger hooks to emit generic hook events.
+- [x] Route visual-effect dispatch in `ActionDirector` by subscribing to hook events.
+- [x] Verify compile.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: status/ability one-shot visuals still trigger during real battles.
+
+---
+
+# Mirror Images Visibility Follow-up
+
+## Plan
+- [x] Normalize status/ability visual-effect storage to `Array<Resource>` for robust Godot serialization.
+- [x] Update visual-effect dispatchers to cast resources to `BattleVisualEffect` before execution.
+- [x] Add sandbox logging to show resolved visual-effect types and active mirror ghost count.
+- [x] Ensure generated mirror ghost sprites inherit source render layers/visibility flags.
+- [x] Add shader fallback visual effect for Mirror Images to guarantee visible presentation.
+- [x] Add shader-overlay sprite path so Mirror shader can render beyond base sprite bounds without modifying base sprite render.
+- [x] Remap overlay shader UVs via runtime `overlay_scale` so expanded overlay margins actually render trails beyond frame bounds.
+- [x] Replace single overlay wobble with dual front/back shader overlays using stable offsets to reduce jitter and edge clipping artifacts.
+- [x] Verify compile.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: applying `Mirror Images` logs a non-zero ghost count and visible ghost copies in focus view (shader fallback removed in favor of ghost-only visuals).
+
+---
+
+# Remove Legacy Status Visual Overrides
+
+## Plan
+- [x] Migrate `Mini` and `Berserk` status visuals to `BattleVisualEffect` resources.
+- [x] Migrate all remaining status resources using legacy visual fields (`ForceInjuredIdleAnimation`) to visual-effect resources.
+- [x] Remove legacy status visual fields and legacy fallback contribution path from runtime code.
+- [x] Add explicit `BattleVisualEffect` resources for injured-idle and keep shader support via visual-effects.
+- [x] Verify compile.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: `Mini` scale, `Berserk` tint, and DOT injured-idle presentation all still render as expected.
+
+---
+
+# Weapon Attack Rating + Formula Pipeline
+
+## Plan
+- [x] Add weapon attack ratings to equippable data (physical and magical channels).
+- [x] Add pluggable weapon-power formula resources with runtime context (holder + target + action context + battle mechanics/battlefield root).
+- [x] Wire weapon rating contribution into `StandardDamageStrategy` damage calculation.
+- [x] Add optional equipment-driven `Attack` command override so weapons can replace default basic attack command.
+- [x] Verify compile health.
+
+## Review
+- [ ] Confirm runtime: fixed-rating weapon increases outgoing attack damage as tuned.
+- [ ] Confirm runtime: formula weapon updates power based on live state (e.g., missing HP/status count).
+- [ ] Confirm runtime: equipping/unequipping weapon with `AttackCommandOverride` swaps/restores the root `Attack` command.
+
+---
+
+# Battlefield Global Modifiers (Weather/Terrain Hooks)
+
+## Plan
+- [x] Add a generic scene-level `BattlefieldEffect` resource type implementing existing action modifier hooks.
+- [x] Add `BattlefieldEffectManager` node to host active battlefield effects.
+- [x] Integrate battlefield effects into `BattleMechanics` modifier pipeline (broadcast/target/post-execution hooks).
+- [x] Add a generic elemental damage multiplier battlefield effect resource script for weather-like logic.
+- [x] Add a sample rain effect resource (Water/Lightning up, Fire down).
+- [ ] Verify runtime in a battle scene with an active manager/effect.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Confirm runtime: enabling rain effect visibly changes Water/Lightning/Fire action outputs.

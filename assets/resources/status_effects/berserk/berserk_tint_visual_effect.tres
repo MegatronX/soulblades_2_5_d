@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="TintBattleVisualEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/visuals/effects/TintBattleVisualEffect.cs" id="1_berserk_tint"]
+
+[resource]
+script = ExtResource("1_berserk_tint")
+TriggerMask = 1
+TintColor = Color(1, 0.55, 0.55, 1)
+TintStrength = 0.55
