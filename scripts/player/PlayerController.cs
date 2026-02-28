@@ -17,6 +17,9 @@ public partial class PlayerController : Node
     [Export]
     public float JumpVelocity = 4.5f;
 
+    [Export]
+    public bool InvertVerticalInput { get; set; } = false;
+
     private int _localInputIndex = 0;
     
     /// <summary>
@@ -112,8 +115,8 @@ public partial class PlayerController : Node
             velocity.Y = JumpVelocity;
 
         Vector2 inputDir = _inputProvider.GetMoveVector();
-        // Note: -inputDir.Y for standard 3D forward
-        Vector3 direction = (_characterBody.Transform.Basis * new Vector3(inputDir.X, 0, -inputDir.Y)).Normalized(); 
+        float forwardInput = InvertVerticalInput ? inputDir.Y : -inputDir.Y;
+        Vector3 direction = (_characterBody.Transform.Basis * new Vector3(inputDir.X, 0, forwardInput)).Normalized(); 
         
         if (direction != Vector3.Zero)
         {

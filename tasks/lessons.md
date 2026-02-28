@@ -66,3 +66,26 @@
 - For hover/bob visuals, expose waveform selection in resource data instead of hardcoding `sin`; designers often need different feel curves without recompiling.
 - For formula-driven equipment scaling, pass an extensible runtime context object instead of long parameter lists so future formulas can consume new battle data without signature churn.
 - When equipment can override commands (e.g., weapon replacing `Attack`), refresh overrides centrally on equip/unequip and clear fallback explicitly to avoid stale menu state.
+- For visual-effect sandboxes, default to a preview-first layout: compact overlay controls and minimal HUD footprint so scene ambience (weather/lighting/particles) remains the primary focus.
+- For Godot `GpuParticles3D`, never set `Amount` below `1`; disable via `Emitting = false` while keeping a valid amount to avoid runtime errors that can mask visual debugging.
+- When scene atmosphere behavior grows beyond one concern (ambient/fog, key light, shafts, fills), keep `SceneAtmosphereSystem` as an orchestrator and push behavior into pluggable layer classes with shared runtime context.
+- After any user process correction, immediately update both `tasks/todo.md` (plan/review trace) and `tasks/lessons.md`, then explicitly restate the enforcement rules before continuing implementation.
+- For hand-authored `.tscn` files, avoid copying stale `uid=` values from other resources and prefer explicit float literals in numeric constructors (`Color`, `PackedFloat32Array`) to prevent parser failures on load.
+- For `Gradient.colors` in this project, use `PackedColorArray` raw float tuples (r,g,b,a,...) rather than `Color(...)` constructor entries; the latter can fail parsing in scene text resources.
+- For exploration maps, keep input-direction adjustments map-configurable (controller property set by map root) instead of hardcoding global movement inversion.
+- Weather ambient loops should not rely solely on import-time stream loop flags; add explicit runtime replay logic on `AudioStreamPlayer.Finished` when loop behavior is required.
+- For weather lightning readability, combine a camera-relative world flash + full-screen overlay pulse + temporary global light boost; a static local omni light alone reads too small/localized in wide scenes.
+- For C# Godot signals on `AudioStreamPlayer.Finished`, avoid `-=` unsubscription during setup; use `IsConnected + Disconnect + Connect` with explicit `Callable` to prevent startup errors about nonexistent connections.
+- For billboard NPC sprites in exploration maps, avoid manual per-scene Y offset tuning only; add reusable foot-ground alignment (frame-height + pixel-size based) and optional ground-ray snap at interactable level.
+- For large billboard props (trees/buildings), collisions should approximate the blocking base/trunk only; attach reusable collider volumes in prop scenes so canopy/upper sprite area stays traversable.
+- In Godot scenes, `CollisionShape3D` must be a child of `PhysicsBody3D`/`Area3D`; placing it directly under `Node3D` silently leaves intended blockers nonfunctional.
+- For ambient wildlife frequency control, avoid duplicated scene entries as the only tuning mechanism; use explicit weighted spawn-entry resources with per-entry caps so designers can tune each prop type directly.
+- For exploration map boundaries, prefer visible thematic blockers (tree lines, thickets, rocks) with real colliders over invisible walls to preserve immersion while enforcing traversal limits.
+- Overcast weather should explicitly control lighting model (directional energy reduction + ambient boost + shadow suppression); tint alone does not remove harsh sun-shadow read in exploration scenes.
+- For HD-2D exploration props, default to `Sprite3D` composition with real light nodes instead of raw 3D meshes; this preserves style cohesion while retaining dynamic scene lighting.
+- If night scenes still read bright after enabling time-of-day, check all additive lighting layers (`NightAmbientEnergyMultiplier` and atmosphere diffuse-fill lights) rather than only main directional light settings.
+- Overcast ambient multipliers should be day-weighted when time-of-day is active; applying full overcast ambient boost at night can make “night rain” scenes unintentionally bright.
+- For night readability in HD-2D scenes, directional/ambient light tuning alone is often insufficient; add a time-of-day post-adjustment layer (environment brightness/saturation) so unshaded/billboard content darkens consistently.
+- Separate two night looks in tuning: `post-darkened cinematic night` vs `lighting-only night`; the latter should keep post-adjustment multipliers at `1.0` so point lights and emissive props retain full perceived brightness.
+- In scenes using both atmosphere fog and weather tint, night brightness can be dominated by fog/ambient color lift; add explicit night multipliers for fog density/color and sky ambient contribution instead of relying only on ambient energy.
+- For `Sprite3D` ambient props, avoid `material_override` unless the texture is explicitly re-bound in the material; otherwise Godot renders an untinted quad/box instead of the intended sprite art.

@@ -1,12 +1,9 @@
-[gd_resource type="Resource" script_class="HoverBattleVisualEffect" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="HoverBattleVisualEffect" load_steps=2 format=3 uid="uid://dvvpyyu20j7mh"]
 
-[ext_resource type="Script" path="res://scripts/gameplay/visuals/effects/HoverBattleVisualEffect.cs" id="1_hover_visual"]
+[ext_resource type="Script" uid="uid://dv6i7cuv84ovk" path="res://scripts/gameplay/visuals/effects/HoverBattleVisualEffect.cs" id="1_hover_visual"]
 
 [resource]
 script = ExtResource("1_hover_visual")
-TriggerMask = 1
-BaseLiftPixels = 8.0
 BobAmplitudePixels = 2.2
 BobSpeed = 2.1
 PhaseOffsetPerSprite = 0.45
-BobWaveform = 0

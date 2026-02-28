@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="BattleMusicData" load_steps=3 format=3 uid="uid://cc7yqppgrvapa"]
+
+[ext_resource type="Script" uid="uid://b852tmrdccomi" path="res://scripts/gameplay/BattleMusicData.cs" id="1"]
+[ext_resource type="AudioStream" uid="uid://b7jjpejq5pdee" path="res://assets/resources/music/battle/Last Strike, Bright Sky.mp3" id="2"]
+
+[resource]
+script = ExtResource("1")
+Stream = ExtResource("2")
+Weight = 40
+VolumeDb = -17.5
+PitchScale = 0.94

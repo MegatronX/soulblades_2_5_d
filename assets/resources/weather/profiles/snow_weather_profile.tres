@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WeatherProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/weather/WeatherProfile.cs" id="1_profile_script"]
+
+[resource]
+script = ExtResource("1_profile_script")
+WeatherName = "Snow"
+WeatherType = 3
+Description = "Calm snowfall with diffused lighting and gentle drift."
+MovementSpeedMultiplier = 0.95
+VisibilityMultiplier = 0.92
+AmbientVolumeDb = -14.0
+PrecipitationMode = 2
+ParticleDensity = 0.9
+FallSpeed = 7.0
+WindStrength = 1.4
+WindDirection = Vector3(0.6, 0, 0.2)
+ParticleTint = Color(0.95, 0.97, 1, 0.9)
+EnableEnvironmentTint = true
+EnvironmentTint = Color(0.8, 0.9, 1, 1)
+EnvironmentTintStrength = 0.18
+EnableGlowBoost = true
+GlowIntensityMultiplier = 1.1
+EnableLightColorOverride = true
+LightColorOverride = Color(0.92, 0.95, 1, 1)
+LightEnergyMultiplier = 0.96

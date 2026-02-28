@@ -1,0 +1,71 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://scripts/exploration/ambient/AmbientLightPulseProp.cs" id="1"]
+
+[sub_resource type="Gradient" id="1_stem_grad"]
+colors = PackedColorArray(0.517647, 0.4, 0.278431, 0, 0.74902, 0.639216, 0.498039, 0.95, 0.517647, 0.4, 0.278431, 0)
+offsets = PackedFloat32Array(0, 0.5, 1)
+
+[sub_resource type="GradientTexture2D" id="2_stem_tex"]
+gradient = SubResource("1_stem_grad")
+width = 64
+height = 128
+fill = 1
+
+[sub_resource type="Gradient" id="3_cap_grad"]
+colors = PackedColorArray(0.227451, 0.639216, 0.772549, 0, 0.458824, 0.862745, 0.980392, 1, 0.227451, 0.639216, 0.772549, 0)
+offsets = PackedFloat32Array(0, 0.35, 1)
+
+[sub_resource type="GradientTexture2D" id="4_cap_tex"]
+gradient = SubResource("3_cap_grad")
+width = 128
+height = 96
+fill = 1
+
+[sub_resource type="Gradient" id="5_glow_grad"]
+colors = PackedColorArray(0.564706, 0.901961, 1, 0, 0.564706, 0.901961, 1, 0.9, 0.564706, 0.901961, 1, 0)
+offsets = PackedFloat32Array(0, 0.25, 1)
+
+[sub_resource type="GradientTexture2D" id="6_glow_tex"]
+gradient = SubResource("5_glow_grad")
+width = 160
+height = 160
+fill = 1
+
+[node name="GlowingMushroomProp" type="Node3D"]
+script = ExtResource("1")
+LightPath = NodePath("OmniLight3D")
+BaseEnergy = 1.45
+PulseAmplitude = 0.35
+PulseSpeed = 1.3
+PulseRangeMultiplier = 1.0
+
+[node name="StemSprite3D" type="Sprite3D" parent="."]
+transform = Transform3D(0.75, 0, 0, 0, 1.15, 0, 0, 0, 1, 0, 0.2, 0)
+pixel_size = 0.006
+billboard = 1
+texture_filter = 0
+texture = SubResource("2_stem_tex")
+
+[node name="CapSprite3D" type="Sprite3D" parent="."]
+transform = Transform3D(1.35, 0, 0, 0, 0.95, 0, 0, 0, 1, 0, 0.46, 0)
+pixel_size = 0.006
+billboard = 1
+texture_filter = 0
+texture = SubResource("4_cap_tex")
+
+[node name="GlowSprite3D" type="Sprite3D" parent="."]
+transform = Transform3D(1.8, 0, 0, 0, 1.2, 0, 0, 0, 1, 0, 0.43, 0)
+pixel_size = 0.006
+billboard = 1
+shaded = false
+texture_filter = 0
+modulate = Color(1, 1, 1, 0.62)
+texture = SubResource("6_glow_tex")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)
+light_color = Color(0.4, 0.843137, 0.972549, 1)
+light_energy = 1.45
+omni_range = 3.0
+shadow_enabled = false

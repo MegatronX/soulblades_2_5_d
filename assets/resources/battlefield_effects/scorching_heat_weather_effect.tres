@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ElementalDamageMultiplierBattlefieldEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/battle/effects/ElementalDamageMultiplierBattlefieldEffect.cs" id="1_heat_script"]
+
+[resource]
+script = ExtResource("1_heat_script")
+EffectName = "Scorching Heat"
+Priority = 40
+ElementMultipliers = {
+2: 0.8,
+3: 1.35,
+4: 0.85
+}

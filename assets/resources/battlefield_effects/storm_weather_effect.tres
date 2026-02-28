@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ElementalDamageMultiplierBattlefieldEffect" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/battle/effects/ElementalDamageMultiplierBattlefieldEffect.cs" id="1_storm_script"]
+
+[resource]
+script = ExtResource("1_storm_script")
+EffectName = "Storm Conductivity"
+Priority = 45
+ElementMultipliers = {
+2: 1.3,
+3: 0.7,
+5: 1.35
+}

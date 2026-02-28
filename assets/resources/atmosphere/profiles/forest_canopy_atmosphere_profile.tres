@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="SceneAtmosphereProfile" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/atmosphere/SceneAtmosphereProfile.cs" id="1_profile_script"]
+
+[resource]
+script = ExtResource("1_profile_script")
+ProfileName = "Forest Canopy"
+Description = "Dense tree canopy look with directional shafts and low-intensity diffuse under-lighting."
+CanopyThickness = 0.72
+AmbientTint = Color(0.66, 0.76, 0.64, 1)
+AmbientTintStrength = 0.44
+FogDensityBoost = 0.0065
+FogTint = Color(0.6, 0.71, 0.59, 1)
+FogTintStrength = 0.32
+MainLightEnergyDenseCanopy = 0.52
+MainLightDenseCanopyTint = Color(0.9, 0.96, 0.84, 1)
+MainLightTintStrength = 0.34
+SunShaftCount = 8
+SunShaftRadius = 13.0
+SunShaftHeight = 13.5
+SunShaftRange = 32.0
+SunShaftAngle = 16.5
+SunShaftEnergy = 1.2
+SunShaftEnergyJitter = 0.14
+SunShaftJitterSpeed = 1.35
+SunHeightThreshold = 0.38
+SunShaftCanopyPower = 1.2
+DiffuseFillCount = 5
+DiffuseFillRadius = 10.5
+DiffuseFillHeight = 2.0
+DiffuseFillRange = 18.0
+DiffuseFillColor = Color(0.7, 0.81, 0.67, 1)
+DiffuseFillEnergy = 0.38

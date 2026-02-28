@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="WeatherProfile" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/weather/WeatherProfile.cs" id="1_profile_script"]
+[ext_resource type="Resource" path="res://assets/resources/weather/hazards/hail_chip_damage_hazard.tres" id="2_hail_hazard"]
+
+[resource]
+script = ExtResource("1_profile_script")
+WeatherName = "Hail"
+WeatherType = 4
+Description = "Sharp ice pellets strike the field and chip away at everyone over time."
+MovementSpeedMultiplier = 0.9
+VisibilityMultiplier = 0.9
+AmbientVolumeDb = -10.0
+PrecipitationMode = 3
+ParticleDensity = 1.15
+FallSpeed = 23.0
+WindStrength = 4.5
+WindDirection = Vector3(1, 0, 0.15)
+ParticleTint = Color(0.83, 0.91, 1, 0.95)
+EnableEnvironmentTint = true
+EnvironmentTint = Color(0.63, 0.72, 0.9, 1)
+EnvironmentTintStrength = 0.24
+EnableLightColorOverride = true
+LightColorOverride = Color(0.87, 0.91, 1, 1)
+LightEnergyMultiplier = 0.9
+TurnHazards = Array[Resource]([ExtResource("2_hail_hazard")])

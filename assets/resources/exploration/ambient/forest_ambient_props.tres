@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="AmbientPropProfile" load_steps=7 format=3 uid="uid://xfqsembpsv40"]
+
+[ext_resource type="Script" uid="uid://clylnb5015rw6" path="res://scripts/exploration/ambient/AmbientPropProfile.cs" id="1"]
+[ext_resource type="PackedScene" uid="uid://quuqth7mduyl" path="res://assets/scenes/exploration/props/FireflyAmbientProp.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/props/OwlCallAmbientProp.tscn" id="3"]
+[ext_resource type="Script" uid="uid://cqb0eaf3k3xcy" path="res://scripts/exploration/ambient/AmbientPropSpawnEntry.cs" id="4"]
+
+[sub_resource type="Resource" id="1_firefly_entry"]
+script = ExtResource("4")
+PropScene = ExtResource("2")
+Weight = 22
+MaxActiveCount = 42
+
+[sub_resource type="Resource" id="2_owl_entry"]
+script = ExtResource("4")
+PropScene = ExtResource("3")
+Weight = 3
+MaxActiveCount = 4
+
+[resource]
+script = ExtResource("1")
+ProfileName = "Forest Ambient"
+PropScenes = Array[PackedScene]([ExtResource("2"), ExtResource("2"), ExtResource("3")])
+SpawnEntries = Array[ExtResource("4")]([SubResource("1_firefly_entry"), SubResource("2_owl_entry")])
+InitialSpawnCount = 16
+MaxActiveProps = 46
+SpawnIntervalSeconds = 0.65
+SpawnRadius = 14.5
+DespawnRadius = 36.0
+VerticalJitter = 1.6

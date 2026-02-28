@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="WeatherProfile" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/weather/WeatherProfile.cs" id="1_profile_script"]
+[ext_resource type="Resource" path="res://assets/resources/weather/hazards/sandstorm_chip_damage_hazard.tres" id="2_sand_hazard"]
+
+[resource]
+script = ExtResource("1_profile_script")
+WeatherName = "Sandstorm"
+WeatherType = 5
+Description = "A dense wall of sand. Visibility drops and abrasive grains chip all combatants."
+MovementSpeedMultiplier = 0.9
+VisibilityMultiplier = 0.78
+AmbientVolumeDb = -9.5
+PrecipitationMode = 4
+ParticleDensity = 1.25
+FallSpeed = 14.0
+WindStrength = 10.0
+WindDirection = Vector3(1, 0, 0.1)
+ParticleTint = Color(0.87, 0.73, 0.5, 0.88)
+EnableEnvironmentTint = true
+EnvironmentTint = Color(0.8, 0.65, 0.45, 1)
+EnvironmentTintStrength = 0.34
+EnableGlowBoost = true
+GlowIntensityMultiplier = 1.08
+EnableLightColorOverride = true
+LightColorOverride = Color(1, 0.85, 0.66, 1)
+LightEnergyMultiplier = 0.9
+TurnHazards = Array[Resource]([ExtResource("2_sand_hazard")])

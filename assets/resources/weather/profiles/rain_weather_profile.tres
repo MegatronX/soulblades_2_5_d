@@ -1,0 +1,47 @@
+[gd_resource type="Resource" script_class="WeatherProfile" load_steps=8 format=3 uid="uid://p20fxkw6clhk"]
+
+[ext_resource type="Script" uid="uid://b46ek5pbedk0m" path="res://scripts/gameplay/weather/WeatherProfile.cs" id="1_profile_script"]
+[ext_resource type="AudioStream" uid="uid://de27ic6tmled8" path="res://assets/audio/effects/weather/liecio-calming-rain-257596.mp3" id="1_tok7n"]
+[ext_resource type="Resource" path="res://assets/resources/battlefield_effects/rain_weather_effect.tres" id="2_rain_battle_effect"]
+[ext_resource type="AudioStream" uid="uid://beotdlcg8qupj" path="res://assets/audio/effects/weather/samc44-lightning-189909.mp3" id="3_66q32"]
+[ext_resource type="AudioStream" uid="uid://b5g5y8uf2xsl1" path="res://assets/audio/effects/weather/blendertimer-thunder-245174.mp3" id="4_1do6s"]
+[ext_resource type="AudioStream" uid="uid://c7461c6mj6qs0" path="res://assets/audio/effects/weather/tanweraman-thunder-strike-wav-321628.mp3" id="5_mpkbr"]
+[ext_resource type="AudioStream" uid="uid://cg1pfi8dhw6k5" path="res://assets/audio/effects/weather/universfield-loud-thunder-192165.mp3" id="6_ea2ef"]
+
+[resource]
+script = ExtResource("1_profile_script")
+WeatherName = "Rain"
+WeatherType = 1
+Description = "Steady rainfall with conductive air and dampened flames."
+AmbientLoop = ExtResource("1_tok7n")
+AmbientVolumeDb = -25.0
+PrecipitationMode = 1
+ParticleDensity = 2.87
+CameraDepthOffset = 7.5
+EmissionHeight = 5.5
+FallSpeed = 20.0
+WindStrength = 3.5
+ParticleTint = Color(0.42, 0.62, 0.92, 0.58)
+EnableEnvironmentTint = true
+EnvironmentTint = Color(0.55, 0.62, 0.75, 1)
+EnvironmentTintStrength = 0.26
+EnableLightColorOverride = true
+LightColorOverride = Color(0.86, 0.9, 1, 1)
+LightEnergyMultiplier = 0.92
+EnableOvercastDiffuseLighting = true
+OvercastDirectionalLightEnergyMultiplier = 0.42
+OvercastAmbientLightEnergyMultiplier = 1.48
+EnableLightningFlashes = true
+LightningFlashIntervalMin = 7.4
+LightningFlashIntervalMax = 14.7
+LightningFlashDuration = 0.33
+LightningFlashIntensity = 22.8
+LightningFlashRange = 160.0
+LightningFlashVerticalOffset = 18.0
+LightningFlashForwardOffset = 10.0
+LightningMainLightEnergyBoost = 2.9
+LightningEnvironmentFlashStrength = 0.55
+LightningSfx = ExtResource("3_66q32")
+LightningSfxOptions = Array[AudioStream]([ExtResource("4_1do6s"), ExtResource("3_66q32"), ExtResource("5_mpkbr"), ExtResource("6_ea2ef")])
+LightningSfxVolumeDb = -20.0
+BattlefieldEffects = Array[Resource]([ExtResource("2_rain_battle_effect")])

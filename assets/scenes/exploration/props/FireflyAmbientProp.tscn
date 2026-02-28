@@ -1,0 +1,39 @@
+[gd_scene load_steps=5 format=3 uid="uid://quuqth7mduyl"]
+
+[ext_resource type="Script" uid="uid://cg7v8bbu1kcs1" path="res://scripts/exploration/ambient/FireflyDriftProp.cs" id="1"]
+[ext_resource type="Texture2D" uid="uid://drolfewn6mck1" path="res://assets/objects/environment/objects/ELR_FireFlies.png" id="2_7xamt"]
+
+[sub_resource type="StandardMaterial3D" id="1"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(1, 0.94902, 0.639216, 0.65)
+
+[sub_resource type="SphereMesh" id="2"]
+material = SubResource("1")
+radius = 0.05
+height = 0.1
+
+[node name="FireflyAmbientProp" type="Node3D"]
+script = ExtResource("1")
+SpritePixelSize = 0.008
+GlowPulseCyclesPerSecond = 0.18
+GlowPulseMinFactor = 0.68
+SpritePulseMinAlphaFactor = 0.78
+SpriteFrameFps = 1.0
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("2")
+
+[node name="Sprite3D" type="Sprite3D" parent="."]
+pixel_size = 0.012
+billboard = 1
+shaded = false
+texture_filter = 0
+texture = ExtResource("2_7xamt")
+hframes = 4
+vframes = 2
+
+[node name="GlowLight" type="OmniLight3D" parent="."]
+light_color = Color(1, 0.9607843, 0.7411765, 1)
+light_energy = 0.6
+omni_range = 2.2

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="BattleMusicData" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/BattleMusicData.cs" id="1"]
+[ext_resource type="AudioStream" path="res://assets/resources/music/battle/Keyblade Carnival.ogg" id="2"]
+
+[resource]
+script = ExtResource("1")
+Stream = ExtResource("2")
+Weight = 60
+VolumeDb = -15.0
+PitchScale = 1.0
+Loop = true

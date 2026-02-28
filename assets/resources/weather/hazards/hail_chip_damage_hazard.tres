@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeatherTurnHazard" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/weather/WeatherTurnHazard.cs" id="1_hazard_script"]
+
+[resource]
+script = ExtResource("1_hazard_script")
+HazardName = "Hail Pellets"
+TriggerEveryTurnStarts = 2
+TriggerChancePercent = 100.0
+ApplyToAllCombatants = true
+Element = 4
+FlatDamageMin = 4
+FlatDamageMax = 9
+PercentOfMaxHpDamage = 0.004
+CombatLogMessage = "Hail pelts every combatant."

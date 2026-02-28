@@ -1,0 +1,10 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/exploration/ambient/OwlCallProp.cs" id="1"]
+
+[node name="OwlCallAmbientProp" type="Node3D"]
+script = ExtResource("1")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="."]
+unit_size = 6.0
+max_distance = 28.0

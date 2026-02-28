@@ -1,0 +1,95 @@
+[gd_scene load_steps=14 format=3]
+
+[ext_resource type="Script" path="res://scripts/exploration/ExplorationMapController.cs" id="1"]
+[ext_resource type="Script" path="res://scripts/exploration/ExplorationCameraController.cs" id="2"]
+[ext_resource type="Script" path="res://scripts/gameplay/atmosphere/SceneAtmosphereSystem.cs" id="3"]
+[ext_resource type="Resource" path="res://assets/resources/atmosphere/profiles/forest_canopy_atmosphere_profile.tres" id="4"]
+[ext_resource type="Script" path="res://scripts/gameplay/weather/WeatherSystem.cs" id="5"]
+[ext_resource type="Script" path="res://scripts/exploration/ambient/AmbientPropSystem.cs" id="6"]
+[ext_resource type="Script" path="res://scripts/gameplay/EncounterManager.cs" id="7"]
+[ext_resource type="Script" path="res://scripts/exploration/MapSpawnPoint.cs" id="8"]
+[ext_resource type="PackedScene" path="res://assets/resources/characters/ceira/ceira.tscn" id="9"]
+[ext_resource type="Script" path="res://scripts/exploration/audio/ExplorationMusicController.cs" id="10"]
+
+[sub_resource type="ProceduralSkyMaterial" id="1"]
+sky_top_color = Color(0.352941, 0.560784, 0.941176, 1)
+sky_horizon_color = Color(0.65098, 0.847059, 0.917647, 1)
+ground_bottom_color = Color(0.301961, 0.321569, 0.258824, 1)
+ground_horizon_color = Color(0.588235, 0.65098, 0.482353, 1)
+
+[sub_resource type="Sky" id="2"]
+sky_material = SubResource("1")
+
+[sub_resource type="Environment" id="3"]
+background_mode = 2
+sky = SubResource("2")
+ambient_light_color = Color(0.866667, 0.909804, 0.807843, 1)
+ambient_light_energy = 1.0
+ssao_enabled = true
+glow_enabled = true
+glow_intensity = 0.58
+glow_bloom = 0.2
+
+[node name="ExplorationMapTemplate" type="Node3D"]
+script = ExtResource("1")
+MapId = "exploration/template"
+PartyRootPath = NodePath("PartyRoot")
+DefaultSpawnId = "entry_default"
+FallbackPlayerScene = ExtResource("9")
+EncounterManagerPath = NodePath("EncounterManager")
+
+[node name="PartyRoot" type="Node3D" parent="."]
+
+[node name="SpawnPoints" type="Node3D" parent="."]
+
+[node name="entry_default" type="Node3D" parent="SpawnPoints"]
+script = ExtResource("8")
+SpawnId = "entry_default"
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("3")
+
+[node name="MainLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.790306, -0.241845, 0.562888, 0, 0.918216, 0.39608, -0.612712, -0.312938, 0.725723, 0, 0, 0)
+light_energy = 1.15
+shadow_enabled = true
+
+[node name="ExplorationCameraRig" type="Node3D" parent="."]
+script = ExtResource("2")
+FollowOffset = Vector3(0, 7.2, 9.8)
+LookAtOffset = Vector3(0, 1.1, 0)
+
+[node name="Camera3D" type="Camera3D" parent="ExplorationCameraRig"]
+current = true
+fov = 42.0
+
+[node name="SceneAtmosphereSystem" type="Node3D" parent="." node_paths=PackedStringArray("WorldEnvironment", "MainLight", "AtmosphereCamera")]
+script = ExtResource("3")
+InitialProfile = ExtResource("4")
+ApplyInitialProfileOnReady = true
+WorldEnvironment = NodePath("../WorldEnvironment")
+MainLight = NodePath("../MainLight")
+AtmosphereCamera = NodePath("../ExplorationCameraRig/Camera3D")
+
+[node name="WeatherSystem" type="Node3D" parent="." node_paths=PackedStringArray("WorldEnvironment", "MainLight", "WeatherCamera")]
+script = ExtResource("5")
+ApplyInitialWeatherOnReady = false
+WorldEnvironment = NodePath("../WorldEnvironment")
+MainLight = NodePath("../MainLight")
+WeatherCamera = NodePath("../ExplorationCameraRig/Camera3D")
+
+[node name="AmbientPropSystem" type="Node3D" parent="."]
+script = ExtResource("6")
+
+[node name="ExplorationMusicController" type="Node" parent="."]
+script = ExtResource("10")
+
+[node name="EncounterManager" type="Node" parent="."]
+script = ExtResource("7")
+_battleScenePath = "res://assets/scenes/battle/MainBattleScene.tscn"
+
+[node name="EnvironmentGeometry" type="Node3D" parent="."]
+
+[node name="LayerSwitchVolumes" type="Node3D" parent="."]
+
+[node name="Interactables" type="Node3D" parent="."]

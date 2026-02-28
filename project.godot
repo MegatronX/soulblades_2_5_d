@@ -32,9 +32,9 @@ UiSoundManager="*res://assets/scenes/ui/UISoundManager.tscn"
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
+window/subwindows/embed_subwindows=false
 window/stretch/mode="viewport"
 window/stretch/aspect="expand"
-window/subwindows/embed_subwindows=false
 
 [dotnet]
 

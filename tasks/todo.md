@@ -2,6 +2,36 @@
 
 ---
 
+# Forest Night Lighting Tuning
+
+## Plan
+- [x] Identify night-time brightness sources in the vertical slice (weather ambient multiplier + atmosphere fill lights).
+- [x] Apply darker night defaults in `ForestExplorationVerticalSlice.tscn` for weather and atmosphere runtime multipliers.
+- [x] Verify project compiles after scene updates.
+- [x] Make weather overcast ambient boost day-weighted so it does not unintentionally brighten nighttime scenes.
+- [x] Push vertical slice to deep-night rain defaults (very low ambient, no moon key light, minimal atmosphere fill).
+- [x] Add weather time-of-day post-adjustment controls (brightness/saturation) to darken final scene output at night.
+- [x] Tune forest vertical slice to use deeper night post-adjustment multipliers.
+- [x] Retune forest to lighting-only night mode (near-zero ambient, no global post-darkening) so point/prop lights remain full brightness.
+- [x] Add night-specific ambient/fog multipliers in `WeatherSystem` to reduce haze/lift without dimming local point lights.
+- [x] Tune forest vertical slice to deeper ambient/fog-night values while keeping post-darkening disabled.
+
+## Review
+- [ ] Validate deep-night readability and rain mood in `ForestExplorationVerticalSlice.tscn` during runtime playtest.
+
+---
+
+# Firefly Visual Polish
+
+## Plan
+- [x] Inspect firefly scene/script to identify white-quad render issue and pulse timing behavior.
+- [x] Remove incorrect sprite material override causing box rendering and keep sprite texture-driven visuals.
+- [x] Add slower configurable glow/alpha pulse controls for fireflies in `FireflyDriftProp`.
+- [x] Add optional slow frame animation controls for sprite-sheet firefly twinkle.
+- [ ] Validate firefly look in runtime scene.
+
+---
+
 # Float Hover Visual
 
 ## Plan
@@ -568,3 +598,254 @@
 ## Review
 - [x] `dotnet build SoulBlades_2_5_D.sln` passes.
 - [ ] Confirm runtime: enabling rain effect visibly changes Water/Lightning/Fire action outputs.
+
+---
+
+# Weather System (Scene + Battle)
+
+## Plan
+- [x] Add reusable scene-level weather resources (`WeatherProfile`, `WeatherTurnHazard`) and enums.
+- [x] Add reusable `WeatherSystem` node for visual/audio ambience and scene condition multipliers.
+- [x] Integrate battle-facing weather hooks:
+  - [x] inject/remove weather battlefield effects through `BattlefieldEffectManager`
+  - [x] periodic turn-based weather hazards (storm strikes, hail/sand chip damage)
+- [x] Author weather data/resources for Rain, Storm, Snow, Hail, Sandstorm, and Scorching Heat.
+- [x] Add a dedicated `WeatherSandboxScene` to preview weather visuals and probe battle weather behavior.
+- [x] Wire `MainBattleScene` with `BattlefieldEffectManager` and `WeatherSystem` nodes.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln` passes.
+- [ ] Runtime check: weather particle look and density/wind tuning in `WeatherSandboxScene`.
+- [ ] Runtime check: storm random lightning hazard, hail/sand periodic chip damage, and rain/heat elemental battle modifiers.
+
+## UI Follow-up
+- [x] Refactor `WeatherSandboxScene` to a minimal overlay HUD so preview world remains dominant.
+- [x] Add simple 3D set dressing in sandbox for more realistic precipitation readability.
+- [x] Update `WeatherSandboxController` node resolution to support the new compact layout while preserving old path fallback.
+- [x] Re-run compile verification.
+
+---
+
+# Scene Atmosphere Layer Refactor
+
+## Plan
+- [x] Convert `SceneAtmosphereSystem` from monolithic logic into a thin orchestrator.
+- [x] Route apply/update/clear through pluggable `IAtmosphereLayer` implementations using `SceneAtmosphereRuntimeContext`.
+- [x] Preserve existing scene-facing API/exports (`SetProfile`, runtime multipliers, scene references) for compatibility.
+- [x] Add runtime layer management hooks (`AddLayer`, `RemoveLayer`, `SetLayers`) for future extensibility.
+- [x] Run compile verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes.
+
+---
+
+# Workflow Compliance Refresh
+
+## Plan
+- [x] Re-read and align with the user’s workflow constraints before further implementation work.
+- [x] Confirm non-trivial tasks always begin with a written checklist in `tasks/todo.md` (plan + verification gates).
+- [x] Confirm user correction handling always updates `tasks/lessons.md`.
+- [x] Confirm progress updates include high-level step summaries during execution.
+- [x] Confirm completion criteria always include concrete verification evidence before marking done.
+
+## Review
+- [x] Compliance refresh recorded and will be applied as default workflow for subsequent tasks in this session.
+
+---
+
+# Explorable Map Framework (Forest Vertical Slice)
+
+## Plan
+- [x] Define exploration scene architecture with pluggable subsystems (layering, interaction, transitions, ambience, state persistence).
+- [x] Implement base exploration scene template and reusable subsystem nodes/scripts.
+- [x] Implement map layering model (upper/lower traversal, bridge/underpass behavior, render-order layer switching volumes).
+- [x] Implement generic interaction framework (`IInteractable` + conditions + effects) supporting:
+  - [x] NPC interaction stubs
+  - [x] one-time treasure chest with prerequisites and persistent open/closed state
+  - [x] step/activate interaction areas with condition checks and event dispatch
+- [x] Implement map-state persistence model (per-map object states for revisit consistency).
+- [x] Integrate atmosphere/weather into exploration map scene and expose tuning references.
+- [x] Implement ambient prop system (visual/audio wildlife props with spawn profiles and optional lightweight behaviors).
+- [x] Build forest prototype map scene demonstrating all above systems.
+- [x] Build a map authoring workflow doc/checklist for Godot editor usage and content production.
+- [x] Verification:
+  - [x] run build
+  - [ ] run in editor and validate layer switching, interactions, persistence, ambience, and atmosphere behavior.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after framework + scene integration.
+- [x] Fixed `ForestExplorationVerticalSlice.tscn` resource parse blockers:
+  - removed stale ext_resource UIDs for encounter and goblin texture refs
+  - converted hand-authored gradient constructor values to explicit floats
+- [ ] Manual editor/runtime validation pending for interaction flow, bridge over/under feel, and transition spawn behavior.
+
+---
+
+# Exploration Controls + Audio Follow-up
+
+## Plan
+- [x] Fix exploration forward/back movement inversion by adding explicit vertical-axis inversion control in movement pipeline and wiring map defaults.
+- [x] Add explicit weather ambient looping support so ambient weather SFX can loop regardless of source stream import loop flags.
+- [x] Implement exploration scene music controller with:
+  - [x] weighted random selection from a track list
+  - [x] per-map initial playback configuration
+  - [x] runtime track switching
+  - [x] runtime pitch/volume adjustment
+- [x] Add interaction effects that can:
+  - [x] switch to a specific/random map track
+  - [x] adjust map music mix properties (volume/pitch multipliers)
+- [x] Wire the forest vertical-slice scene to demonstrate random map music + trigger-driven music change.
+- [x] Verification:
+  - [x] run build
+  - [ ] manual runtime check in editor for movement direction, weather looping, and map music trigger behavior.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after control/audio follow-up changes.
+- [ ] Manual editor/runtime validation pending.
+
+---
+
+# Weather Lightning Dramatic Pass
+
+## Plan
+- [x] Make lightning flashes screen-filling by adding a camera-relative lightning burst position and configurable flash range.
+- [x] Add optional screen overlay flash and scene-light pulse controls to `WeatherProfile` for per-weather tuning.
+- [x] Tune storm/rain profile defaults to stronger lightning presentation.
+- [x] Verification:
+  - [x] run build
+  - [ ] manual runtime check in weather sandbox to validate intensity/readability.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after lightning presentation changes.
+- [ ] Manual sandbox validation pending.
+
+---
+
+# Exploration Startup Signal Warnings
+
+## Plan
+- [x] Fix weather startup warning caused by disconnecting a nonexistent `AudioStreamPlayer.Finished` connection.
+- [x] Fix exploration music startup warning caused by the same signal disconnect pattern.
+- [x] Replace event `-=` wiring in these paths with guarded `IsConnected/Disconnect/Connect` signal wiring.
+- [x] Verification:
+  - [x] run build
+  - [ ] manual scene run to confirm warnings are gone on `ForestExplorationVerticalSlice` startup.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after signal wiring fix.
+- [ ] Manual runtime warning verification pending.
+
+---
+
+# Forest Position Debug Window
+
+## Plan
+- [x] Add a lightweight toggleable position debug UI controller for exploration scenes.
+- [x] Wire the debug position window into `ForestExplorationVerticalSlice`.
+- [x] Show live player `GlobalPosition` (X/Y/Z) and support quick toggle via hotkey.
+- [x] Verification:
+  - [x] run build
+  - [ ] manual scene run to confirm toggle/visibility and live position updates.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after adding debug position window.
+- [ ] Manual runtime validation pending.
+
+---
+
+# NPC Grounding Fix
+
+## Plan
+- [x] Prevent `GuideNpc`-style sprite clipping by adding reusable NPC sprite grounding logic.
+- [x] Auto-align NPC sprite feet to the node origin using sprite frame height + pixel size.
+- [x] Optionally snap NPC root to ground on ready via downward raycast.
+- [x] Verification:
+  - [x] run build
+  - [ ] manual scene run to confirm `GuideNpc` no longer clips into the base layer.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after NPC grounding change.
+- [ ] Manual visual validation pending.
+
+---
+
+# Vertical Slice Prop Collisions
+
+## Plan
+- [x] Verify whether tree props in the forest vertical slice have physics bodies.
+- [x] Add trunk-only collision to tree prop scenes so large canopy sprites remain pass-through while bases block movement.
+- [x] Keep collisions reusable by updating prop scenes (not per-instance ad hoc blockers).
+- [x] Verification:
+  - [x] run build
+  - [ ] manual scene run to confirm player collides with trunk area but can move around canopy edges.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after prop collision changes.
+- [ ] Manual runtime collision feel validation pending.
+
+---
+
+# Guide NPC Collider Wiring
+
+## Plan
+- [x] Convert `GuideNpc` collider wiring from orphan `CollisionShape3D` under `Node3D` to valid `StaticBody3D` + `CollisionShape3D`.
+- [x] Preserve existing collider local offset/size while making it physically active.
+- [x] Verification:
+  - [x] run build
+  - [ ] manual scene run to confirm NPC blocks at intended base footprint.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after collider-body wiring fix.
+- [ ] Manual runtime validation pending.
+
+---
+
+# Forest Immersion Pass
+
+## Plan
+- [x] Add explicit firefly frequency controls by extending ambient spawn profile with weighted entries and per-entry active caps.
+- [x] Add firefly sprite support (texture-driven sprite visuals, mesh fallback, optional glow light) in `FireflyDriftProp`/`FireflyAmbientProp`.
+- [x] Increase forest ambience density via ambient profile tuning for the vertical slice.
+- [x] Make map boundaries feel natural by adding visible blocker props/geometry (trees + thickets) instead of invisible walls.
+- [x] Add reusable light-emitting props (mushroom/crystal) and place them in the vertical slice.
+- [x] Verification:
+  - [x] run build
+  - [ ] manual scene run for visual/collision tuning.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after immersion pass changes.
+- [ ] Manual runtime playtest pending for ambience spawn feel and boundary traversal.
+
+---
+
+# Weather Overcast Diffuse Lighting
+
+## Plan
+- [x] Extend `WeatherProfile` with overcast controls for directional flattening, ambient boost, and shadow suppression.
+- [x] Apply overcast lighting behavior in `WeatherSystem` for active weather and proper baseline restoration.
+- [x] Tune rain/storm profiles to use overcast diffuse settings in exploration vertical slice contexts.
+- [x] Verification:
+  - [x] run build
+  - [ ] manual scene run to validate reduced harsh shadows and diffuse overcast feel during rain/storm.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after overcast lighting changes.
+- [ ] Manual visual validation pending.
+
+---
+
+# Sprite-First Glow Props
+
+## Plan
+- [x] Convert mushroom/crystal glow props from mesh-based geometry to `Sprite3D`-based composition to match HD-2D aesthetic.
+- [x] Keep pulsing `OmniLight3D` behavior through existing `AmbientLightPulseProp`.
+- [x] Keep placeholder textures/material look so art can be swapped in directly later.
+- [x] Verification:
+  - [x] run build
+  - [ ] manual scene run to evaluate style/readability with current camera and weather.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes after sprite-first prop conversion.
+- [ ] Manual art pass pending once final mushroom/crystal sprites are provided.

@@ -1,0 +1,578 @@
+[gd_scene load_steps=25 format=3 uid="uid://vx7tyq262lag"]
+
+[ext_resource type="Script" uid="uid://cak2c5r224jhh" path="res://scripts/ui/weather/WeatherSandboxController.cs" id="1_controller"]
+[ext_resource type="PackedScene" uid="uid://cg40606sv55" path="res://assets/resources/characters/ceira/ceira.tscn" id="2_player"]
+[ext_resource type="Script" uid="uid://b46ek5pbedk0m" path="res://scripts/gameplay/weather/WeatherProfile.cs" id="2_s8xe6"]
+[ext_resource type="PackedScene" uid="uid://cikngvbkfdkqo" path="res://assets/resources/characters/goblin_lv5/goblin_lv5_animated.tscn" id="3_enemy"]
+[ext_resource type="Resource" uid="uid://cf0sodp0rftil" path="res://assets/resources/characters/ceira/ceira_starting_stats.tres" id="4_stats"]
+[ext_resource type="Script" uid="uid://1dx8ugonp26k" path="res://scripts/gameplay/weather/WeatherSystem.cs" id="5_weather_system"]
+[ext_resource type="Script" uid="uid://c5wmb1ll5j82i" path="res://scripts/battle/effects/BattlefieldEffectManager.cs" id="6_battlefield_manager"]
+[ext_resource type="Script" uid="uid://bcpqb1lb7lgai" path="res://scripts/battle/mechanics/BattleMechanics.cs" id="7_battle_mechanics"]
+[ext_resource type="Resource" uid="uid://p20fxkw6clhk" path="res://assets/resources/weather/profiles/rain_weather_profile.tres" id="8_rain"]
+[ext_resource type="Resource" path="res://assets/resources/weather/profiles/storm_weather_profile.tres" id="9_storm"]
+[ext_resource type="Resource" path="res://assets/resources/weather/profiles/snow_weather_profile.tres" id="10_snow"]
+[ext_resource type="Resource" path="res://assets/resources/weather/profiles/hail_weather_profile.tres" id="11_hail"]
+[ext_resource type="Resource" path="res://assets/resources/weather/profiles/sandstorm_weather_profile.tres" id="12_sand"]
+[ext_resource type="Resource" path="res://assets/resources/weather/profiles/scorching_heat_weather_profile.tres" id="13_heat"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
+sky_top_color = Color(0.152941, 0.203922, 0.333333, 1)
+sky_horizon_color = Color(0.333333, 0.415686, 0.572549, 1)
+ground_bottom_color = Color(0.0901961, 0.105882, 0.152941, 1)
+ground_horizon_color = Color(0.14902, 0.176471, 0.25098, 1)
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("ProceduralSkyMaterial_1")
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 2
+sky = SubResource("Sky_1")
+ambient_light_color = Color(0.6, 0.66, 0.76, 1)
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.55
+glow_bloom = 0.22
+fog_enabled = true
+fog_light_color = Color(0.482353, 0.545098, 0.67451, 1)
+fog_density = 0.004
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_1"]
+size = Vector2(56, 56)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1"]
+albedo_color = Color(0.172549, 0.184314, 0.203922, 1)
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="BoxMesh_1"]
+size = Vector3(2.2, 3.8, 1.1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2"]
+albedo_color = Color(0.215686, 0.227451, 0.25098, 1)
+roughness = 0.88
+
+[sub_resource type="BoxMesh" id="BoxMesh_2"]
+size = Vector3(5.6, 2.2, 1.4)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1"]
+bg_color = Color(0.0588235, 0.0666667, 0.0862745, 0.82)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.243137, 0.298039, 0.403922, 0.7)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2"]
+bg_color = Color(0.0588235, 0.0666667, 0.0862745, 0.68)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.243137, 0.298039, 0.403922, 0.6)
+corner_radius_top_left = 7
+corner_radius_top_right = 7
+corner_radius_bottom_right = 7
+corner_radius_bottom_left = 7
+
+[node name="WeatherSandboxScene" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_controller")
+WeatherProfiles = Array[ExtResource("2_s8xe6")]([ExtResource("8_rain"), ExtResource("9_storm"), ExtResource("10_snow"), ExtResource("11_hail"), ExtResource("12_sand"), ExtResource("13_heat")])
+DefaultPlayerScene = ExtResource("2_player")
+DefaultEnemyScene = ExtResource("3_enemy")
+FallbackBaseStats = ExtResource("4_stats")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0352941, 0.0392157, 0.054902, 0)
+
+[node name="SandboxWorld" type="Node3D" parent="."]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="SandboxWorld"]
+environment = SubResource("Environment_1")
+
+[node name="Camera3D" type="Camera3D" parent="SandboxWorld"]
+transform = Transform3D(1, 0, 0, 0, 0.96105546, 0.27635565, 0, -0.27635565, 0.96105546, 0, 4.2, 11.5)
+current = true
+
+[node name="MainLight" type="DirectionalLight3D" parent="SandboxWorld"]
+transform = Transform3D(0.8525245, -0.42516193, 0.30403835, 0, 0.5816831, 0.8134155, -0.52268726, -0.6934567, 0.4958991, 0, 10, 0)
+light_energy = 1.25
+shadow_enabled = true
+
+[node name="FillLight" type="OmniLight3D" parent="SandboxWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.2, 2.8)
+light_energy = 0.4
+omni_range = 18.0
+
+[node name="Ground" type="MeshInstance3D" parent="SandboxWorld"]
+mesh = SubResource("PlaneMesh_1")
+surface_material_override/0 = SubResource("StandardMaterial3D_1")
+
+[node name="SceneSet" type="Node3D" parent="SandboxWorld"]
+
+[node name="PillarA" type="MeshInstance3D" parent="SandboxWorld/SceneSet"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.2, 1.9, -2.4)
+mesh = SubResource("BoxMesh_1")
+surface_material_override/0 = SubResource("StandardMaterial3D_2")
+
+[node name="PillarB" type="MeshInstance3D" parent="SandboxWorld/SceneSet"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.2, 1.9, -2.4)
+mesh = SubResource("BoxMesh_1")
+surface_material_override/0 = SubResource("StandardMaterial3D_2")
+
+[node name="RearWall" type="MeshInstance3D" parent="SandboxWorld/SceneSet"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, -6.8)
+mesh = SubResource("BoxMesh_2")
+surface_material_override/0 = SubResource("StandardMaterial3D_2")
+
+[node name="FrontRuinL" type="MeshInstance3D" parent="SandboxWorld/SceneSet"]
+transform = Transform3D(0.9, 0, 0, 0, 0.6, 0, 0, 0, 0.8, -4.6, 0.65, 3.8)
+mesh = SubResource("BoxMesh_2")
+surface_material_override/0 = SubResource("StandardMaterial3D_2")
+
+[node name="FrontRuinR" type="MeshInstance3D" parent="SandboxWorld/SceneSet"]
+transform = Transform3D(0.9, 0, 0, 0, 0.6, 0, 0, 0, 0.8, 4.6, 0.65, 3.8)
+mesh = SubResource("BoxMesh_2")
+surface_material_override/0 = SubResource("StandardMaterial3D_2")
+
+[node name="PlayerAnchor" type="Node3D" parent="SandboxWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5, 0, 0)
+
+[node name="ActorPreview" parent="SandboxWorld/PlayerAnchor" instance=ExtResource("2_player")]
+
+[node name="EnemyAnchor" type="Node3D" parent="SandboxWorld"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5, 0, 0)
+
+[node name="EnemyPreview" parent="SandboxWorld/EnemyAnchor" instance=ExtResource("3_enemy")]
+
+[node name="BattlefieldEffectManager" type="Node" parent="SandboxWorld"]
+script = ExtResource("6_battlefield_manager")
+
+[node name="WeatherSystem" type="Node3D" parent="SandboxWorld"]
+script = ExtResource("5_weather_system")
+
+[node name="BattleMechanics" type="Node" parent="."]
+script = ExtResource("7_battle_mechanics")
+
+[node name="UI" type="Control" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+
+[node name="ToggleUiButton" type="Button" parent="UI"]
+z_index = 100
+layout_mode = 1
+offset_left = 16.0
+offset_top = 14.0
+offset_right = 156.0
+offset_bottom = 44.0
+tooltip_text = "Hide weather tuning and debug panels. Press F1 to toggle."
+text = "Hide Tuning UI"
+
+[node name="HUD" type="PanelContainer" parent="UI"]
+layout_mode = 1
+offset_left = 16.0
+offset_top = 14.0
+offset_right = 928.0
+offset_bottom = 484.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_1")
+
+[node name="Body" type="VBoxContainer" parent="UI/HUD"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WeatherRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WeatherSelect" type="OptionButton" parent="UI/HUD/Body/WeatherRow"]
+custom_minimum_size = Vector2(320, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ApplyWeatherButton" type="Button" parent="UI/HUD/Body/WeatherRow"]
+layout_mode = 2
+text = "Apply"
+
+[node name="ClearWeatherButton" type="Button" parent="UI/HUD/Body/WeatherRow"]
+layout_mode = 2
+text = "Clear"
+
+[node name="ResetTuningButton" type="Button" parent="UI/HUD/Body/WeatherRow"]
+layout_mode = 2
+tooltip_text = "Reset all weather tuning controls to defaults."
+text = "Reset Tuning"
+
+[node name="DensityRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DensityLabel" type="Label" parent="UI/HUD/Body/DensityRow"]
+layout_mode = 2
+text = "Density"
+
+[node name="DensitySlider" type="HSlider" parent="UI/HUD/Body/DensityRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="DensityValue" type="Label" parent="UI/HUD/Body/DensityRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="WindRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WindLabel" type="Label" parent="UI/HUD/Body/WindRow"]
+layout_mode = 2
+text = "Wind"
+
+[node name="WindSlider" type="HSlider" parent="UI/HUD/Body/WindRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="WindValue" type="Label" parent="UI/HUD/Body/WindRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="DepthRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DepthLabel" type="Label" parent="UI/HUD/Body/DepthRow"]
+layout_mode = 2
+text = "Depth"
+
+[node name="DepthSlider" type="HSlider" parent="UI/HUD/Body/DepthRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Push precipitation away from camera so drops are not rendered right in front of the lens."
+max_value = 24.0
+step = 0.1
+
+[node name="DepthValue" type="Label" parent="UI/HUD/Body/DepthRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "0.0"
+
+[node name="NearCullRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="NearCullLabel" type="Label" parent="UI/HUD/Body/NearCullRow"]
+layout_mode = 2
+text = "Near Cull"
+
+[node name="NearCullSlider" type="HSlider" parent="UI/HUD/Body/NearCullRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 12.0
+step = 0.1
+value = 2.5
+tooltip_text = "Suppress precipitation near the camera to reduce screen flooding."
+
+[node name="NearCullValue" type="Label" parent="UI/HUD/Body/NearCullRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "2.5"
+
+[node name="WidthRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="WidthLabel" type="Label" parent="UI/HUD/Body/WidthRow"]
+layout_mode = 2
+text = "Drop W"
+
+[node name="WidthSlider" type="HSlider" parent="UI/HUD/Body/WidthRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Runtime multiplier for precipitation width. Useful for matching pixel scale."
+min_value = 0.25
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="WidthValue" type="Label" parent="UI/HUD/Body/WidthRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="LengthRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LengthLabel" type="Label" parent="UI/HUD/Body/LengthRow"]
+layout_mode = 2
+text = "Drop L"
+
+[node name="LengthSlider" type="HSlider" parent="UI/HUD/Body/LengthRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Runtime multiplier for precipitation length."
+min_value = 0.25
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="LengthValue" type="Label" parent="UI/HUD/Body/LengthRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="AlphaRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="AlphaLabel" type="Label" parent="UI/HUD/Body/AlphaRow"]
+layout_mode = 2
+text = "Drop A"
+
+[node name="AlphaSlider" type="HSlider" parent="UI/HUD/Body/AlphaRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Runtime multiplier for precipitation alpha."
+min_value = 0.1
+max_value = 2.0
+step = 0.01
+value = 1.0
+
+[node name="AlphaValue" type="Label" parent="UI/HUD/Body/AlphaRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="FallSpeedRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="FallSpeedLabel" type="Label" parent="UI/HUD/Body/FallSpeedRow"]
+layout_mode = 2
+text = "Fall Spd"
+
+[node name="FallSpeedSlider" type="HSlider" parent="UI/HUD/Body/FallSpeedRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Multiplier for precipitation fall speed."
+min_value = 0.25
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="FallSpeedValue" type="Label" parent="UI/HUD/Body/FallSpeedRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="EmissionHeightRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="EmissionHeightLabel" type="Label" parent="UI/HUD/Body/EmissionHeightRow"]
+layout_mode = 2
+text = "Emit H"
+
+[node name="EmissionHeightSlider" type="HSlider" parent="UI/HUD/Body/EmissionHeightRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Multiplier for precipitation emission height."
+min_value = 0.25
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="EmissionHeightValue" type="Label" parent="UI/HUD/Body/EmissionHeightRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="TintRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TintLabel" type="Label" parent="UI/HUD/Body/TintRow"]
+layout_mode = 2
+text = "Tint Str"
+
+[node name="TintSlider" type="HSlider" parent="UI/HUD/Body/TintRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Multiplier for environment tint strength."
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="TintValue" type="Label" parent="UI/HUD/Body/TintRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="LightEnergyRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LightEnergyLabel" type="Label" parent="UI/HUD/Body/LightEnergyRow"]
+layout_mode = 2
+text = "Light En"
+
+[node name="LightEnergySlider" type="HSlider" parent="UI/HUD/Body/LightEnergyRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Multiplier for weather light energy."
+min_value = 0.25
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="LightEnergyValue" type="Label" parent="UI/HUD/Body/LightEnergyRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="GlowRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="GlowLabel" type="Label" parent="UI/HUD/Body/GlowRow"]
+layout_mode = 2
+text = "Glow"
+
+[node name="GlowSlider" type="HSlider" parent="UI/HUD/Body/GlowRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Multiplier for weather glow boost."
+min_value = 0.25
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="GlowValue" type="Label" parent="UI/HUD/Body/GlowRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="LightningRateRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LightningRateLabel" type="Label" parent="UI/HUD/Body/LightningRateRow"]
+layout_mode = 2
+text = "Lt Rate"
+
+[node name="LightningRateSlider" type="HSlider" parent="UI/HUD/Body/LightningRateRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Multiplier for lightning flash interval (higher = slower lightning)."
+min_value = 0.25
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="LightningRateValue" type="Label" parent="UI/HUD/Body/LightningRateRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="LightningPowerRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="LightningPowerLabel" type="Label" parent="UI/HUD/Body/LightningPowerRow"]
+layout_mode = 2
+text = "Lt Pow"
+
+[node name="LightningPowerSlider" type="HSlider" parent="UI/HUD/Body/LightningPowerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+tooltip_text = "Multiplier for lightning flash intensity."
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="LightningPowerValue" type="Label" parent="UI/HUD/Body/LightningPowerRow"]
+custom_minimum_size = Vector2(52, 0)
+layout_mode = 2
+text = "1.00"
+
+[node name="ActionRow" type="HBoxContainer" parent="UI/HUD/Body"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SampleActionSelect" type="OptionButton" parent="UI/HUD/Body/ActionRow"]
+custom_minimum_size = Vector2(230, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RunSampleActionButton" type="Button" parent="UI/HUD/Body/ActionRow"]
+layout_mode = 2
+text = "Sample Hit"
+
+[node name="SimulateTurnButton" type="Button" parent="UI/HUD/Body/ActionRow"]
+layout_mode = 2
+text = "Weather Tick"
+
+[node name="RespawnButton" type="Button" parent="UI/HUD/Body/ActionRow"]
+layout_mode = 2
+text = "Respawn"
+
+[node name="SummaryPanel" type="PanelContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -460.0
+offset_top = 14.0
+offset_right = -14.0
+offset_bottom = 114.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_2")
+
+[node name="SummaryLabel" type="Label" parent="UI/SummaryPanel"]
+layout_mode = 2
+text = "Weather summary"
+autowrap_mode = 2
+
+[node name="LogPanel" type="PanelContainer" parent="UI"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 16.0
+offset_top = -176.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_styles/panel = SubResource("StyleBoxFlat_2")
+
+[node name="LogLabel" type="RichTextLabel" parent="UI/LogPanel"]
+layout_mode = 2
+scroll_following = true

@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="AttackData" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/turn_order/AttackData.cs" id="1_attack_script"]
+
+[resource]
+script = ExtResource("1_attack_script")
+Power = 10
+Accuracy = 95
+Element = 2
+Category = 3
+PhysicalRatio = 0.0
+CommandName = "Water"

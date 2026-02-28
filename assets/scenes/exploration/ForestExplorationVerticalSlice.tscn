@@ -1,0 +1,420 @@
+[gd_scene load_steps=58 format=3 uid="uid://by5mms12xwtwe"]
+
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/templates/ExplorationMapTemplate.tscn" id="1"]
+[ext_resource type="PackedScene" uid="uid://dx3pbmugn2ql8" path="res://assets/scenes/props/Tree_0.tscn" id="2"]
+[ext_resource type="Texture2D" uid="uid://bt5jm88xpb70a" path="res://assets/objects/environment/ground_texture.png" id="3"]
+[ext_resource type="Script" uid="uid://csskb5ue6f54h" path="res://scripts/exploration/MapLayerSwitchVolume.cs" id="4"]
+[ext_resource type="Script" uid="uid://dmpbp1yendyjl" path="res://scripts/exploration/MapSpawnPoint.cs" id="5"]
+[ext_resource type="Script" uid="uid://b852tmrdccomi" path="res://scripts/gameplay/BattleMusicData.cs" id="5_l5ioc"]
+[ext_resource type="Script" uid="uid://08lter72dv21" path="res://scripts/exploration/interaction/NpcInteractable.cs" id="6"]
+[ext_resource type="Script" uid="uid://bny1so65di5hh" path="res://scripts/exploration/interaction/TreasureChestInteractable.cs" id="7"]
+[ext_resource type="Script" uid="uid://d4ep853ql1jl0" path="res://scripts/exploration/interaction/InteractionZone.cs" id="8"]
+[ext_resource type="Script" uid="uid://x415u8mb1xty" path="res://scripts/exploration/interaction/conditions/PartyMemberPresentCondition.cs" id="9"]
+[ext_resource type="Script" uid="uid://q2g8pmtyao46" path="res://scripts/exploration/interaction/effects/ForceEncounterInteractionEffect.cs" id="10"]
+[ext_resource type="Script" uid="uid://br3a6oa3ydse4" path="res://scripts/exploration/interaction/effects/TransitionToMapInteractionEffect.cs" id="11"]
+[ext_resource type="Script" uid="uid://clbr5ojbpx6n8" path="res://scripts/exploration/interaction/effects/LogInteractionEffect.cs" id="12"]
+[ext_resource type="Script" uid="uid://clny56vpilnt3" path="res://scripts/exploration/interaction/effects/InteractionEffect.cs" id="12_gpqem"]
+[ext_resource type="Resource" uid="uid://p20fxkw6clhk" path="res://assets/resources/weather/profiles/rain_weather_profile.tres" id="13"]
+[ext_resource type="Resource" uid="uid://xfqsembpsv40" path="res://assets/resources/exploration/ambient/forest_ambient_props.tres" id="14"]
+[ext_resource type="Resource" uid="uid://qakj03uoo3aa" path="res://assets/resources/encounters/TestMapEncounters.tres" id="15"]
+[ext_resource type="Resource" uid="uid://wco61svul3tx" path="res://assets/resources/items/potion.tres" id="16"]
+[ext_resource type="Texture2D" uid="uid://dbhplww1x7ujd" path="res://assets/characters/goblin/goblin.png" id="17"]
+[ext_resource type="Resource" uid="uid://cc7yqppgrvapa" path="res://assets/resources/music/exploration/forest_theme_b.tres" id="19"]
+[ext_resource type="Script" uid="uid://dfviird3wyy0o" path="res://scripts/exploration/interaction/effects/SetExplorationMusicInteractionEffect.cs" id="20"]
+[ext_resource type="Script" uid="uid://capyu8ocnmccl" path="res://scripts/exploration/interaction/effects/AdjustExplorationMusicMixInteractionEffect.cs" id="21"]
+[ext_resource type="Script" uid="uid://c3cqd8lcd1buh" path="res://scripts/exploration/interaction/conditions/InteractionCondition.cs" id="21_yjrhw"]
+[ext_resource type="Script" uid="uid://b70r0v1madav1" path="res://scripts/exploration/ui/ExplorationPositionDebugWindow.cs" id="22"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/props/GlowingMushroomProp.tscn" id="23_mushroom"]
+[ext_resource type="PackedScene" uid="uid://bpx2ykq1uvhjy" path="res://assets/scenes/exploration/props/GlowingCrystalProp.tscn" id="24_crystal"]
+
+[sub_resource type="StandardMaterial3D" id="1"]
+albedo_texture = ExtResource("3")
+uv1_scale = Vector3(8, 8, 1)
+
+[sub_resource type="PlaneMesh" id="2"]
+material = SubResource("1")
+size = Vector2(42, 42)
+
+[sub_resource type="BoxShape3D" id="3"]
+size = Vector3(42, 1, 42)
+
+[sub_resource type="StandardMaterial3D" id="4"]
+albedo_color = Color(0.239216, 0.321569, 0.196078, 1)
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="5"]
+material = SubResource("4")
+size = Vector3(12, 1.2, 10)
+
+[sub_resource type="BoxShape3D" id="6"]
+size = Vector3(12, 1.2, 10)
+
+[sub_resource type="StandardMaterial3D" id="7"]
+albedo_color = Color(0.356863, 0.309804, 0.184314, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="8"]
+material = SubResource("7")
+size = Vector3(10, 0.7, 3.4)
+
+[sub_resource type="BoxShape3D" id="9"]
+size = Vector3(10, 0.7, 3.4)
+
+[sub_resource type="StandardMaterial3D" id="10"]
+albedo_color = Color(0.207843, 0.211765, 0.243137, 1)
+
+[sub_resource type="BoxMesh" id="11"]
+material = SubResource("10")
+size = Vector3(42, 4, 5)
+
+[sub_resource type="StandardMaterial3D" id="12"]
+transparency = 1
+albedo_color = Color(0.188235, 0.321569, 0.392157, 0.85)
+roughness = 0.15
+
+[sub_resource type="PlaneMesh" id="13"]
+material = SubResource("12")
+size = Vector2(42, 8)
+
+[sub_resource type="StandardMaterial3D" id="28_boundary_mat"]
+albedo_color = Color(0.137255, 0.247059, 0.152941, 1)
+roughness = 0.95
+
+[sub_resource type="BoxMesh" id="29_boundary_mesh"]
+material = SubResource("28_boundary_mat")
+size = Vector3(42, 1.9, 3.2)
+
+[sub_resource type="BoxShape3D" id="30_boundary_shape"]
+size = Vector3(42, 1.9, 3.2)
+
+[sub_resource type="BoxShape3D" id="14"]
+size = Vector3(4, 2, 4)
+
+[sub_resource type="Resource" id="19"]
+script = ExtResource("12")
+Message = "The ranger whispers: storms empower lightning and water attacks in this forest."
+
+[sub_resource type="Resource" id="25"]
+script = ExtResource("20")
+Track = ExtResource("19")
+CrossfadeSecondsOverride = 0.8
+
+[sub_resource type="Resource" id="26"]
+script = ExtResource("21")
+VolumeOffsetDb = -2.5
+PitchMultiplier = 0.92
+
+[sub_resource type="Resource" id="27"]
+script = ExtResource("12")
+Message = "The ranger points deeper into the woods. The mood shifts."
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_gpqem"]
+size = Vector3(1, 1.526001, 0.48443604)
+
+[sub_resource type="Gradient" id="15"]
+colors = PackedColorArray(0.639216, 0.423529, 0.196078, 1, 0.87451, 0.760784, 0.384314, 1)
+
+[sub_resource type="GradientTexture2D" id="16"]
+gradient = SubResource("15")
+fill = 1
+
+[sub_resource type="Gradient" id="17"]
+colors = PackedColorArray(0.396078, 0.333333, 0.231373, 1, 0.670588, 0.576471, 0.337255, 1)
+
+[sub_resource type="GradientTexture2D" id="18"]
+gradient = SubResource("17")
+fill = 1
+
+[sub_resource type="Resource" id="20"]
+script = ExtResource("10")
+
+[sub_resource type="Resource" id="21"]
+script = ExtResource("12")
+Message = "A feral pack ambushes the party from the underbrush."
+
+[sub_resource type="Resource" id="22"]
+script = ExtResource("9")
+RequiredMemberName = "Ceira"
+
+[sub_resource type="Resource" id="24"]
+script = ExtResource("12")
+Message = "You found a narrow pass. Moving to the lower river path."
+
+[sub_resource type="Resource" id="23"]
+script = ExtResource("11")
+TargetScenePath = "res://assets/scenes/exploration/ForestExplorationVerticalSlice.tscn"
+TargetSpawnId = "entry_lower"
+
+[node name="ForestExplorationVerticalSlice" instance=ExtResource("1")]
+MapId = "exploration/forest_vertical_slice"
+
+[node name="entry_default" parent="SpawnPoints" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 9)
+
+[node name="entry_lower" type="Node3D" parent="SpawnPoints" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, -1.5, -10)
+script = ExtResource("5")
+SpawnId = "entry_lower"
+
+[node name="entry_upper" type="Node3D" parent="SpawnPoints" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.2, -4)
+script = ExtResource("5")
+SpawnId = "entry_upper"
+
+[node name="SceneAtmosphereSystem" parent="." index="5"]
+RuntimeSunShaftIntensityMultiplier = 0.0
+RuntimeDiffuseFillIntensityMultiplier = 0.0
+
+[node name="WeatherSystem" parent="." index="6"]
+InitialWeather = ExtResource("13")
+ApplyInitialWeatherOnReady = true
+RuntimeDensityMultiplier = 1.1
+RuntimeNearCameraExclusionDistance = 3.2
+RuntimeEnvironmentTintStrengthMultiplier = 0.5
+EnableTimeOfDay = true
+TimeOfDayHours = 22.0
+SolarAzimuthDegrees = -42.0
+TwilightSoftness = 0.1
+EnableMoonlightAtNight = false
+MoonlightTint = Color(0.607843, 0.701961, 0.94902, 1)
+MoonlightTintStrength = 0.45
+MoonlightDirectionalEnergyMultiplier = 0.08
+NightAmbientEnergyMultiplier = 0.4
+NightSceneBrightnessMultiplier = 1.0
+NightSceneSaturationMultiplier = 1.0
+NightGlowIntensityMultiplier = 1.0
+NightAmbientColorMultiplier = 0.1
+NightFogColorMultiplier = 0.18
+NightFogDensityMultiplier = 0.3
+NightSkyAmbientContributionMultiplier = 0.22
+
+[node name="AmbientPropSystem" parent="." index="7"]
+Profile = ExtResource("14")
+
+[node name="ExplorationMusicController" parent="." index="8"]
+MusicLibrary = Array[ExtResource("5_l5ioc")]([ExtResource("19")])
+DefaultCrossfadeSeconds = 0.75
+
+[node name="EncounterManager" parent="." index="9"]
+_mapData = ExtResource("15")
+
+[node name="Ground" type="StaticBody3D" parent="EnvironmentGeometry" index="0"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="EnvironmentGeometry/Ground" index="0"]
+mesh = SubResource("2")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EnvironmentGeometry/Ground" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
+shape = SubResource("3")
+
+[node name="LowerPath" type="StaticBody3D" parent="EnvironmentGeometry" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, -1.6, -10)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="EnvironmentGeometry/LowerPath" index="0"]
+mesh = SubResource("5")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EnvironmentGeometry/LowerPath" index="1"]
+shape = SubResource("6")
+
+[node name="UpperBridge" type="StaticBody3D" parent="EnvironmentGeometry" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.2, -4)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="EnvironmentGeometry/UpperBridge" index="0"]
+mesh = SubResource("8")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EnvironmentGeometry/UpperBridge" index="1"]
+shape = SubResource("9")
+
+[node name="LowerCliff" type="MeshInstance3D" parent="EnvironmentGeometry" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, -3.8, -10)
+mesh = SubResource("11")
+
+[node name="River" type="MeshInstance3D" parent="EnvironmentGeometry" index="4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.45, -10)
+mesh = SubResource("13")
+
+[node name="TreeA" parent="EnvironmentGeometry" index="5" instance=ExtResource("2")]
+transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 7, 0, 3)
+
+[node name="TreeB" parent="EnvironmentGeometry" index="6" instance=ExtResource("2")]
+transform = Transform3D(1.3, 0, 0, 0, 1.3, 0, 0, 0, 1.3, -8, 0, 2)
+
+[node name="TreeC" parent="EnvironmentGeometry" index="7" instance=ExtResource("2")]
+transform = Transform3D(1.6, 0, 0, 0, 1.6, 0, 0, 0, 1.6, 10, 0, -9)
+
+[node name="TreeNorthA" parent="EnvironmentGeometry" index="8" instance=ExtResource("2")]
+transform = Transform3D(1.8, 0, 0, 0, 1.8, 0, 0, 0, 1.8, -16.2, 0, -18.2)
+
+[node name="TreeNorthB" parent="EnvironmentGeometry" index="9" instance=ExtResource("2")]
+transform = Transform3D(1.65, 0, 0, 0, 1.65, 0, 0, 0, 1.65, -6.9, 0, -19.1)
+
+[node name="TreeNorthC" parent="EnvironmentGeometry" index="10" instance=ExtResource("2")]
+transform = Transform3D(1.75, 0, 0, 0, 1.75, 0, 0, 0, 1.75, 4.6, 0, -19.4)
+
+[node name="TreeNorthD" parent="EnvironmentGeometry" index="11" instance=ExtResource("2")]
+transform = Transform3D(1.85, 0, 0, 0, 1.85, 0, 0, 0, 1.85, 14.7, 0, -18.6)
+
+[node name="TreeSouthA" parent="EnvironmentGeometry" index="12" instance=ExtResource("2")]
+transform = Transform3D(1.75, 0, 0, 0, 1.75, 0, 0, 0, 1.75, -14.8, 0, 18.4)
+
+[node name="TreeSouthB" parent="EnvironmentGeometry" index="13" instance=ExtResource("2")]
+transform = Transform3D(1.55, 0, 0, 0, 1.55, 0, 0, 0, 1.55, -2.8, 0, 19.1)
+
+[node name="TreeSouthC" parent="EnvironmentGeometry" index="14" instance=ExtResource("2")]
+transform = Transform3D(1.65, 0, 0, 0, 1.65, 0, 0, 0, 1.65, 8.3, 0, 18.7)
+
+[node name="TreeSouthD" parent="EnvironmentGeometry" index="15" instance=ExtResource("2")]
+transform = Transform3D(1.78, 0, 0, 0, 1.78, 0, 0, 0, 1.78, 17.1, 0, 18.2)
+
+[node name="TreeWestA" parent="EnvironmentGeometry" index="16" instance=ExtResource("2")]
+transform = Transform3D(1.62, 0, 0, 0, 1.62, 0, 0, 0, 1.62, -19.2, 0, -7.4)
+
+[node name="TreeWestB" parent="EnvironmentGeometry" index="17" instance=ExtResource("2")]
+transform = Transform3D(1.7, 0, 0, 0, 1.7, 0, 0, 0, 1.7, -19.4, 0, 7.5)
+
+[node name="TreeEastA" parent="EnvironmentGeometry" index="18" instance=ExtResource("2")]
+transform = Transform3D(1.65, 0, 0, 0, 1.65, 0, 0, 0, 1.65, 19.3, 0, -8.1)
+
+[node name="TreeEastB" parent="EnvironmentGeometry" index="19" instance=ExtResource("2")]
+transform = Transform3D(1.72, 0, 0, 0, 1.72, 0, 0, 0, 1.72, 19.1, 0, 8.2)
+
+[node name="ThicketNorth" type="StaticBody3D" parent="EnvironmentGeometry" index="20"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, -20.4)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="EnvironmentGeometry/ThicketNorth" index="0"]
+mesh = SubResource("29_boundary_mesh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EnvironmentGeometry/ThicketNorth" index="1"]
+shape = SubResource("30_boundary_shape")
+
+[node name="ThicketSouth" type="StaticBody3D" parent="EnvironmentGeometry" index="21"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.95, 20.4)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="EnvironmentGeometry/ThicketSouth" index="0"]
+mesh = SubResource("29_boundary_mesh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EnvironmentGeometry/ThicketSouth" index="1"]
+shape = SubResource("30_boundary_shape")
+
+[node name="ThicketWest" type="StaticBody3D" parent="EnvironmentGeometry" index="22"]
+transform = Transform3D(1.27064e-07, 0, -1, 0, 1, 0, 1, 0, 1.27064e-07, -20.5, 0.95, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="EnvironmentGeometry/ThicketWest" index="0"]
+mesh = SubResource("29_boundary_mesh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EnvironmentGeometry/ThicketWest" index="1"]
+shape = SubResource("30_boundary_shape")
+
+[node name="ThicketEast" type="StaticBody3D" parent="EnvironmentGeometry" index="23"]
+transform = Transform3D(1.27064e-07, 0, -1, 0, 1, 0, 1, 0, 1.27064e-07, 20.5, 0.95, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="EnvironmentGeometry/ThicketEast" index="0"]
+mesh = SubResource("29_boundary_mesh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EnvironmentGeometry/ThicketEast" index="1"]
+shape = SubResource("30_boundary_shape")
+
+[node name="GlowMushroomA" parent="EnvironmentGeometry" index="24" instance=ExtResource("23_mushroom")]
+transform = Transform3D(1.25, 0, 0, 0, 1.25, 0, 0, 0, 1.25, -2.3, 0, -3.4)
+
+[node name="GlowMushroomB" parent="EnvironmentGeometry" index="25" instance=ExtResource("23_mushroom")]
+transform = Transform3D(1.1, 0, 0, 0, 1.1, 0, 0, 0, 1.1, 8.4, 0, 2.1)
+
+[node name="GlowCrystalA" parent="EnvironmentGeometry" index="26" instance=ExtResource("24_crystal")]
+transform = Transform3D(1.18, 0, 0, 0, 1.18, 0, 0, 0, 1.18, -9.2, 0, -5.7)
+
+[node name="GlowCrystalB" parent="EnvironmentGeometry" index="27" instance=ExtResource("24_crystal")]
+transform = Transform3D(1.05, 0, 0, 0, 1.05, 0, 0, 0, 1.05, 13.1, 0, -1.8)
+
+[node name="ToUpperLayerVolume" type="Area3D" parent="LayerSwitchVolumes" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0.8, -4)
+script = ExtResource("4")
+TargetLayer = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LayerSwitchVolumes/ToUpperLayerVolume" index="0"]
+shape = SubResource("14")
+
+[node name="ToLowerLayerVolume" type="Area3D" parent="LayerSwitchVolumes" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.5, -0.4, -7.5)
+script = ExtResource("4")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LayerSwitchVolumes/ToLowerLayerVolume" index="0"]
+shape = SubResource("14")
+
+[node name="GuideNpc" type="Node3D" parent="Interactables" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.2, 0, 5)
+script = ExtResource("6")
+NpcId = "forest_ranger"
+InteractionName = "Talk"
+Effects = Array[ExtResource("12_gpqem")]([SubResource("19"), SubResource("25"), SubResource("26"), SubResource("27")])
+
+[node name="Sprite3D" type="Sprite3D" parent="Interactables/GuideNpc" index="0"]
+transform = Transform3D(-0.017801462, 0, 0.9998416, 0, 1, 0, -0.9998416, 0, -0.017801462, 0, 0, 0)
+offset = Vector2(0, 252)
+pixel_size = 0.0015
+billboard = 1
+shaded = true
+alpha_cut = 1
+texture = ExtResource("17")
+
+[node name="CollisionBody" type="StaticBody3D" parent="Interactables/GuideNpc" index="1"]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Interactables/GuideNpc/CollisionBody" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2630005, -0.25778198)
+shape = SubResource("BoxShape3D_gpqem")
+
+[node name="TreasureChest01" type="Node3D" parent="Interactables" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.8, 0.2, 1.5)
+script = ExtResource("7")
+SpritePath = NodePath("Sprite3D")
+ClosedTexture = SubResource("16")
+OpenTexture = SubResource("18")
+RewardItem = ExtResource("16")
+RewardQuantity = 2
+InteractionName = "Open Chest"
+OneShot = true
+PersistentStateKey = "forest/chest_01_opened"
+
+[node name="Sprite3D" type="Sprite3D" parent="Interactables/TreasureChest01" index="0"]
+offset = Vector2(0, 16)
+pixel_size = 0.02
+billboard = 1
+texture_filter = 0
+texture = SubResource("16")
+
+[node name="BattleTriggerZone" type="Area3D" parent="Interactables" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10.5, -1.6, -10)
+script = ExtResource("8")
+InteractionName = "Hidden Predator Pack"
+Effects = Array[ExtResource("12_gpqem")]([SubResource("20"), SubResource("21")])
+OneShot = true
+PersistentStateKey = "forest/zone_battle_01"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Interactables/BattleTriggerZone" index="0"]
+shape = SubResource("14")
+
+[node name="LowerPathGate" type="Area3D" parent="Interactables" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14, 0.2, -8)
+script = ExtResource("8")
+InteractionName = "Squeeze Through Vines"
+TriggerMode = 0
+Conditions = Array[ExtResource("21_yjrhw")]([SubResource("22")])
+Effects = Array[ExtResource("12_gpqem")]([SubResource("24"), SubResource("23")])
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Interactables/LowerPathGate" index="0"]
+shape = SubResource("14")
+
+[node name="Hud" type="CanvasLayer" parent="." index="13"]
+
+[node name="HintLabel" type="Label" parent="Hud" index="0"]
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 1040.0
+offset_bottom = 54.0
+theme_override_font_sizes/font_size = 24
+text = "Move: WASD / Left Stick | Interact: Confirm (H / South Face Button)"
+
+[node name="PositionDebugWindow" type="Control" parent="Hud" index="1"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("22")

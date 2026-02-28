@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://dx3pbmugn2ql8"]
+[gd_scene load_steps=6 format=3 uid="uid://dx3pbmugn2ql8"]
 
 [ext_resource type="Texture2D" uid="uid://bvrpioad6ixuk" path="res://assets/objects/environment/Tree_0_.png" id="1_oqout"]
 
@@ -7,6 +7,13 @@ albedo_texture = ExtResource("1_oqout")
 
 [sub_resource type="QuadMesh" id="QuadMesh_xcrun"]
 material = SubResource("StandardMaterial3D_oob1n")
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_oqout"]
+radius = 0.3828125
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_oob1n"]
+radius = 0.114746094
+height = 1.6268921
 
 [node name="Tree0" type="Node3D"]
 
@@ -21,3 +28,14 @@ pixel_size = 0.005
 shaded = true
 alpha_cut = 1
 texture = ExtResource("1_oqout")
+
+[node name="TrunkCollider" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TrunkCollider"]
+transform = Transform3D(0.9977957, 0, -0.06636098, 0, 1, 0, 0.06636098, 0, 0.9977957, -0.13062806, 0.16621542, -0.03668773)
+shape = SubResource("CapsuleShape3D_oqout")
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="TrunkCollider"]
+transform = Transform3D(-0.0018849799, 0.9999982, 0, -0.9999982, -0.0018849799, 0, 0, 0, 1, -0.13745686, -0.5709825, -0.041)
+shape = SubResource("CapsuleShape3D_oob1n")

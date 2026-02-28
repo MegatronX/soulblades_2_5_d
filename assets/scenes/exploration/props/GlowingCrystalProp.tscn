@@ -1,0 +1,40 @@
+[gd_scene load_steps=4 format=3 uid="uid://bpx2ykq1uvhjy"]
+
+[ext_resource type="Script" uid="uid://cjhn170kxm5m1" path="res://scripts/exploration/ambient/AmbientLightPulseProp.cs" id="1"]
+[ext_resource type="Texture2D" uid="uid://b7mihh0ijmouw" path="res://assets/objects/environment/objects/crystal_test.png" id="2_c6d8e"]
+[ext_resource type="Texture2D" uid="uid://bg3r5f3bmsu3b" path="res://assets/objects/environment/objects/crystal_test_glow.png" id="3_3umom"]
+
+[node name="GlowingCrystalProp" type="Node3D"]
+script = ExtResource("1")
+BaseEnergy = 1.8
+PulseAmplitude = 0.5
+PulseSpeed = 0.95
+
+[node name="CrystalBackSprite3D" type="Sprite3D" parent="."]
+transform = Transform3D(0.82, 0, 0, 0, 1.28, 0, 0, 0, 1, -0.05, 0.68, -0.04)
+modulate = Color(0.729412, 0.968627, 1, 0.5)
+pixel_size = 0.007
+billboard = 1
+texture_filter = 0
+
+[node name="CrystalFrontSprite3D" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.04, 0.71, 0.03)
+modulate = Color(0.815686, 0.988235, 1, 0.9)
+pixel_size = 0.007
+billboard = 1
+texture_filter = 0
+texture = ExtResource("2_c6d8e")
+
+[node name="GlowSprite3D" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.04, 0.71, 0.03)
+modulate = Color(0.5568628, 1, 1, 0.52156866)
+pixel_size = 0.007
+billboard = 1
+texture_filter = 0
+texture = ExtResource("3_3umom")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(0.906308, 0, -0.422618, 0, 1, 0, 0.422618, 0, 0.906308, 0, 0.75, 0)
+light_color = Color(0.482353, 0.901961, 1, 1)
+light_energy = 1.8
+omni_range = 3.6

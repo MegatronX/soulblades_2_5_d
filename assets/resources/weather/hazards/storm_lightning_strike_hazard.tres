@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="WeatherTurnHazard" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/weather/WeatherTurnHazard.cs" id="1_hazard_script"]
+
+[resource]
+script = ExtResource("1_hazard_script")
+HazardName = "Lightning Strike"
+TriggerEveryTurnStarts = 1
+TriggerChancePercent = 35.0
+RandomTargetCount = 1
+Element = 5
+FlatDamageMin = 10
+FlatDamageMax = 22
+PercentOfMaxHpDamage = 0.01
+CombatLogMessage = "A lightning strike crashes down!"

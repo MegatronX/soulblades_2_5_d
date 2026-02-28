@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="WeatherProfile" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/gameplay/weather/WeatherProfile.cs" id="1_profile_script"]
+[ext_resource type="Resource" path="res://assets/resources/battlefield_effects/scorching_heat_weather_effect.tres" id="2_heat_battle_effect"]
+
+[resource]
+script = ExtResource("1_profile_script")
+WeatherName = "Scorching Heat"
+WeatherType = 6
+Description = "Blazing sunlight intensifies Fire damage and creates heavy glare."
+MovementSpeedMultiplier = 0.96
+AmbientVolumeDb = -16.0
+ParticleDensity = 0.0
+FallSpeed = 0.0
+WindStrength = 0.8
+EnableEnvironmentTint = true
+EnvironmentTint = Color(1, 0.86, 0.6, 1)
+EnvironmentTintStrength = 0.22
+EnableGlowBoost = true
+GlowIntensityMultiplier = 1.32
+EnableLightColorOverride = true
+LightColorOverride = Color(1, 0.89, 0.69, 1)
+LightEnergyMultiplier = 1.18
+BattlefieldEffects = Array[Resource]([ExtResource("2_heat_battle_effect")])

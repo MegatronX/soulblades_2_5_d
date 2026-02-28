@@ -1,4 +1,4 @@
-[gd_scene load_steps=39 format=3 uid="uid://ccd7ai2lpxylm"]
+[gd_scene load_steps=43 format=3 uid="uid://ccd7ai2lpxylm"]
 
 [ext_resource type="Script" uid="uid://duqljtammbdvq" path="res://scripts/mechanics/turns/TurnManager.cs" id="1_23ekb"]
 [ext_resource type="PackedScene" uid="uid://ddbhgeh1rfpoe" path="res://assets/scenes/battle/ui/TurnOrderPreviewUI.tscn" id="2_2uhgy"]
@@ -28,6 +28,10 @@
 [ext_resource type="Script" uid="uid://cgpkraak8my5t" path="res://scripts/gameplay/experimtenal/ChargeSystem.cs" id="23_sb4i4"]
 [ext_resource type="PackedScene" uid="uid://c2j0f2t5b8j7g" path="res://assets/scenes/battle/ui/BattlePartyVisualizer.tscn" id="25_g5m2s"]
 [ext_resource type="Script" path="res://scripts/gameplay/overflow/OverflowSystem.cs" id="26_7m2jf"]
+[ext_resource type="Script" path="res://scripts/battle/effects/BattlefieldEffectManager.cs" id="27_weather_fx_mgr"]
+[ext_resource type="Script" path="res://scripts/gameplay/weather/WeatherSystem.cs" id="28_weather_system"]
+[ext_resource type="Script" path="res://scripts/gameplay/atmosphere/SceneAtmosphereSystem.cs" id="29_atmosphere_system"]
+[ext_resource type="Resource" path="res://assets/resources/atmosphere/profiles/forest_canopy_atmosphere_profile.tres" id="30_forest_atmo"]
 
 [sub_resource type="Resource" id="Resource_utwf6"]
 script = ExtResource("5_65ea0")
@@ -117,6 +121,9 @@ _battleMechanics = NodePath("BattleMechanics")
 _battleAnimator = NodePath("BattleAnimator")
 _timedHitManager = NodePath("TimedHitManager")
 
+[node name="BattlefieldEffectManager" type="Node" parent="."]
+script = ExtResource("27_weather_fx_mgr")
+
 [node name="BattleMechanics" type="Node" parent="ActionDirector"]
 script = ExtResource("7_absku")
 _defaultStrategy = SubResource("Resource_2xjdu")
@@ -148,6 +155,22 @@ MainLight = NodePath("../MainLight")
 
 [node name="MainLight" type="DirectionalLight3D" parent="."]
 light_color = Color(1, 0.09803922, 0.24313726, 1)
+
+[node name="WeatherSystem" type="Node3D" parent="." node_paths=PackedStringArray("WorldEnvironment", "MainLight", "BattlefieldEffectManager", "BattleController", "WeatherCamera")]
+script = ExtResource("28_weather_system")
+ApplyInitialWeatherOnReady = false
+WorldEnvironment = NodePath("../WorldEnvironment")
+MainLight = NodePath("../MainLight")
+BattlefieldEffectManager = NodePath("../BattlefieldEffectManager")
+BattleController = NodePath("../BattleController")
+WeatherCamera = NodePath("../BattleCamera")
+
+[node name="SceneAtmosphereSystem" type="Node3D" parent="." node_paths=PackedStringArray("WorldEnvironment", "MainLight", "AtmosphereCamera")]
+script = ExtResource("29_atmosphere_system")
+InitialProfile = ExtResource("30_forest_atmo")
+WorldEnvironment = NodePath("../WorldEnvironment")
+MainLight = NodePath("../MainLight")
+AtmosphereCamera = NodePath("../BattleCamera")
 
 [node name="ArenaGeometry" type="Node3D" parent="."]
 script = ExtResource("9_7ovj4")
