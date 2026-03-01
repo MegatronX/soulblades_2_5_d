@@ -1,0 +1,87 @@
+[gd_scene load_steps=9 format=3]
+
+[sub_resource type="StandardMaterial3D" id="1_bank_top_mat"]
+albedo_color = Color(0.223529, 0.313726, 0.188235, 1)
+roughness = 0.95
+
+[sub_resource type="StandardMaterial3D" id="2_bank_wall_mat"]
+albedo_color = Color(0.305882, 0.262745, 0.180392, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="3_top_mesh"]
+material = SubResource("1_bank_top_mat")
+size = Vector3(3.2, 0.3, 3.2)
+
+[sub_resource type="BoxMesh" id="4_wall_mesh"]
+material = SubResource("2_bank_wall_mat")
+size = Vector3(3.2, 2.1, 0.9)
+
+[sub_resource type="BoxShape3D" id="5_top_shape"]
+size = Vector3(3.2, 0.3, 3.2)
+
+[sub_resource type="BoxShape3D" id="6_wall_shape"]
+size = Vector3(3.2, 2.1, 0.9)
+
+[node name="RiverBankCurveModule" type="Node3D"]
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="TopA" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+mesh = SubResource("3_top_mesh")
+
+[node name="TopB" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 2.35, 0.15, 1.35)
+mesh = SubResource("3_top_mesh")
+
+[node name="TopC" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(0.5, 0, -0.8660254, 0, 1, 0, 0.8660254, 0, 0.5, 3.7, 0.15, 3.7)
+mesh = SubResource("3_top_mesh")
+
+[node name="WallA" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 1.45)
+mesh = SubResource("4_wall_mesh")
+
+[node name="WallB" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 2.25, -0.9, 2.62)
+mesh = SubResource("4_wall_mesh")
+
+[node name="WallC" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(0.5, 0, -0.8660254, 0, 1, 0, 0.8660254, 0, 0.5, 3.55, -0.9, 4.95)
+mesh = SubResource("4_wall_mesh")
+
+[node name="Collision" type="Node3D" parent="."]
+
+[node name="Body" type="StaticBody3D" parent="Collision"]
+
+[node name="TopA" type="CollisionShape3D" parent="Collision/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+shape = SubResource("5_top_shape")
+
+[node name="TopB" type="CollisionShape3D" parent="Collision/Body"]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 2.35, 0.15, 1.35)
+shape = SubResource("5_top_shape")
+
+[node name="TopC" type="CollisionShape3D" parent="Collision/Body"]
+transform = Transform3D(0.5, 0, -0.8660254, 0, 1, 0, 0.8660254, 0, 0.5, 3.7, 0.15, 3.7)
+shape = SubResource("5_top_shape")
+
+[node name="WallA" type="CollisionShape3D" parent="Collision/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 1.45)
+shape = SubResource("6_wall_shape")
+
+[node name="WallB" type="CollisionShape3D" parent="Collision/Body"]
+transform = Transform3D(0.8660254, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660254, 2.25, -0.9, 2.62)
+shape = SubResource("6_wall_shape")
+
+[node name="WallC" type="CollisionShape3D" parent="Collision/Body"]
+transform = Transform3D(0.5, 0, -0.8660254, 0, 1, 0, 0.8660254, 0, 0.5, 3.55, -0.9, 4.95)
+shape = SubResource("6_wall_shape")
+
+[node name="SnapPoints" type="Node3D" parent="."]
+
+[node name="Snap_Start" type="Marker3D" parent="SnapPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.6, 0, 0)
+
+[node name="Snap_End" type="Marker3D" parent="SnapPoints"]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 3.7, 0, 5.3)

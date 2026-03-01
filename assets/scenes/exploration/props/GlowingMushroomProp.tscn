@@ -1,6 +1,7 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/exploration/ambient/AmbientLightPulseProp.cs" id="1"]
+[ext_resource type="Script" path="res://scripts/exploration/props/LitSpriteProp3D.cs" id="2_lit_sprite"]
 
 [sub_resource type="Gradient" id="1_stem_grad"]
 colors = PackedColorArray(0.517647, 0.4, 0.278431, 0, 0.74902, 0.639216, 0.498039, 0.95, 0.517647, 0.4, 0.278431, 0)
@@ -62,6 +63,11 @@ shaded = false
 texture_filter = 0
 modulate = Color(1, 1, 1, 0.62)
 texture = SubResource("6_glow_tex")
+
+[node name="SpriteLighting" type="Node3D" parent="."]
+script = ExtResource("2_lit_sprite")
+SpritePath = NodePath("../StemSprite3D")
+AdditionalSpritePaths = Array[NodePath]([NodePath("../CapSprite3D")])
 
 [node name="OmniLight3D" type="OmniLight3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.42, 0)

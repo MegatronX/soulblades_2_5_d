@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3]
+[gd_scene load_steps=15 format=3]
 
 [ext_resource type="Script" path="res://scripts/exploration/ExplorationMapController.cs" id="1"]
 [ext_resource type="Script" path="res://scripts/exploration/ExplorationCameraController.cs" id="2"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" path="res://scripts/exploration/MapSpawnPoint.cs" id="8"]
 [ext_resource type="PackedScene" path="res://assets/resources/characters/ceira/ceira.tscn" id="9"]
 [ext_resource type="Script" path="res://scripts/exploration/audio/ExplorationMusicController.cs" id="10"]
+[ext_resource type="Script" path="res://scripts/gameplay/visuals/SceneVisualDirector.cs" id="11"]
 
 [sub_resource type="ProceduralSkyMaterial" id="1"]
 sky_top_color = Color(0.352941, 0.560784, 0.941176, 1)
@@ -54,6 +55,11 @@ transform = Transform3D(0.790306, -0.241845, 0.562888, 0, 0.918216, 0.39608, -0.
 light_energy = 1.15
 shadow_enabled = true
 
+[node name="SceneVisualDirector" type="Node3D" parent="." node_paths=PackedStringArray("WorldEnvironment", "MainLight")]
+script = ExtResource("11")
+WorldEnvironment = NodePath("../WorldEnvironment")
+MainLight = NodePath("../MainLight")
+
 [node name="ExplorationCameraRig" type="Node3D" parent="."]
 script = ExtResource("2")
 FollowOffset = Vector3(0, 7.2, 9.8)
@@ -63,20 +69,22 @@ LookAtOffset = Vector3(0, 1.1, 0)
 current = true
 fov = 42.0
 
-[node name="SceneAtmosphereSystem" type="Node3D" parent="." node_paths=PackedStringArray("WorldEnvironment", "MainLight", "AtmosphereCamera")]
+[node name="SceneAtmosphereSystem" type="Node3D" parent="." node_paths=PackedStringArray("WorldEnvironment", "MainLight", "AtmosphereCamera", "VisualDirector")]
 script = ExtResource("3")
 InitialProfile = ExtResource("4")
 ApplyInitialProfileOnReady = true
 WorldEnvironment = NodePath("../WorldEnvironment")
 MainLight = NodePath("../MainLight")
 AtmosphereCamera = NodePath("../ExplorationCameraRig/Camera3D")
+VisualDirector = NodePath("../SceneVisualDirector")
 
-[node name="WeatherSystem" type="Node3D" parent="." node_paths=PackedStringArray("WorldEnvironment", "MainLight", "WeatherCamera")]
+[node name="WeatherSystem" type="Node3D" parent="." node_paths=PackedStringArray("WorldEnvironment", "MainLight", "WeatherCamera", "VisualDirector")]
 script = ExtResource("5")
 ApplyInitialWeatherOnReady = false
 WorldEnvironment = NodePath("../WorldEnvironment")
 MainLight = NodePath("../MainLight")
 WeatherCamera = NodePath("../ExplorationCameraRig/Camera3D")
+VisualDirector = NodePath("../SceneVisualDirector")
 
 [node name="AmbientPropSystem" type="Node3D" parent="."]
 script = ExtResource("6")

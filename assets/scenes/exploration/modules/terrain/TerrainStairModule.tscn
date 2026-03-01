@@ -1,0 +1,60 @@
+[gd_scene load_steps=10 format=3]
+
+[sub_resource type="StandardMaterial3D" id="1_stair_mat"]
+albedo_color = Color(0.341176, 0.333333, 0.262745, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="2_step_mesh"]
+material = SubResource("1_stair_mat")
+size = Vector3(8, 0.35, 1.5)
+
+[sub_resource type="BoxShape3D" id="3_step_shape"]
+size = Vector3(8, 0.35, 1.5)
+
+[node name="TerrainStairModule" type="Node3D"]
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Step0" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.175, 2.25)
+mesh = SubResource("2_step_mesh")
+
+[node name="Step1" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.525, 0.75)
+mesh = SubResource("2_step_mesh")
+
+[node name="Step2" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.875, -0.75)
+mesh = SubResource("2_step_mesh")
+
+[node name="Step3" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.225, -2.25)
+mesh = SubResource("2_step_mesh")
+
+[node name="Collision" type="Node3D" parent="."]
+
+[node name="Body" type="StaticBody3D" parent="Collision"]
+
+[node name="Step0" type="CollisionShape3D" parent="Collision/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.175, 2.25)
+shape = SubResource("3_step_shape")
+
+[node name="Step1" type="CollisionShape3D" parent="Collision/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.525, 0.75)
+shape = SubResource("3_step_shape")
+
+[node name="Step2" type="CollisionShape3D" parent="Collision/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.875, -0.75)
+shape = SubResource("3_step_shape")
+
+[node name="Step3" type="CollisionShape3D" parent="Collision/Body"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.225, -2.25)
+shape = SubResource("3_step_shape")
+
+[node name="SnapPoints" type="Node3D" parent="."]
+
+[node name="Snap_Bottom" type="Marker3D" parent="SnapPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 3)
+
+[node name="Snap_Top" type="Marker3D" parent="SnapPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -3)

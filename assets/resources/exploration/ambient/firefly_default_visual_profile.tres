@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="FireflyVisualProfile" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/exploration/ambient/FireflyVisualProfile.cs" id="1"]
+[ext_resource type="Texture2D" path="res://assets/objects/environment/objects/ELR_FireFlies.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+DriftSpeed = 0.45
+DriftRadius = 0.39
+BobAmplitude = 0.34
+SpriteTexture = ExtResource("2")
+SpritePixelSize = 0.008
+SpriteModulate = Color(1, 0.95, 0.74, 0.9)
+GlowLightEnergy = 0.42
+EnableGlowPulse = true
+GlowPulseCyclesPerSecond = 0.06
+GlowPulseMinFactor = 0.8
+PulseSpriteAlpha = true
+SpritePulseMinAlphaFactor = 0.95
+AnimateSpriteFrames = false
+ForceSingleFrameWhenAnimationDisabled = true
+SpriteFrameFps = 0.55
+AnimatedFrameStartIndex = 4
+AnimatedFrameCountLimit = 4
+RandomizeStartFrame = true

@@ -1,0 +1,120 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://scripts/exploration/props/RiverPathChannel.cs" id="1_river_path_script"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_flow_material.tres" id="2_water_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_bank_material.tres" id="3_bank_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_bed_material.tres" id="4_bed_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_gorge_wall_material.tres" id="5_wall_mat"]
+
+[sub_resource type="ProceduralSkyMaterial" id="1_sky"]
+sky_top_color = Color(0.258824, 0.333333, 0.478431, 1)
+sky_horizon_color = Color(0.592157, 0.639216, 0.721569, 1)
+ground_bottom_color = Color(0.105882, 0.129412, 0.117647, 1)
+ground_horizon_color = Color(0.223529, 0.27451, 0.243137, 1)
+
+[sub_resource type="Sky" id="2_sky_res"]
+sky_material = SubResource("1_sky")
+
+[sub_resource type="Environment" id="3_env"]
+background_mode = 2
+sky = SubResource("2_sky_res")
+ambient_light_source = 2
+ambient_light_energy = 0.9
+tonemap_mode = 2
+glow_enabled = true
+glow_intensity = 0.45
+glow_bloom = 0.2
+ssao_enabled = true
+
+[sub_resource type="PlaneMesh" id="4_ground_mesh"]
+size = Vector2(90, 90)
+
+[sub_resource type="StandardMaterial3D" id="5_ground_mat"]
+albedo_color = Color(0.231373, 0.254902, 0.235294, 1)
+roughness = 0.98
+
+[sub_resource type="BoxMesh" id="6_marker_mesh"]
+size = Vector3(1.5, 1.5, 1.5)
+
+[sub_resource type="StandardMaterial3D" id="7_marker_mat"]
+albedo_color = Color(0.45098, 0.454902, 0.411765, 1)
+roughness = 0.95
+
+[node name="RiverPathAuthoringSandboxScene" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("3_env")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.952221, 0.3054066, 0, -0.3054066, 0.952221, 0, 9.3, 25.5)
+current = true
+fov = 44.0
+
+[node name="MainLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8166422, -0.483378, 0.3151558, 0, 0.5469344, 0.8371755, -0.5771452, -0.6831368, 0.4466368, 0, 4.8, 0)
+light_energy = 1.14
+shadow_enabled = true
+
+[node name="FillLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.2, 0)
+light_energy = 0.26
+omni_range = 32.0
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("4_ground_mesh")
+surface_material_override/0 = SubResource("5_ground_mat")
+
+[node name="ReferenceRockL" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.3, 0, 0, 0, 1.2, 0, 0, 0, 1.15, -18, 0.75, 14.5)
+mesh = SubResource("6_marker_mesh")
+surface_material_override/0 = SubResource("7_marker_mat")
+
+[node name="ReferenceRockR" type="MeshInstance3D" parent="."]
+transform = Transform3D(1.4, 0, 0, 0, 1.2, 0, 0, 0, 1.2, 18.5, 0.8, -13.5)
+mesh = SubResource("6_marker_mesh")
+surface_material_override/0 = SubResource("7_marker_mat")
+
+[node name="RiverPathChannel" type="Path3D" parent="."]
+script = ExtResource("1_river_path_script")
+AutoRebuildInEditor = true
+CreateDefaultCurveIfMissing = true
+SampleSpacing = 0.7
+CrossSectionStyle = 1
+WaterSurfaceYOffset = -0.34
+WaterWidth = 10.0
+SmoothBankRun = 2.3
+BedDepth = 1.5
+BedWidthExtra = 1.2
+GorgeRimHeight = 1.15
+GorgeLedgeRun = 1.6
+FlowMode = 0
+CustomFlowDirection = Vector2(0, -1)
+WaterUvLengthScale = 0.08
+WaterUvWidthScale = 1.0
+TerrainUvLengthScale = 0.12
+GenerateBoatPath = true
+BoatPathYOffset = 0.08
+EnableBoatPreview = true
+BoatPreviewSpeed = 1.4
+BoatPreviewScale = 0.75
+GenerateObstacleAnchors = true
+ObstacleAnchorInterval = 5.3
+ObstacleEdgeBias = 0.72
+ObstacleHeightOffset = 0.04
+AlternateObstacleSides = true
+ObstacleSeed = 117
+MaxObstacleAnchors = 36
+WaterMaterial = ExtResource("2_water_mat")
+BedMaterial = ExtResource("4_bed_mat")
+TerrainMaterial = ExtResource("3_bank_mat")
+GorgeWallMaterial = ExtResource("5_wall_mat")
+
+[node name="UiHint" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="UiHint"]
+offset_left = 18.0
+offset_top = 16.0
+offset_right = 1320.0
+offset_bottom = 90.0
+theme_override_font_sizes/font_size = 20
+text = "River Path Authoring Sandbox: Select RiverPathChannel, edit Curve points in 3D view, then tune cross-section/material/flow in Inspector.\nObstacle anchors + BoatPath are auto-generated."

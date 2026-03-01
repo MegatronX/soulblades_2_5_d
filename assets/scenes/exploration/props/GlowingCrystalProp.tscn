@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://bpx2ykq1uvhjy"]
+[gd_scene load_steps=5 format=3 uid="uid://bpx2ykq1uvhjy"]
 
 [ext_resource type="Script" uid="uid://cjhn170kxm5m1" path="res://scripts/exploration/ambient/AmbientLightPulseProp.cs" id="1"]
 [ext_resource type="Texture2D" uid="uid://b7mihh0ijmouw" path="res://assets/objects/environment/objects/crystal_test.png" id="2_c6d8e"]
 [ext_resource type="Texture2D" uid="uid://bg3r5f3bmsu3b" path="res://assets/objects/environment/objects/crystal_test_glow.png" id="3_3umom"]
+[ext_resource type="Script" path="res://scripts/exploration/props/LitSpriteProp3D.cs" id="4_lit_sprite"]
 
 [node name="GlowingCrystalProp" type="Node3D"]
 script = ExtResource("1")
@@ -32,6 +33,11 @@ pixel_size = 0.007
 billboard = 1
 texture_filter = 0
 texture = ExtResource("3_3umom")
+
+[node name="SpriteLighting" type="Node3D" parent="."]
+script = ExtResource("4_lit_sprite")
+SpritePath = NodePath("../CrystalFrontSprite3D")
+AdditionalSpritePaths = Array[NodePath]([NodePath("../CrystalBackSprite3D")])
 
 [node name="OmniLight3D" type="OmniLight3D" parent="."]
 transform = Transform3D(0.906308, 0, -0.422618, 0, 1, 0, 0.422618, 0, 0.906308, 0, 0.75, 0)

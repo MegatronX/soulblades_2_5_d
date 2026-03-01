@@ -1,0 +1,48 @@
+[gd_scene load_steps=8 format=3]
+
+[sub_resource type="StandardMaterial3D" id="1_bridge_mat"]
+albedo_color = Color(0.360784, 0.278431, 0.196078, 1)
+roughness = 0.84
+
+[sub_resource type="BoxMesh" id="2_deck_mesh"]
+material = SubResource("1_bridge_mat")
+size = Vector3(8, 0.3, 3)
+
+[sub_resource type="BoxMesh" id="3_rail_mesh"]
+material = SubResource("1_bridge_mat")
+size = Vector3(8, 0.7, 0.24)
+
+[sub_resource type="BoxShape3D" id="4_deck_shape"]
+size = Vector3(8, 0.3, 3)
+
+[node name="BridgeSegmentModule" type="Node3D"]
+
+[node name="Visual" type="Node3D" parent="."]
+
+[node name="Deck" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+mesh = SubResource("2_deck_mesh")
+
+[node name="RailNear" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 1.38)
+mesh = SubResource("3_rail_mesh")
+
+[node name="RailFar" type="MeshInstance3D" parent="Visual"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -1.38)
+mesh = SubResource("3_rail_mesh")
+
+[node name="Collision" type="Node3D" parent="."]
+
+[node name="Body" type="StaticBody3D" parent="Collision"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision/Body"]
+shape = SubResource("4_deck_shape")
+
+[node name="SnapPoints" type="Node3D" parent="."]
+
+[node name="Snap_Front" type="Marker3D" parent="SnapPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4, 0, 0)
+
+[node name="Snap_Back" type="Marker3D" parent="SnapPoints"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4, 0, 0)

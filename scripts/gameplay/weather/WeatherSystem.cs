@@ -43,6 +43,9 @@ public partial class WeatherSystem : Node3D
     [Export]
     public Camera3D WeatherCamera { get; private set; }
 
+    [Export]
+    public SceneVisualDirector VisualDirector { get; private set; }
+
     [ExportGroup("Particle Placement")]
     [Export]
     public bool FollowCamera { get; private set; } = true;
@@ -194,15 +197,20 @@ public partial class WeatherSystem : Node3D
     private bool _baseLightShadowEnabled = true;
     private bool _capturedEnvironmentBaseline;
     private bool _capturedLightBaseline;
+    private string _visualContributionId;
+    private float _lastAppliedTimeOfDayHours = float.NaN;
+    private bool _lastTimeOfDayActive;
 
     public WeatherProfile ActiveWeather => _activeWeather;
     public float MovementSpeedMultiplier => _activeWeather?.MovementSpeedMultiplier ?? 1f;
     public float VisibilityMultiplier => _activeWeather?.VisibilityMultiplier ?? 1f;
+    private bool UseVisualDirector => VisualDirector != null && GodotObject.IsInstanceValid(VisualDirector);
 
     public override void _Ready()
     {
         EnsureNodes();
         ResolveSceneReferences();
+        _visualContributionId = $"{Name}:{GetInstanceId()}:Weather";
         WireBattleHooks();
 
         if (ApplyInitialWeatherOnReady && InitialWeather != null)
@@ -219,6 +227,7 @@ public partial class WeatherSystem : Node3D
 
     public override void _ExitTree()
     {
+        ClearVisualContribution();
         UnwireBattleHooks();
     }
 
@@ -392,15 +401,15 @@ public partial class WeatherSystem : Node3D
         List<Node> candidates = new();
         if (BattleController != null)
         {
-            candidates.AddRange(BattleController.GetLivingCombatants().Where(IsValidCombatant));
+            candidates.AddRange(BattleController.GetLivingCombatants().Where(CombatantUtils.IsValidLivingCombatant));
         }
         else
         {
-            candidates.AddRange(GetTree().GetNodesInGroup(GameGroups.PlayerCharacters).Where(IsValidCombatant));
+            candidates.AddRange(GetTree().GetNodesInGroup(GameGroups.PlayerCharacters).Where(CombatantUtils.IsValidLivingCombatant));
             // In debug scenes enemies may simply be non-player BaseCharacters.
             foreach (var node in GetTree().CurrentScene?.FindChildren("*", "BaseCharacter", true, false) ?? new Godot.Collections.Array<Node>())
             {
-                if (node is Node n && IsValidCombatant(n) && !candidates.Contains(n))
+                if (node is Node n && CombatantUtils.IsValidLivingCombatant(n) && !candidates.Contains(n))
                 {
                     candidates.Add(n);
                 }
@@ -523,6 +532,11 @@ public partial class WeatherSystem : Node3D
                 WeatherCamera = GetTree()?.CurrentScene?.FindChild("Camera3D", true, false) as Camera3D;
             }
         }
+
+        if (VisualDirector == null)
+        {
+            VisualDirector = GetTree()?.CurrentScene?.FindChild(SceneVisualDirector.NodeName, true, false) as SceneVisualDirector;
+        }
     }
 
     private void WireBattleHooks()
@@ -547,7 +561,7 @@ public partial class WeatherSystem : Node3D
 
         var activeOwner = turnData?.Combatant;
         var living = BattleController.GetLivingCombatants()
-            .Where(IsValidCombatant)
+            .Where(CombatantUtils.IsValidLivingCombatant)
             .ToList();
 
         ApplyTurnHazards(activeOwner, living);
@@ -586,13 +600,13 @@ public partial class WeatherSystem : Node3D
         if (hazard.ApplyToAllCombatants) return available;
 
         int count = Mathf.Clamp(hazard.RandomTargetCount, 1, available.Count);
-        Shuffle(available);
+        RandomListUtils.ShuffleInPlace(available, _rng);
         return available.Take(count).ToList();
     }
 
     private void ApplyHazardToTarget(WeatherTurnHazard hazard, Node target)
     {
-        if (target == null || !IsValidCombatant(target)) return;
+        if (target == null || !CombatantUtils.IsValidLivingCombatant(target)) return;
 
         var stats = target.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
         if (stats == null) return;
@@ -743,9 +757,107 @@ public partial class WeatherSystem : Node3D
     private void ApplyVisuals()
     {
         ApplyPrecipitation();
-        ApplyEnvironmentModifiers();
-        ApplyLightModifiers();
+        if (UseVisualDirector)
+        {
+            PushWeatherVisualContribution();
+        }
+        else
+        {
+            ApplyEnvironmentModifiers();
+            ApplyLightModifiers();
+        }
         ApplyLightningState();
+    }
+
+    private void PushWeatherVisualContribution()
+    {
+        if (!UseVisualDirector) return;
+
+        // Keep time-of-day contribution active even when no weather profile is selected.
+        if (_activeWeather == null && !IsTimeOfDayActive())
+        {
+            ClearVisualContribution();
+            return;
+        }
+
+        VisualDirector.SetContribution(_visualContributionId, BuildWeatherVisualIntent());
+    }
+
+    private void ClearVisualContribution()
+    {
+        if (!UseVisualDirector) return;
+        VisualDirector.ClearContribution(_visualContributionId);
+    }
+
+    private SceneVisualIntent BuildWeatherVisualIntent()
+    {
+        var intent = new SceneVisualIntent
+        {
+            Layer = (int)SceneVisualContributionLayer.Weather,
+            AmbientEnergyMultiplier = ResolveWeatherAmbientEnergyMultiplier(),
+            MainLightEnergyMultiplier = ResolveWeatherMainLightEnergyMultiplier(),
+            GlowIntensityMultiplier = ResolveWeatherGlowIntensityMultiplier()
+        };
+
+        if (_activeWeather != null && _activeWeather.EnableEnvironmentTint)
+        {
+            float t = GetResolvedEnvironmentTintStrength(_activeWeather);
+            intent.UseAmbientTint = true;
+            intent.AmbientTint = _activeWeather.EnvironmentTint;
+            intent.AmbientTintStrength = t;
+            intent.UseFogTint = true;
+            intent.FogTint = _activeWeather.EnvironmentTint;
+            intent.FogTintStrength = t;
+            intent.FogEnabledOverride = true;
+        }
+
+        if (_activeWeather != null && _activeWeather.EnableLightColorOverride)
+        {
+            intent.OverrideMainLightColor = true;
+            intent.MainLightColorOverride = _activeWeather.LightColorOverride;
+        }
+
+        bool disableShadows = false;
+        if (_activeWeather != null
+            && _activeWeather.EnableOvercastDiffuseLighting
+            && _activeWeather.DisableMainLightShadowsInOvercast)
+        {
+            disableShadows = true;
+        }
+
+        if (IsTimeOfDayActive())
+        {
+            float dayBlend = GetDaylightBlend();
+            float nightBlend = 1f - dayBlend;
+
+            intent.AmbientColorMultiplier = Mathf.Lerp(Mathf.Clamp(NightAmbientColorMultiplier, 0f, 1f), 1f, dayBlend);
+            intent.FogColorMultiplier = Mathf.Lerp(Mathf.Clamp(NightFogColorMultiplier, 0f, 1f), 1f, dayBlend);
+            intent.FogDensityMultiplier = Mathf.Lerp(Mathf.Clamp(NightFogDensityMultiplier, 0f, 1f), 1f, dayBlend);
+            intent.AmbientSkyContributionMultiplier = Mathf.Lerp(Mathf.Clamp(NightSkyAmbientContributionMultiplier, 0f, 1f), 1f, dayBlend);
+
+            intent.AdjustmentEnabledOverride = true;
+            intent.AdjustmentBrightnessMultiplier = Mathf.Lerp(Mathf.Clamp(NightSceneBrightnessMultiplier, 0.01f, 1f), 1f, dayBlend);
+            intent.AdjustmentSaturationMultiplier = Mathf.Lerp(Mathf.Clamp(NightSceneSaturationMultiplier, 0.01f, 1f), 1f, dayBlend);
+
+            if (EnableMoonlightAtNight && nightBlend > 0.001f)
+            {
+                intent.UseMainLightTint = true;
+                intent.MainLightTint = MoonlightTint;
+                intent.MainLightTintStrength = Mathf.Clamp(MoonlightTintStrength * nightBlend, 0f, 1f);
+            }
+
+            if (DisableMainLightShadowsAtNight && nightBlend > 0.5f)
+            {
+                disableShadows = true;
+            }
+        }
+
+        if (disableShadows)
+        {
+            intent.MainLightShadowEnabledOverride = false;
+        }
+
+        return intent;
     }
 
     private void ApplyPrecipitation()
@@ -980,21 +1092,11 @@ public partial class WeatherSystem : Node3D
 
         env.AmbientLightEnergy = ResolveWeatherAmbientLightEnergy();
 
-        float glowIntensity = _baseGlowIntensity;
+        float glowIntensity = _baseGlowIntensity * ResolveWeatherGlowIntensityMultiplier();
         if (_activeWeather != null && _activeWeather.EnableGlowBoost)
         {
             env.GlowEnabled = true;
-            glowIntensity *= GetResolvedGlowIntensityMultiplier(_activeWeather);
         }
-
-        if (IsTimeOfDayActive())
-        {
-            glowIntensity *= Mathf.Lerp(
-                Mathf.Clamp(NightGlowIntensityMultiplier, 0.01f, 1f),
-                1f,
-                GetDaylightBlend());
-        }
-
         env.GlowIntensity = glowIntensity;
 
         ApplyTimeOfDayPostAdjustments(env);
@@ -1089,7 +1191,9 @@ public partial class WeatherSystem : Node3D
 
         if (MainLight != null && _activeWeather.LightningMainLightEnergyBoost > 1f)
         {
-            float baseMainLightEnergy = ResolveWeatherMainLightEnergy();
+            float baseMainLightEnergy = UseVisualDirector
+                ? MainLight.LightEnergy
+                : ResolveWeatherMainLightEnergy();
             float boostScale = Mathf.Max(0.15f, intensityScale);
             float boostedEnergy = baseMainLightEnergy * _activeWeather.LightningMainLightEnergyBoost * boostScale;
             MainLight.LightEnergy = Mathf.Max(MainLight.LightEnergy, boostedEnergy);
@@ -1100,8 +1204,8 @@ public partial class WeatherSystem : Node3D
         float envFlashStrength = Mathf.Clamp(_activeWeather.LightningEnvironmentFlashStrength * Mathf.Max(0.15f, intensityScale), 0f, 1f);
         if (env != null && envFlashStrength > 0f)
         {
-            Color ambientBase = ResolveWeatherAmbientLightColor();
-            Color fogBase = ResolveWeatherFogLightColor();
+            Color ambientBase = UseVisualDirector ? env.AmbientLightColor : ResolveWeatherAmbientLightColor();
+            Color fogBase = UseVisualDirector ? env.FogLightColor : ResolveWeatherFogLightColor();
             Color flashColor = _activeWeather.LightningFlashColor;
             env.AmbientLightColor = ambientBase.Lerp(flashColor, envFlashStrength);
             env.FogLightColor = fogBase.Lerp(flashColor, envFlashStrength * 0.9f);
@@ -1156,18 +1260,54 @@ public partial class WeatherSystem : Node3D
 
     private void UpdateTimeOfDay(double delta)
     {
-        if (!IsTimeOfDayActive()) return;
+        bool timeOfDayActive = IsTimeOfDayActive();
+        if (!timeOfDayActive)
+        {
+            if (_lastTimeOfDayActive)
+            {
+                _lastTimeOfDayActive = false;
+                _lastAppliedTimeOfDayHours = float.NaN;
+                if (UseVisualDirector)
+                {
+                    PushWeatherVisualContribution();
+                }
+                else
+                {
+                    ApplyLightModifiers();
+                    ApplyEnvironmentModifiers();
+                }
+            }
+            return;
+        }
 
+        bool changed = false;
         if (AutoAdvanceTimeOfDay)
         {
             float cycleMinutes = Mathf.Max(0.1f, FullDayDurationMinutes);
             float hoursPerSecond = 24f / (cycleMinutes * 60f);
             TimeOfDayHours = Mathf.PosMod(TimeOfDayHours + ((float)delta * hoursPerSecond), 24f);
+            changed = true;
         }
 
+        if (!_lastTimeOfDayActive || !Mathf.IsEqualApprox(_lastAppliedTimeOfDayHours, TimeOfDayHours))
+        {
+            changed = true;
+        }
+        if (!changed) return;
+
         ApplyMainLightTimeOfDayOrientation();
-        ApplyLightModifiers();
-        ApplyEnvironmentModifiers();
+        if (UseVisualDirector)
+        {
+            PushWeatherVisualContribution();
+        }
+        else
+        {
+            ApplyLightModifiers();
+            ApplyEnvironmentModifiers();
+        }
+
+        _lastTimeOfDayActive = true;
+        _lastAppliedTimeOfDayHours = TimeOfDayHours;
     }
 
     private void ApplyMainLightTimeOfDayOrientation()
@@ -1257,6 +1397,12 @@ public partial class WeatherSystem : Node3D
 
     private void RestoreWeatherLightState()
     {
+        if (UseVisualDirector)
+        {
+            VisualDirector.Reapply();
+            return;
+        }
+
         if (MainLight != null)
         {
             MainLight.LightEnergy = ResolveWeatherMainLightEnergy();
@@ -1296,7 +1442,12 @@ public partial class WeatherSystem : Node3D
 
     private float ResolveWeatherAmbientLightEnergy()
     {
-        float energy = _baseAmbientLightEnergy;
+        return _baseAmbientLightEnergy * ResolveWeatherAmbientEnergyMultiplier();
+    }
+
+    private float ResolveWeatherAmbientEnergyMultiplier()
+    {
+        float multiplier = 1f;
         if (_activeWeather != null && _activeWeather.EnableOvercastDiffuseLighting)
         {
             float overcastAmbientMultiplier = Mathf.Max(0.05f, _activeWeather.OvercastAmbientLightEnergyMultiplier);
@@ -1305,33 +1456,38 @@ public partial class WeatherSystem : Node3D
                 // Keep overcast diffuse boost primarily a daytime behavior.
                 // At night, ambient should be governed by night multipliers instead of brightening from cloud cover.
                 float dayBlend = GetDaylightBlend();
-                energy *= Mathf.Lerp(1f, overcastAmbientMultiplier, dayBlend);
+                multiplier *= Mathf.Lerp(1f, overcastAmbientMultiplier, dayBlend);
             }
             else
             {
-                energy *= overcastAmbientMultiplier;
+                multiplier *= overcastAmbientMultiplier;
             }
         }
 
         if (IsTimeOfDayActive())
         {
-            energy *= Mathf.Lerp(Mathf.Max(0.05f, NightAmbientEnergyMultiplier), 1f, GetDaylightBlend());
+            multiplier *= Mathf.Lerp(Mathf.Max(0.05f, NightAmbientEnergyMultiplier), 1f, GetDaylightBlend());
         }
 
-        return energy;
+        return multiplier;
     }
 
     private float ResolveWeatherMainLightEnergy()
     {
-        float energy = _baseLightEnergy;
+        return _baseLightEnergy * ResolveWeatherMainLightEnergyMultiplier();
+    }
+
+    private float ResolveWeatherMainLightEnergyMultiplier()
+    {
+        float multiplier = 1f;
         if (_activeWeather != null)
         {
-            energy *= GetResolvedLightEnergyMultiplier(_activeWeather);
+            multiplier *= GetResolvedLightEnergyMultiplier(_activeWeather);
         }
 
         if (_activeWeather != null && _activeWeather.EnableOvercastDiffuseLighting)
         {
-            energy *= Mathf.Clamp(_activeWeather.OvercastDirectionalLightEnergyMultiplier, 0f, 1f);
+            multiplier *= Mathf.Clamp(_activeWeather.OvercastDirectionalLightEnergyMultiplier, 0f, 1f);
         }
 
         if (IsTimeOfDayActive())
@@ -1339,15 +1495,34 @@ public partial class WeatherSystem : Node3D
             float dayBlend = GetDaylightBlend();
             if (EnableMoonlightAtNight)
             {
-                energy *= Mathf.Lerp(Mathf.Clamp(MoonlightDirectionalEnergyMultiplier, 0f, 1f), 1f, dayBlend);
+                multiplier *= Mathf.Lerp(Mathf.Clamp(MoonlightDirectionalEnergyMultiplier, 0f, 1f), 1f, dayBlend);
             }
             else
             {
-                energy *= dayBlend;
+                multiplier *= dayBlend;
             }
         }
 
-        return energy;
+        return multiplier;
+    }
+
+    private float ResolveWeatherGlowIntensityMultiplier()
+    {
+        float multiplier = 1f;
+        if (_activeWeather != null && _activeWeather.EnableGlowBoost)
+        {
+            multiplier *= GetResolvedGlowIntensityMultiplier(_activeWeather);
+        }
+
+        if (IsTimeOfDayActive())
+        {
+            multiplier *= Mathf.Lerp(
+                Mathf.Clamp(NightGlowIntensityMultiplier, 0.01f, 1f),
+                1f,
+                GetDaylightBlend());
+        }
+
+        return multiplier;
     }
 
     private void ApplyTimeOfDayPostAdjustments(Environment env)
@@ -1571,20 +1746,4 @@ public partial class WeatherSystem : Node3D
         return Mathf.Max(0f, weather.GlowIntensityMultiplier * Mathf.Max(0.05f, RuntimeGlowIntensityMultiplier));
     }
 
-    private static bool IsValidCombatant(Node node)
-    {
-        if (node == null || !GodotObject.IsInstanceValid(node)) return false;
-        var stats = node.GetNodeOrNull<StatsComponent>(StatsComponent.NodeName);
-        if (stats == null) return false;
-        return stats.CurrentHP > 0;
-    }
-
-    private void Shuffle<T>(IList<T> list)
-    {
-        for (int i = list.Count - 1; i > 0; i--)
-        {
-            int j = _rng.RandiRange(0, i);
-            (list[i], list[j]) = (list[j], list[i]);
-        }
-    }
 }

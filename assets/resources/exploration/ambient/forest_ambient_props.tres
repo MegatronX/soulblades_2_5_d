@@ -10,17 +10,19 @@ script = ExtResource("4")
 PropScene = ExtResource("2")
 Weight = 22
 MaxActiveCount = 42
+EnableSystemMotion = true
+LifetimeMinSeconds = 4.5
+LifetimeMaxSeconds = 15.0
 
 [sub_resource type="Resource" id="2_owl_entry"]
 script = ExtResource("4")
 PropScene = ExtResource("3")
 Weight = 3
-MaxActiveCount = 4
+MaxActiveCount = 2
 
 [resource]
 script = ExtResource("1")
 ProfileName = "Forest Ambient"
-PropScenes = Array[PackedScene]([ExtResource("2"), ExtResource("2"), ExtResource("3")])
 SpawnEntries = Array[ExtResource("4")]([SubResource("1_firefly_entry"), SubResource("2_owl_entry")])
 InitialSpawnCount = 16
 MaxActiveProps = 46

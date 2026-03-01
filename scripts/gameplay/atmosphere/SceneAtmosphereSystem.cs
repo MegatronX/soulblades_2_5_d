@@ -34,6 +34,9 @@ public partial class SceneAtmosphereSystem : Node3D
     [Export]
     public Camera3D AtmosphereCamera { get; private set; }
 
+    [Export]
+    public SceneVisualDirector VisualDirector { get; private set; }
+
     [ExportGroup("Placement")]
     [Export]
     public bool FollowCamera { get; private set; } = true;
@@ -56,15 +59,19 @@ public partial class SceneAtmosphereSystem : Node3D
     private SceneAtmosphereRuntimeContext _runtimeContext;
     private readonly List<IAtmosphereLayer> _layers = new();
     private bool _layersConfigured;
+    private bool _configuredForVisualDirector;
+    private string _visualContributionId;
 
     public SceneAtmosphereProfile ActiveProfile => _activeProfile;
+    private bool UseVisualDirector => VisualDirector != null && GodotObject.IsInstanceValid(VisualDirector);
 
     public override void _Ready()
     {
         _rng.Randomize();
-        EnsureRuntimePipeline();
         ResolveSceneReferences();
+        EnsureRuntimePipeline();
         SyncRuntimeContext();
+        _visualContributionId = $"{Name}:{GetInstanceId()}:Atmosphere";
 
         if (ApplyInitialProfileOnReady && InitialProfile != null)
         {
@@ -72,8 +79,14 @@ public partial class SceneAtmosphereSystem : Node3D
         }
     }
 
+    public override void _ExitTree()
+    {
+        ClearVisualContribution();
+    }
+
     public override void _Process(double delta)
     {
+        ResolveSceneReferences();
         EnsureRuntimePipeline();
         SyncRuntimeContext();
 
@@ -85,12 +98,14 @@ public partial class SceneAtmosphereSystem : Node3D
         {
             layer.Update(_runtimeContext, _activeProfile, Mathf.Max(0f, (float)delta));
         }
+
+        PushVisualContribution();
     }
 
     public void SetProfile(SceneAtmosphereProfile profile)
     {
-        EnsureRuntimePipeline();
         ResolveSceneReferences();
+        EnsureRuntimePipeline();
         SyncRuntimeContext();
 
         if (_activeProfile == profile)
@@ -201,18 +216,34 @@ public partial class SceneAtmosphereSystem : Node3D
                 AtmosphereCamera = GetTree()?.CurrentScene?.FindChild("Camera3D", true, false) as Camera3D;
             }
         }
+
+        if (VisualDirector == null)
+        {
+            VisualDirector = GetTree()?.CurrentScene?.FindChild(SceneVisualDirector.NodeName, true, false) as SceneVisualDirector;
+        }
     }
 
     private void EnsureRuntimePipeline()
     {
         _runtimeContext ??= new SceneAtmosphereRuntimeContext(this, _rng);
-        if (_layersConfigured) return;
+        bool useVisualDirector = UseVisualDirector;
+        if (_layersConfigured && _configuredForVisualDirector == useVisualDirector) return;
 
-        _layers.Add(new AmbientFogAtmosphereLayer());
-        _layers.Add(new MainLightAtmosphereLayer());
+        foreach (var layer in _layers)
+        {
+            layer.Clear(_runtimeContext);
+        }
+
+        _layers.Clear();
+        if (!useVisualDirector)
+        {
+            _layers.Add(new AmbientFogAtmosphereLayer());
+            _layers.Add(new MainLightAtmosphereLayer());
+        }
         _layers.Add(new SunShaftAtmosphereLayer());
         _layers.Add(new DiffuseFillAtmosphereLayer());
         _layersConfigured = true;
+        _configuredForVisualDirector = useVisualDirector;
     }
 
     private void SyncRuntimeContext()
@@ -238,6 +269,7 @@ public partial class SceneAtmosphereSystem : Node3D
             {
                 layer.Clear(_runtimeContext);
             }
+            ClearVisualContribution();
             return;
         }
 
@@ -245,6 +277,8 @@ public partial class SceneAtmosphereSystem : Node3D
         {
             layer.Apply(_runtimeContext, _activeProfile);
         }
+
+        PushVisualContribution();
     }
 
     private void UpdateAnchor()
@@ -264,5 +298,68 @@ public partial class SceneAtmosphereSystem : Node3D
         }
 
         GlobalPosition = camera.GlobalPosition + CameraFollowOffset;
+    }
+
+    private void PushVisualContribution()
+    {
+        if (!UseVisualDirector || _activeProfile == null || _runtimeContext == null) return;
+        VisualDirector.SetContribution(_visualContributionId, BuildAtmosphereVisualIntent(_activeProfile));
+    }
+
+    private void ClearVisualContribution()
+    {
+        if (!UseVisualDirector) return;
+        VisualDirector.ClearContribution(_visualContributionId);
+    }
+
+    private SceneVisualIntent BuildAtmosphereVisualIntent(SceneAtmosphereProfile profile)
+    {
+        float canopy = _runtimeContext.GetResolvedCanopy(profile);
+        float sunHeight = _runtimeContext.ComputeSunHeightFactor();
+
+        var intent = new SceneVisualIntent
+        {
+            Layer = (int)SceneVisualContributionLayer.BaseBiome
+        };
+
+        if (profile.EnableAmbientTint)
+        {
+            intent.UseAmbientTint = true;
+            intent.AmbientTint = profile.AmbientTint;
+            intent.AmbientTintStrength = Mathf.Clamp(profile.AmbientTintStrength * canopy, 0f, 1f);
+        }
+
+        float fogDensityAdd = Mathf.Max(0f, profile.FogDensityBoost * canopy);
+        intent.FogDensityAdd = fogDensityAdd;
+        if (profile.FogTintStrength > 0f)
+        {
+            intent.UseFogTint = true;
+            intent.FogTint = profile.FogTint;
+            intent.FogTintStrength = Mathf.Clamp(profile.FogTintStrength * canopy, 0f, 1f);
+        }
+        if (fogDensityAdd > 0f || intent.FogTintStrength > 0.01f)
+        {
+            intent.FogEnabledOverride = true;
+        }
+
+        if (profile.EnableMainLightAdjustments)
+        {
+            float energyMul = Mathf.Lerp(
+                profile.MainLightEnergySparseCanopy,
+                profile.MainLightEnergyDenseCanopy,
+                canopy);
+            energyMul *= Mathf.Lerp(0.85f, 1.05f, sunHeight);
+            intent.MainLightEnergyMultiplier = Mathf.Max(0.05f, energyMul);
+
+            float tintT = Mathf.Clamp(profile.MainLightTintStrength * canopy, 0f, 1f);
+            if (tintT > 0.001f)
+            {
+                intent.UseMainLightTint = true;
+                intent.MainLightTint = profile.MainLightDenseCanopyTint;
+                intent.MainLightTintStrength = tintT;
+            }
+        }
+
+        return intent;
     }
 }

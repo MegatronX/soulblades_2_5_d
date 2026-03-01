@@ -1,6 +1,7 @@
-[gd_scene load_steps=6 format=3 uid="uid://dx3pbmugn2ql8"]
+[gd_scene load_steps=7 format=3 uid="uid://dx3pbmugn2ql8"]
 
 [ext_resource type="Texture2D" uid="uid://bvrpioad6ixuk" path="res://assets/objects/environment/Tree_0_.png" id="1_oqout"]
+[ext_resource type="Script" path="res://scripts/exploration/props/LitSpriteProp3D.cs" id="2_lit_sprite"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oob1n"]
 albedo_texture = ExtResource("1_oqout")
@@ -16,6 +17,7 @@ radius = 0.114746094
 height = 1.6268921
 
 [node name="Tree0" type="Node3D"]
+script = ExtResource("2_lit_sprite")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.50527835, 0)

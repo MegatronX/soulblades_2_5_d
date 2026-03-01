@@ -1,4 +1,4 @@
-[gd_scene load_steps=58 format=3 uid="uid://by5mms12xwtwe"]
+[gd_scene load_steps=68 format=3 uid="uid://by5mms12xwtwe"]
 
 [ext_resource type="PackedScene" path="res://assets/scenes/exploration/templates/ExplorationMapTemplate.tscn" id="1"]
 [ext_resource type="PackedScene" uid="uid://dx3pbmugn2ql8" path="res://assets/scenes/props/Tree_0.tscn" id="2"]
@@ -26,14 +26,23 @@
 [ext_resource type="Script" uid="uid://b70r0v1madav1" path="res://scripts/exploration/ui/ExplorationPositionDebugWindow.cs" id="22"]
 [ext_resource type="PackedScene" path="res://assets/scenes/exploration/props/GlowingMushroomProp.tscn" id="23_mushroom"]
 [ext_resource type="PackedScene" uid="uid://bpx2ykq1uvhjy" path="res://assets/scenes/exploration/props/GlowingCrystalProp.tscn" id="24_crystal"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_flow_material.tres" id="25_river_mat"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/props/RiverChannel.tscn" id="26_river_channel_scene"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_bank_material.tres" id="27_river_bank_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_bed_material.tres" id="28_river_bed_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_gorge_wall_material.tres" id="29_river_gorge_wall_mat"]
 
 [sub_resource type="StandardMaterial3D" id="1"]
 albedo_texture = ExtResource("3")
 uv1_scale = Vector3(8, 8, 1)
 
-[sub_resource type="PlaneMesh" id="2"]
+[sub_resource type="PlaneMesh" id="31_ground_north_mesh"]
 material = SubResource("1")
-size = Vector2(42, 42)
+size = Vector2(42, 5.5)
+
+[sub_resource type="PlaneMesh" id="32_ground_south_mesh"]
+material = SubResource("1")
+size = Vector2(42, 25.5)
 
 [sub_resource type="BoxShape3D" id="3"]
 size = Vector3(42, 1, 42)
@@ -67,14 +76,23 @@ albedo_color = Color(0.207843, 0.211765, 0.243137, 1)
 material = SubResource("10")
 size = Vector3(42, 4, 5)
 
-[sub_resource type="StandardMaterial3D" id="12"]
-transparency = 1
-albedo_color = Color(0.188235, 0.321569, 0.392157, 0.85)
-roughness = 0.15
+[sub_resource type="PlaneMesh" id="PlaneMesh_ak33w"]
+size = Vector2(42, 15)
 
-[sub_resource type="PlaneMesh" id="13"]
-material = SubResource("12")
+[sub_resource type="PlaneMesh" id="PlaneMesh_40mrv"]
+size = Vector2(42, 0)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_f7gyo"]
 size = Vector2(42, 8)
+
+[sub_resource type="BoxMesh" id="BoxMesh_yfjrp"]
+size = Vector3(42, 0.12, 10.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_a5bfd"]
+size = Vector3(42, 2.6, 1.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_l3mkw"]
+size = Vector3(42, 2.6, 1.1)
 
 [sub_resource type="StandardMaterial3D" id="28_boundary_mat"]
 albedo_color = Color(0.137255, 0.247059, 0.152941, 1)
@@ -161,11 +179,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.2, -4)
 script = ExtResource("5")
 SpawnId = "entry_upper"
 
-[node name="SceneAtmosphereSystem" parent="." index="5"]
+[node name="SceneAtmosphereSystem" parent="." index="6"]
 RuntimeSunShaftIntensityMultiplier = 0.0
 RuntimeDiffuseFillIntensityMultiplier = 0.0
 
-[node name="WeatherSystem" parent="." index="6"]
+[node name="WeatherSystem" parent="." index="7"]
 InitialWeather = ExtResource("13")
 ApplyInitialWeatherOnReady = true
 RuntimeDensityMultiplier = 1.1
@@ -188,22 +206,31 @@ NightFogColorMultiplier = 0.18
 NightFogDensityMultiplier = 0.3
 NightSkyAmbientContributionMultiplier = 0.22
 
-[node name="AmbientPropSystem" parent="." index="7"]
+[node name="AmbientPropSystem" parent="." index="8"]
 Profile = ExtResource("14")
+EnableDebugOverlay = true
+DebugOverlayStartVisible = true
+DebugOverlayRefreshSeconds = 0.5
+DebugOverlayFontSize = 18
 
-[node name="ExplorationMusicController" parent="." index="8"]
+[node name="ExplorationMusicController" parent="." index="9"]
 MusicLibrary = Array[ExtResource("5_l5ioc")]([ExtResource("19")])
 DefaultCrossfadeSeconds = 0.75
 
-[node name="EncounterManager" parent="." index="9"]
+[node name="EncounterManager" parent="." index="10"]
 _mapData = ExtResource("15")
 
 [node name="Ground" type="StaticBody3D" parent="EnvironmentGeometry" index="0"]
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="EnvironmentGeometry/Ground" index="0"]
-mesh = SubResource("2")
+[node name="GroundNorthVisual" type="MeshInstance3D" parent="EnvironmentGeometry/Ground" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -18.25)
+mesh = SubResource("31_ground_north_mesh")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="EnvironmentGeometry/Ground" index="1"]
+[node name="GroundSouthVisual" type="MeshInstance3D" parent="EnvironmentGeometry/Ground" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 8.25)
+mesh = SubResource("32_ground_south_mesh")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EnvironmentGeometry/Ground" index="2"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 0)
 shape = SubResource("3")
 
@@ -229,9 +256,84 @@ shape = SubResource("9")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, -3.8, -10)
 mesh = SubResource("11")
 
-[node name="River" type="MeshInstance3D" parent="EnvironmentGeometry" index="4"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.45, -10)
-mesh = SubResource("13")
+[node name="RiverChannel" parent="EnvironmentGeometry" index="4" instance=ExtResource("26_river_channel_scene")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -10)
+BankStyle = 1
+WaterSurfaceY = -0.28
+ChannelDepth = 1.45
+TerrainPositiveWidth = 15.0
+TerrainNegativeWidth = 0.0
+GorgeWallThickness = 1.1
+GorgeWallHeight = 2.6
+GenerateCollision = false
+TerrainMaterial = ExtResource("27_river_bank_mat")
+WaterMaterial = ExtResource("25_river_mat")
+BedMaterial = ExtResource("28_river_bed_mat")
+SmoothBankMaterial = ExtResource("27_river_bank_mat")
+GorgeWallMaterial = ExtResource("29_river_gorge_wall_mat")
+
+[node name="__GeneratedRiverChannel" type="Node3D" parent="EnvironmentGeometry/RiverChannel" index="0"]
+
+[node name="TerrainPositive" type="MeshInstance3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 12.6)
+material_override = ExtResource("27_river_bank_mat")
+mesh = SubResource("PlaneMesh_ak33w")
+
+[node name="TerrainNegative" type="MeshInstance3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -5.1)
+visible = false
+material_override = ExtResource("27_river_bank_mat")
+mesh = SubResource("PlaneMesh_40mrv")
+
+[node name="WaterSurface" type="MeshInstance3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.28, 0)
+material_override = ExtResource("25_river_mat")
+mesh = SubResource("PlaneMesh_f7gyo")
+
+[node name="RiverBed" type="MeshInstance3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.79, 0)
+material_override = ExtResource("28_river_bed_mat")
+mesh = SubResource("BoxMesh_yfjrp")
+
+[node name="SmoothBankPositive" type="MeshInstance3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel" index="4"]
+visible = false
+
+[node name="SmoothBankNegative" type="MeshInstance3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel" index="5"]
+visible = false
+
+[node name="GorgeWallPositive" type="MeshInstance3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel" index="6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.43000007, 4.55)
+material_override = ExtResource("29_river_gorge_wall_mat")
+mesh = SubResource("BoxMesh_a5bfd")
+
+[node name="GorgeWallNegative" type="MeshInstance3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel" index="7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.43000007, -4.55)
+material_override = ExtResource("29_river_gorge_wall_mat")
+mesh = SubResource("BoxMesh_l3mkw")
+
+[node name="Collision" type="StaticBody3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel" index="8"]
+visible = false
+
+[node name="TerrainPositiveCollision" type="CollisionShape3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel/Collision" index="0"]
+disabled = true
+
+[node name="TerrainNegativeCollision" type="CollisionShape3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel/Collision" index="1"]
+disabled = true
+
+[node name="SmoothBankPositiveCollision" type="CollisionShape3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel/Collision" index="2"]
+disabled = true
+
+[node name="SmoothBankNegativeCollision" type="CollisionShape3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel/Collision" index="3"]
+disabled = true
+
+[node name="GorgeWallPositiveCollision" type="CollisionShape3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel/Collision" index="4"]
+disabled = true
+
+[node name="GorgeWallNegativeCollision" type="CollisionShape3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel/Collision" index="5"]
+disabled = true
+
+[node name="RiverBlockerCollision" type="CollisionShape3D" parent="EnvironmentGeometry/RiverChannel/__GeneratedRiverChannel/Collision" index="6"]
+disabled = true
 
 [node name="TreeA" parent="EnvironmentGeometry" index="5" instance=ExtResource("2")]
 transform = Transform3D(1.4, 0, 0, 0, 1.4, 0, 0, 0, 1.4, 7, 0, 3)
@@ -341,6 +443,21 @@ script = ExtResource("4")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="LayerSwitchVolumes/ToLowerLayerVolume" index="0"]
 shape = SubResource("14")
 
+[node name="Hud" type="CanvasLayer" parent="." index="13"]
+
+[node name="HintLabel" type="Label" parent="Hud" index="0"]
+offset_left = 24.0
+offset_top = 18.0
+offset_right = 1040.0
+offset_bottom = 54.0
+theme_override_font_sizes/font_size = 24
+text = "Move: WASD / Left Stick | Interact: Confirm (H / South Face Button)"
+
+[node name="PositionDebugWindow" type="Control" parent="Hud" index="1"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("22")
+
 [node name="GuideNpc" type="Node3D" parent="Interactables" index="0"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.2, 0, 5)
 script = ExtResource("6")
@@ -403,18 +520,3 @@ Effects = Array[ExtResource("12_gpqem")]([SubResource("24"), SubResource("23")])
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Interactables/LowerPathGate" index="0"]
 shape = SubResource("14")
-
-[node name="Hud" type="CanvasLayer" parent="." index="13"]
-
-[node name="HintLabel" type="Label" parent="Hud" index="0"]
-offset_left = 24.0
-offset_top = 18.0
-offset_right = 1040.0
-offset_bottom = 54.0
-theme_override_font_sizes/font_size = 24
-text = "Move: WASD / Left Stick | Interact: Confirm (H / South Face Button)"
-
-[node name="PositionDebugWindow" type="Control" parent="Hud" index="1"]
-layout_mode = 3
-anchors_preset = 0
-script = ExtResource("22")

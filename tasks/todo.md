@@ -2,6 +2,184 @@
 
 ---
 
+# HD-2D Vertical Slice V2
+
+## Plan
+- [x] Write a concrete HD-2D workflow and migration strategy doc.
+- [x] Create `ForestExplorationVerticalSliceV2.tscn` from template with V2 layer stack (`Geometry`, `Collision`, `Gameplay`, `SetDress`) while reusing template-provided system nodes.
+- [ ] Port exploration systems to V2 (`SceneVisualDirector`, atmosphere, weather, ambient props, music, encounters).
+- [x] Build graybox terraces + one overpass/underpass traversal path.
+- [x] Integrate `RiverPathChannel` as curved river authoring baseline in V2.
+- [ ] Add initial gameplay interactions (NPC, chest, conditional interaction zone).
+- [ ] Runtime verify camera readability + traversal + layer switching.
+- [ ] Build verification.
+
+## Review
+- [x] Added workflow doc: `assets/resources/exploration/hd2d_vertical_slice_v2_workflow.md`.
+- [x] Added `assets/scenes/exploration/ForestExplorationVerticalSliceV2.tscn` scaffold with geometry/collision/river/layer-switch layout.
+- [ ] Runtime verify V2 scene once scaffolded.
+
+---
+
+# Terrain Module Kit Scaffold
+
+## Plan
+- [x] Create reusable terrain blockout module scenes as separate pieces (plateau, cliff, ramp, stairs, bridge, bank edge).
+- [x] Add per-module collision and snap-point markers for stitching in map scenes.
+- [x] Add a module assembly sandbox scene to preview module stitching quickly.
+- [x] Add quick module usage documentation.
+- [ ] Runtime verify module scene parsing and assembly in editor.
+
+## Review
+- [x] Added module kit under `assets/scenes/exploration/modules/terrain/`.
+- [x] Added sandbox scene: `assets/scenes/exploration/modules/sandboxes/TerrainModuleKitSandboxScene.tscn`.
+- [x] Added docs: `assets/scenes/exploration/modules/terrain/README.md`.
+
+---
+
+# Terrain Variant Pack (Corners/Lengths/Curves)
+
+## Plan
+- [x] Add small plateau variant (`4m x 4m`) for tighter traversal spaces.
+- [x] Add cliff corner variants (inner + outer) for layer turns and canyon bends.
+- [x] Add bridge length variants (short + long) for quick composition without scaling base modules.
+- [x] Add curved river bank module for non-linear shoreline blockout.
+- [x] Update module sandbox to include new variants for immediate stitch testing.
+- [ ] Runtime verify variant modules align cleanly with existing `SnapPoints` workflow.
+
+## Review
+- [x] Added new variant scenes in `assets/scenes/exploration/modules/terrain/`.
+- [x] Updated sandbox: `assets/scenes/exploration/modules/sandboxes/TerrainModuleKitSandboxScene.tscn`.
+- [x] Updated module docs: `assets/scenes/exploration/modules/terrain/README.md`.
+
+---
+
+# River Path Authoring Pass
+
+## Plan
+- [x] Fix `RiverSandboxScene` visibility issue so 3D river content is actually visible at runtime.
+- [x] Add a path-authored river generator (`RiverPathChannel`) that supports dragging curve points in editor.
+- [x] Support adjustable cross-section for both `SmoothBanks` and `RockyGorge` styles on path rivers.
+- [x] Add generated boat support path and optional moving boat preview.
+- [x] Add generated obstacle anchors along river path for placing jutting river obstacles.
+- [x] Add dedicated authoring sandbox scene for path river workflows.
+- [x] Build verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes.
+- [ ] Runtime verify:
+  - [ ] `RiverSandboxScene.tscn` shows river visuals immediately.
+  - [ ] `RiverPathAuthoringSandboxScene.tscn` allows drag-editing path points and live geometry rebuild.
+  - [ ] obstacle anchors and boat path update when curve/params change.
+
+---
+
+# River Sandbox Tuning Scene
+
+## Plan
+- [x] Add a standalone exploration river sandbox scene for isolated river iteration.
+- [x] Add a dedicated sandbox controller with runtime controls for `RiverChannel` geometry and water shader parameters.
+- [x] Add quality-of-life controls: hide/show tuning UI, preset buttons, reset to defaults, mouse-wheel camera zoom, copy-to-clipboard snippet export.
+- [x] Expose `RiverChannel.RefreshGeometry()` so runtime tuning changes rebuild channel meshes immediately.
+- [x] Build verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes.
+- [ ] Runtime verify in `RiverSandboxScene.tscn`:
+  - [ ] sliders update river geometry live.
+  - [ ] shader controls update water flow/foam live.
+  - [ ] copied snippet pastes cleanly into scene/material tuning workflow.
+
+---
+
+# River Channel Geometry Pass
+
+## Plan
+- [x] Add a reusable exploration `RiverChannel` scene + script with toggles for `SmoothBanks` and `RockyGorge`.
+- [x] Support independent river materials (terrain/banks, bed, water, gorge wall) so rivers can use textures separate from base forest floor.
+- [x] Integrate `RiverChannel` into `ForestExplorationVerticalSlice.tscn` in gorge mode.
+- [x] Split forest ground visuals around the river corridor so channel depth renders instead of flat overlap.
+- [x] Add a short authoring guide for river channel setup and depth/collision expectations.
+- [x] Build verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes.
+- [ ] Runtime verify in `ForestExplorationVerticalSlice.tscn`:
+  - [ ] `RockyGorge` renders with visible depth and separate bank/bed/water materials.
+  - [ ] switching to `SmoothBanks` yields a mostly level river profile without scene edits.
+  - [ ] no unwanted z-fighting with ground visuals near the channel.
+
+---
+
+# Ambient Spawn Model Simplification
+
+## Plan
+- [x] Remove legacy `PropScenes` from `AmbientPropProfile`.
+- [x] Remove `PropScenes` fallback path from `AmbientPropSystem` so `SpawnEntries` is the only spawn source.
+- [x] Update ambient profile resources to stop serializing `PropScenes`.
+- [ ] Build verification.
+
+## Review
+- [ ] Runtime verify ambient spawning behavior unchanged with `SpawnEntries`-only model.
+
+---
+
+# Firefly Visibility and Ambient Motion
+
+## Plan
+- [x] Stabilize `FireflyAmbientProp` defaults for single-frame/custom sprite usage (prevent frame-grid disappearance).
+- [x] Slow firefly glow pulse defaults to avoid rapid glow/un-glow flicker.
+- [x] Add optional system-driven ambient prop motion and lifetime settings to `AmbientPropSpawnEntry`.
+- [x] Extend `AmbientPropSystem` runtime to apply entry-driven motion and lifetime despawn behavior.
+- [x] Add explicit animated-frame count limiting for firefly sprite sheets so few-frame animated textures do not step into empty frames.
+- [x] Add explicit animated-frame start index support so firefly animation can target a contiguous valid frame subset (e.g., lower sprite-sheet row only).
+- [x] Restore slow default frame animation on `FireflyAmbientProp` while keeping single-frame fallback support in script.
+- [x] Add per-entry spawn cooldown support so each prop entry can have independent spawn pacing.
+- [x] Add profile option to constrain ambient prop spawn positions to the active camera view.
+- [ ] Runtime verify in exploration scene:
+  - [ ] firefly sprite remains visible with custom single-frame sprite.
+  - [ ] firefly animated few-frame sprite plays without disappearing.
+  - [ ] per-entry cooldown produces expected independent spawn pacing.
+  - [ ] spawn-only-in-view keeps ambient props within camera framing.
+  - [ ] entry-configured motion/lifetime props drift and despawn as expected.
+
+## Review
+- [ ] Build verification.
+
+---
+
+# Weather Utils Extraction
+
+## Plan
+- [x] Extract weather-local combatant validation helper into shared gameplay utility.
+- [x] Extract weather-local list shuffle helper into shared RNG utility.
+- [x] Update `WeatherSystem` to consume shared utility methods.
+- [ ] Verify where else these helpers should be adopted incrementally (AI/targeting systems).
+
+## Review
+- [ ] Build verification.
+
+---
+
+# Scene Visual Director Refactor (Phase 1)
+
+## Plan
+- [x] Add shared scene-visual primitives (`SceneVisualIntent`, contribution layers) and a central `SceneVisualDirector`.
+- [x] Integrate `SceneAtmosphereSystem` with director contributions for ambient/fog/main-light while keeping sun-shaft/diffuse-fill layers local.
+- [x] Integrate `WeatherSystem` with director contributions for weather + time-of-day lighting while keeping particles/audio/lightning local.
+- [x] Keep fallback behavior when no director exists to avoid breaking legacy scenes.
+- [x] Wire exploration map template to include `SceneVisualDirector` and connect atmosphere/weather nodes.
+- [x] Build verification.
+
+## Review
+- [x] `dotnet build SoulBlades_2_5_D.sln -v minimal` passes.
+- [ ] Runtime verify in `ForestExplorationVerticalSlice.tscn`:
+  - [ ] weather + atmosphere stack predictably (no subsystem tug-of-war).
+  - [ ] time-of-day updates remain stable with/without auto-advance.
+  - [ ] lightning flashes restore correctly with director orchestration.
+
+---
+
 # Forest Night Lighting Tuning
 
 ## Plan
@@ -28,7 +206,72 @@
 - [x] Remove incorrect sprite material override causing box rendering and keep sprite texture-driven visuals.
 - [x] Add slower configurable glow/alpha pulse controls for fireflies in `FireflyDriftProp`.
 - [x] Add optional slow frame animation controls for sprite-sheet firefly twinkle.
+- [x] Fix atlas-frame handling when frame animation is disabled so sprite sheets do not pop/disappear from forced `hframes/vframes` reset.
+- [x] Fix ambient spawn order so spawned props receive final position before `_Ready` origin capture (prevents first-frame snap/disappear).
 - [ ] Validate firefly look in runtime scene.
+
+---
+
+# Ambient Prop Polish Pass
+
+## Plan
+- [x] Add spawn/despawn fade support in `AmbientPropSystem` to smooth visual pop-in/out.
+- [x] Add optional ambient debug overlay (active count + spawn/despawn reason tracking) in `AmbientPropSystem`.
+- [x] Extract firefly motion/glow tuning into reusable `FireflyVisualProfile` resource and wire `FireflyDriftProp` to consume it.
+- [x] Update `FireflyAmbientProp.tscn` to use the new profile for tuning.
+- [x] Build verification.
+- [x] Add recent despawn event logging (timestamp + reason + prop label) to ambient debug overlay.
+
+## Review
+- [ ] Runtime verify in `ForestExplorationVerticalSlice.tscn`:
+  - [ ] Fireflies fade in/out smoothly (no hard pop).
+  - [ ] Ambient debug overlay toggles and reports useful spawn/despawn reasons.
+  - [ ] Ambient debug overlay shows rolling recent despawn events in real-time.
+  - [ ] Firefly behavior remains tunable via profile resource without recompiling.
+
+---
+
+# Editor Export Property Clarity
+
+## Plan
+- [x] Add clearer inspector group labels for ambient/firefly exported properties.
+- [x] Add unit-aware export hints (`suffix:s`, `suffix:m`, etc.) where appropriate.
+- [x] Keep property names/data model stable to avoid scene/resource migration risk.
+- [x] Build verification.
+
+## Review
+- [ ] Inspector authoring feels clearer for `AmbientPropProfile`, `AmbientPropSpawnEntry`, `AmbientPropSystem`, and `FireflyVisualProfile`.
+
+---
+
+# Tree Prop Normal Mapping Support
+
+## Plan
+- [x] Add a reusable Sprite3D lighting helper script that supports optional normal map assignment.
+- [x] Wire tree prop scenes to use the helper script so normal maps can be assigned in-editor.
+- [x] Keep default visuals unchanged when no normal map is assigned.
+- [x] Build verification.
+- [x] Generalize the helper for multi-sprite targets and reuse it for mushroom/crystal prop scenes.
+
+## Review
+- [ ] Tree props accept normal map textures in inspector and still render correctly without them.
+- [ ] Mushroom/crystal props accept normal map textures via shared helper without affecting glow overlay sprites.
+
+---
+
+# Forest River Flow Pass
+
+## Plan
+- [x] Add a stylized HD-2D river surface shader with UV flow animation, highlights, and edge foam.
+- [x] Add optional flow-map input to support directional bends/curves in river flow.
+- [x] Create a reusable river material resource with tuned defaults for the forest scene.
+- [x] Wire `EnvironmentGeometry/River` in `ForestExplorationVerticalSlice.tscn` to use the river flow material.
+- [x] Add a flow-map authoring guide resource with channel conventions and bend/curve workflow.
+- [x] Build verification.
+
+## Review
+- [ ] River surface visibly flows in the forest scene and retains stylized HD-2D readability.
+- [ ] Curved-river support is available through flow-map authoring on the material.
 
 ---
 

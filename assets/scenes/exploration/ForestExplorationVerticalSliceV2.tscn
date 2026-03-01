@@ -1,0 +1,354 @@
+[gd_scene load_steps=49 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/templates/ExplorationMapTemplate.tscn" id="1_template"]
+[ext_resource type="Script" path="res://scripts/exploration/MapSpawnPoint.cs" id="2_spawn_script"]
+[ext_resource type="Script" path="res://scripts/exploration/MapLayerSwitchVolume.cs" id="3_layer_switch_script"]
+[ext_resource type="Script" path="res://scripts/exploration/props/RiverPathChannel.cs" id="4_river_path_script"]
+[ext_resource type="Resource" path="res://assets/resources/weather/profiles/rain_weather_profile.tres" id="5_rain_weather"]
+[ext_resource type="Resource" path="res://assets/resources/exploration/ambient/forest_ambient_props.tres" id="6_ambient_profile"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_flow_material.tres" id="7_river_water_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_bank_material.tres" id="8_river_bank_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_bed_material.tres" id="9_river_bed_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_gorge_wall_material.tres" id="10_river_wall_mat"]
+[ext_resource type="PackedScene" path="res://assets/scenes/props/Tree_0.tscn" id="11_tree0_scene"]
+[ext_resource type="PackedScene" path="res://assets/scenes/props/Tree_1.tscn" id="12_tree1_scene"]
+
+[sub_resource type="StandardMaterial3D" id="1_upper_ground_mat"]
+albedo_color = Color(0.247059, 0.341176, 0.192157, 1)
+roughness = 0.96
+
+[sub_resource type="PlaneMesh" id="2_upper_ground_mesh"]
+material = SubResource("1_upper_ground_mat")
+size = Vector2(52, 34)
+
+[sub_resource type="StandardMaterial3D" id="3_lower_ground_mat"]
+albedo_color = Color(0.215686, 0.286275, 0.164706, 1)
+roughness = 0.97
+
+[sub_resource type="PlaneMesh" id="4_lower_ground_mesh"]
+material = SubResource("3_lower_ground_mat")
+size = Vector2(32, 18)
+
+[sub_resource type="StandardMaterial3D" id="5_bank_ground_mat"]
+albedo_color = Color(0.211765, 0.298039, 0.172549, 1)
+roughness = 0.96
+
+[sub_resource type="PlaneMesh" id="6_bank_ground_mesh"]
+material = SubResource("5_bank_ground_mat")
+size = Vector2(11, 27)
+
+[sub_resource type="StandardMaterial3D" id="7_cliff_face_mat"]
+albedo_color = Color(0.27451, 0.247059, 0.180392, 1)
+roughness = 0.9
+
+[sub_resource type="BoxMesh" id="8_cliff_face_mesh_large"]
+material = SubResource("7_cliff_face_mat")
+size = Vector3(52, 3.2, 6.2)
+
+[sub_resource type="BoxMesh" id="9_cliff_face_mesh_mid"]
+material = SubResource("7_cliff_face_mat")
+size = Vector3(18, 2.6, 4.2)
+
+[sub_resource type="BoxMesh" id="10_cliff_face_mesh_small"]
+material = SubResource("7_cliff_face_mat")
+size = Vector3(13.5, 2.4, 4)
+
+[sub_resource type="StandardMaterial3D" id="11_bridge_mat"]
+albedo_color = Color(0.372549, 0.305882, 0.227451, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="12_bridge_mesh"]
+material = SubResource("11_bridge_mat")
+size = Vector3(14.4, 0.38, 4.2)
+
+[sub_resource type="BoxMesh" id="13_bridge_rail_mesh"]
+material = SubResource("11_bridge_mat")
+size = Vector3(14.4, 0.85, 0.32)
+
+[sub_resource type="BoxShape3D" id="14_upper_collision_shape"]
+size = Vector3(52, 0.4, 34)
+
+[sub_resource type="BoxShape3D" id="15_lower_collision_shape"]
+size = Vector3(32, 0.4, 18)
+
+[sub_resource type="BoxShape3D" id="16_bank_collision_shape"]
+size = Vector3(11, 0.35, 27)
+
+[sub_resource type="BoxShape3D" id="17_bridge_collision_shape"]
+size = Vector3(14.4, 0.38, 4.2)
+
+[sub_resource type="BoxShape3D" id="18_boundary_north_shape"]
+size = Vector3(52, 3.2, 2.6)
+
+[sub_resource type="BoxShape3D" id="19_boundary_south_shape"]
+size = Vector3(52, 3.2, 2.6)
+
+[sub_resource type="BoxShape3D" id="20_boundary_west_shape"]
+size = Vector3(2.8, 3.2, 44)
+
+[sub_resource type="BoxShape3D" id="21_boundary_east_shape"]
+size = Vector3(2.8, 3.2, 44)
+
+[sub_resource type="BoxShape3D" id="22_layer_switch_shape"]
+size = Vector3(7.6, 2.4, 5.8)
+
+[sub_resource type="BoxShape3D" id="23_layer_switch_shape_small"]
+size = Vector3(7.6, 2.4, 4.8)
+
+[node name="ForestExplorationVerticalSliceV2" instance=ExtResource("1_template")]
+MapId = "exploration/forest_vertical_slice_v2"
+DefaultSpawnId = "entry_upper"
+InvertPlayerVerticalInput = false
+
+[node name="entry_default" parent="SpawnPoints" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 6)
+
+[node name="entry_upper" type="Node3D" parent="SpawnPoints" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0.5, -3)
+script = ExtResource("2_spawn_script")
+SpawnId = "entry_upper"
+
+[node name="entry_lower" type="Node3D" parent="SpawnPoints" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -13, -1.9, 12)
+script = ExtResource("2_spawn_script")
+SpawnId = "entry_lower"
+
+[node name="MainLight" parent="." index="4"]
+transform = Transform3D(0.8090169, -0.4141969, 0.4161978, 0, 0.70874995, 0.7054596, -0.58778524, -0.57063395, 0.57329303, 0, 0, 0)
+light_energy = 0.95
+shadow_enabled = true
+
+[node name="ExplorationCameraRig" parent="." index="6"]
+FollowOffset = Vector3(0, 8.5, 11.5)
+FollowLerpSpeed = 7.0
+LookAtOffset = Vector3(0, 1.2, 0)
+
+[node name="Camera3D" parent="ExplorationCameraRig" index="0"]
+fov = 42.0
+
+[node name="SceneAtmosphereSystem" parent="." index="7"]
+RuntimeSunShaftIntensityMultiplier = 0.8
+RuntimeDiffuseFillIntensityMultiplier = 0.9
+
+[node name="WeatherSystem" parent="." index="8"]
+InitialWeather = ExtResource("5_rain_weather")
+ApplyInitialWeatherOnReady = false
+RuntimeDensityMultiplier = 0.9
+RuntimeNearCameraExclusionDistance = 2.8
+RuntimeEnvironmentTintStrengthMultiplier = 0.65
+EnableTimeOfDay = true
+TimeOfDayHours = 18.5
+SolarAzimuthDegrees = -22.0
+EnableMoonlightAtNight = true
+MoonlightDirectionalEnergyMultiplier = 0.25
+NightAmbientEnergyMultiplier = 0.7
+NightSceneBrightnessMultiplier = 0.95
+NightAmbientColorMultiplier = 0.7
+NightFogColorMultiplier = 0.8
+NightFogDensityMultiplier = 1.0
+NightSkyAmbientContributionMultiplier = 0.75
+
+[node name="AmbientPropSystem" parent="." index="9"]
+Profile = ExtResource("6_ambient_profile")
+EnableDebugOverlay = false
+
+[node name="Geometry" type="Node3D" parent="." index="14"]
+
+[node name="TerrainBase" type="Node3D" parent="Geometry" index="0"]
+
+[node name="UpperPlateauVisual" type="MeshInstance3D" parent="Geometry/TerrainBase" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -4)
+mesh = SubResource("2_upper_ground_mesh")
+
+[node name="LowerTerraceVisual" type="MeshInstance3D" parent="Geometry/TerrainBase" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, -2.4, 12)
+mesh = SubResource("4_lower_ground_mesh")
+
+[node name="WestBankVisual" type="MeshInstance3D" parent="Geometry/TerrainBase" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.4, -0.95, -2)
+mesh = SubResource("6_bank_ground_mesh")
+
+[node name="EastBankVisual" type="MeshInstance3D" parent="Geometry/TerrainBase" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.4, -0.95, -8)
+mesh = SubResource("6_bank_ground_mesh")
+
+[node name="TerrainCliffs" type="Node3D" parent="Geometry" index="1"]
+
+[node name="NorthCliffVisual" type="MeshInstance3D" parent="Geometry/TerrainCliffs" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.6, -20.5)
+mesh = SubResource("8_cliff_face_mesh_large")
+
+[node name="SouthCliffVisual" type="MeshInstance3D" parent="Geometry/TerrainCliffs" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, -3.6, 21)
+mesh = SubResource("9_cliff_face_mesh_mid")
+
+[node name="UpperDropVisual" type="MeshInstance3D" parent="Geometry/TerrainCliffs" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -9.4, -1.3, 2.8)
+mesh = SubResource("9_cliff_face_mesh_mid")
+
+[node name="UpperDropVisualFar" type="MeshInstance3D" parent="Geometry/TerrainCliffs" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.8, -1.3, -8.6)
+mesh = SubResource("10_cliff_face_mesh_small")
+
+[node name="Water" type="Node3D" parent="Geometry" index="2"]
+
+[node name="MainRiver" type="Path3D" parent="Geometry/Water" index="0"]
+script = ExtResource("4_river_path_script")
+AutoRebuildInEditor = true
+CreateDefaultCurveIfMissing = true
+SampleSpacing = 0.75
+CrossSectionStyle = 1
+WaterSurfaceYOffset = -0.45
+WaterWidth = 8.0
+SmoothBankRun = 1.6
+BedDepth = 1.45
+BedWidthExtra = 1.0
+GorgeRimHeight = 0.95
+GorgeLedgeRun = 1.0
+FlowMode = 0
+WaterUvLengthScale = 0.08
+WaterUvWidthScale = 1.0
+TerrainUvLengthScale = 0.12
+GenerateBoatPath = true
+BoatPathYOffset = 0.08
+EnableBoatPreview = false
+GenerateObstacleAnchors = true
+ObstacleAnchorInterval = 6.0
+ObstacleEdgeBias = 0.76
+ObstacleHeightOffset = 0.02
+AlternateObstacleSides = true
+ObstacleSeed = 314
+MaxObstacleAnchors = 40
+WaterMaterial = ExtResource("7_river_water_mat")
+BedMaterial = ExtResource("9_river_bed_mat")
+TerrainMaterial = ExtResource("8_river_bank_mat")
+GorgeWallMaterial = ExtResource("10_river_wall_mat")
+
+[node name="BridgesAndOverpasses" type="Node3D" parent="Geometry" index="3"]
+
+[node name="UpperBridgeVisual" type="MeshInstance3D" parent="Geometry/BridgesAndOverpasses" index="0"]
+transform = Transform3D(1, 0, 0, 0, 0.997564, -0.0697565, 0, 0.0697565, 0.997564, 0, 1.5, 2.2)
+mesh = SubResource("12_bridge_mesh")
+
+[node name="UpperBridgeRailNear" type="MeshInstance3D" parent="Geometry/BridgesAndOverpasses" index="1"]
+transform = Transform3D(1, 0, 0, 0, 0.997564, -0.0697565, 0, 0.0697565, 0.997564, 0, 1.96, 4.25)
+mesh = SubResource("13_bridge_rail_mesh")
+
+[node name="UpperBridgeRailFar" type="MeshInstance3D" parent="Geometry/BridgesAndOverpasses" index="2"]
+transform = Transform3D(1, 0, 0, 0, 0.997564, -0.0697565, 0, 0.0697565, 0.997564, 0, 1.96, 0.15)
+mesh = SubResource("13_bridge_rail_mesh")
+
+[node name="Collision" type="Node3D" parent="." index="15"]
+
+[node name="UpperPlateauBody" type="StaticBody3D" parent="Collision" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, -4)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision/UpperPlateauBody" index="0"]
+shape = SubResource("14_upper_collision_shape")
+
+[node name="LowerTerraceBody" type="StaticBody3D" parent="Collision" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, -2.6, 12)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision/LowerTerraceBody" index="0"]
+shape = SubResource("15_lower_collision_shape")
+
+[node name="WestBankBody" type="StaticBody3D" parent="Collision" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.4, -1.13, -2)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision/WestBankBody" index="0"]
+shape = SubResource("16_bank_collision_shape")
+
+[node name="EastBankBody" type="StaticBody3D" parent="Collision" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18.4, -1.13, -8)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision/EastBankBody" index="0"]
+shape = SubResource("16_bank_collision_shape")
+
+[node name="UpperBridgeBody" type="StaticBody3D" parent="Collision" index="4"]
+transform = Transform3D(1, 0, 0, 0, 0.997564, -0.0697565, 0, 0.0697565, 0.997564, 0, 1.5, 2.2)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision/UpperBridgeBody" index="0"]
+shape = SubResource("17_bridge_collision_shape")
+
+[node name="BoundaryNorth" type="StaticBody3D" parent="Collision" index="5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, -25)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision/BoundaryNorth" index="0"]
+shape = SubResource("18_boundary_north_shape")
+
+[node name="BoundarySouth" type="StaticBody3D" parent="Collision" index="6"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.9, 25)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision/BoundarySouth" index="0"]
+shape = SubResource("19_boundary_south_shape")
+
+[node name="BoundaryWest" type="StaticBody3D" parent="Collision" index="7"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -26.5, -1.6, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision/BoundaryWest" index="0"]
+shape = SubResource("20_boundary_west_shape")
+
+[node name="BoundaryEast" type="StaticBody3D" parent="Collision" index="8"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 26.5, -1.6, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Collision/BoundaryEast" index="0"]
+shape = SubResource("21_boundary_east_shape")
+
+[node name="LayerSwitchVolumesV2" type="Node3D" parent="LayerSwitchVolumes" index="0"]
+
+[node name="BridgeLayerUp" type="Area3D" parent="LayerSwitchVolumes/LayerSwitchVolumesV2" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.4, 0.6, 5.8)
+script = ExtResource("3_layer_switch_script")
+TargetLayer = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LayerSwitchVolumes/LayerSwitchVolumesV2/BridgeLayerUp" index="0"]
+shape = SubResource("22_layer_switch_shape")
+
+[node name="BridgeLayerDown" type="Area3D" parent="LayerSwitchVolumes/LayerSwitchVolumesV2" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.4, 0.6, -1.4)
+script = ExtResource("3_layer_switch_script")
+TargetLayer = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="LayerSwitchVolumes/LayerSwitchVolumesV2/BridgeLayerDown" index="0"]
+shape = SubResource("23_layer_switch_shape_small")
+
+[node name="Gameplay" type="Node3D" parent="." index="16"]
+
+[node name="NPCs" type="Node3D" parent="Gameplay" index="0"]
+
+[node name="Treasure" type="Node3D" parent="Gameplay" index="1"]
+
+[node name="InteractionZones" type="Node3D" parent="Gameplay" index="2"]
+
+[node name="SceneTriggers" type="Node3D" parent="Gameplay" index="3"]
+
+[node name="SetDress" type="Node3D" parent="." index="17"]
+
+[node name="ForegroundProps" type="Node3D" parent="SetDress" index="0"]
+
+[node name="MidgroundProps" type="Node3D" parent="SetDress" index="1"]
+
+[node name="TreeClusterL0" parent="SetDress/MidgroundProps" index="0" instance=ExtResource("11_tree0_scene")]
+transform = Transform3D(0.9993908, 0, -0.034899496, 0, 1, 0, 0.034899496, 0, 0.9993908, -20.8, 0, -10.4)
+
+[node name="TreeClusterL1" parent="SetDress/MidgroundProps" index="1" instance=ExtResource("12_tree1_scene")]
+transform = Transform3D(0.9612617, 0, -0.2756374, 0, 1, 0, 0.2756374, 0, 0.9612617, -22.3, 0, -2.8)
+
+[node name="TreeClusterR0" parent="SetDress/MidgroundProps" index="2" instance=ExtResource("11_tree0_scene")]
+transform = Transform3D(0.9816272, 0, 0.190809, 0, 1, 0, -0.190809, 0, 0.9816272, 21.4, 0, -15.6)
+
+[node name="TreeClusterR1" parent="SetDress/MidgroundProps" index="3" instance=ExtResource("12_tree1_scene")]
+transform = Transform3D(0.9848078, 0, -0.1736482, 0, 1, 0, 0.1736482, 0, 0.9848078, 22.1, 0, -5.2)
+
+[node name="BackgroundCards" type="Node3D" parent="SetDress" index="2"]
+
+[node name="BackTreeLine0" parent="SetDress/BackgroundCards" index="0" instance=ExtResource("12_tree1_scene")]
+transform = Transform3D(0.9396926, 0, 0.34202015, 0, 1, 0, -0.34202015, 0, 0.9396926, -14.2, 0, -23.2)
+
+[node name="BackTreeLine1" parent="SetDress/BackgroundCards" index="1" instance=ExtResource("11_tree0_scene")]
+transform = Transform3D(0.90630776, 0, -0.42261827, 0, 1, 0, 0.42261827, 0, 0.90630776, 0.6, 0, -24.1)
+
+[node name="BackTreeLine2" parent="SetDress/BackgroundCards" index="2" instance=ExtResource("12_tree1_scene")]
+transform = Transform3D(0.9659258, 0, 0.25881904, 0, 1, 0, -0.25881904, 0, 0.9659258, 15.6, 0, -22.7)
+
+[node name="LightingProps" type="Node3D" parent="SetDress" index="3"]

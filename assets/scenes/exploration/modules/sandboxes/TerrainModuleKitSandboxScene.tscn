@@ -1,0 +1,142 @@
+[gd_scene load_steps=23 format=3]
+
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/TerrainPlateauModule.tscn" id="1_plateau_module"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/TerrainCliffFaceModule.tscn" id="2_cliff_module"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/TerrainRampModule.tscn" id="3_ramp_module"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/TerrainStairModule.tscn" id="4_stair_module"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/BridgeSegmentModule.tscn" id="5_bridge_module"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/RiverBankEdgeModule.tscn" id="6_bank_module"]
+[ext_resource type="Script" path="res://scripts/exploration/props/RiverPathChannel.cs" id="7_river_path_script"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_flow_material.tres" id="8_river_water_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_bank_material.tres" id="9_river_bank_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_bed_material.tres" id="10_river_bed_mat"]
+[ext_resource type="Material" path="res://assets/resources/exploration/materials/forest_river_gorge_wall_material.tres" id="11_river_wall_mat"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/TerrainPlateauSmallModule.tscn" id="12_plateau_small_module"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/TerrainCliffOuterCornerModule.tscn" id="13_cliff_outer_corner_module"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/TerrainCliffInnerCornerModule.tscn" id="14_cliff_inner_corner_module"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/BridgeSegmentShortModule.tscn" id="15_bridge_short_module"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/BridgeSegmentLongModule.tscn" id="16_bridge_long_module"]
+[ext_resource type="PackedScene" path="res://assets/scenes/exploration/modules/terrain/RiverBankCurveModule.tscn" id="17_bank_curve_module"]
+
+[sub_resource type="ProceduralSkyMaterial" id="1_sky"]
+sky_top_color = Color(0.372549, 0.494118, 0.658824, 1)
+sky_horizon_color = Color(0.729412, 0.807843, 0.854902, 1)
+ground_bottom_color = Color(0.184314, 0.219608, 0.188235, 1)
+ground_horizon_color = Color(0.337255, 0.388235, 0.313726, 1)
+
+[sub_resource type="Sky" id="2_sky_res"]
+sky_material = SubResource("1_sky")
+
+[sub_resource type="Environment" id="3_environment"]
+background_mode = 2
+sky = SubResource("2_sky_res")
+ambient_light_source = 2
+ambient_light_energy = 0.85
+ssao_enabled = true
+glow_enabled = true
+glow_intensity = 0.35
+glow_bloom = 0.15
+
+[sub_resource type="PlaneMesh" id="4_ground_mesh"]
+size = Vector2(120, 120)
+
+[sub_resource type="StandardMaterial3D" id="5_ground_mat"]
+albedo_color = Color(0.215686, 0.286275, 0.164706, 1)
+roughness = 0.97
+
+[node name="TerrainModuleKitSandboxScene" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("3_environment")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.9335804, 0.35836795, 0, -0.35836795, 0.9335804, 0, 13.5, 29.5)
+current = true
+fov = 43.0
+
+[node name="MainLight" type="DirectionalLight3D" parent="."]
+transform = Transform3D(0.8660254, -0.32139382, 0.3830222, 0, 0.76604444, 0.64278764, -0.5, -0.5566704, 0.66341394, 0, 0, 0)
+light_energy = 1.2
+shadow_enabled = true
+
+[node name="FillLight" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3.5, 0)
+light_energy = 0.22
+omni_range = 32.0
+
+[node name="Ground" type="MeshInstance3D" parent="."]
+mesh = SubResource("4_ground_mesh")
+surface_material_override/0 = SubResource("5_ground_mat")
+
+[node name="BlockoutExamples" type="Node3D" parent="."]
+
+[node name="PlateauA" parent="BlockoutExamples" instance=ExtResource("1_plateau_module")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -14, 0, 0)
+
+[node name="PlateauB" parent="BlockoutExamples" instance=ExtResource("1_plateau_module")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6, 0, 0)
+
+[node name="CliffA" parent="BlockoutExamples" instance=ExtResource("2_cliff_module")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -10, 0, 4.6)
+
+[node name="RampA" parent="BlockoutExamples" instance=ExtResource("3_ramp_module")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 4.5, 0, 0.6)
+
+[node name="StairsA" parent="BlockoutExamples" instance=ExtResource("4_stair_module")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.2, 0, 0.4)
+
+[node name="BridgeA" parent="BlockoutExamples" instance=ExtResource("5_bridge_module")]
+transform = Transform3D(1, 0, 0, 0, 0.9961947, -0.08715574, 0, 0.08715574, 0.9961947, -6.5, 1.6, -13.4)
+
+[node name="BankL" parent="BlockoutExamples" instance=ExtResource("6_bank_module")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.5, 0, -14.2)
+
+[node name="BankR" parent="BlockoutExamples" instance=ExtResource("6_bank_module")]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 5.5, 0, -14.2)
+
+[node name="PlateauSmallA" parent="BlockoutExamples" instance=ExtResource("12_plateau_small_module")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.3, 0.6, 5.2)
+
+[node name="CliffOuterCornerA" parent="BlockoutExamples" instance=ExtResource("13_cliff_outer_corner_module")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.8, 0, 8.6)
+
+[node name="CliffInnerCornerA" parent="BlockoutExamples" instance=ExtResource("14_cliff_inner_corner_module")]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, 9.2, 0, 9.1)
+
+[node name="BridgeShortA" parent="BlockoutExamples" instance=ExtResource("15_bridge_short_module")]
+transform = Transform3D(0.9848078, 0, -0.1736482, 0, 1, 0, 0.1736482, 0, 0.9848078, 7.4, 1.5, -12.3)
+
+[node name="BridgeLongA" parent="BlockoutExamples" instance=ExtResource("16_bridge_long_module")]
+transform = Transform3D(0.9659258, 0, 0.25881904, 0, 1, 0, -0.25881904, 0, 0.9659258, 20.1, 2.2, -11.6)
+
+[node name="BankCurveA" parent="BlockoutExamples" instance=ExtResource("17_bank_curve_module")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -20.6, 0, -3.8)
+
+[node name="RiverExample" type="Path3D" parent="BlockoutExamples"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.3, 0, -12.2)
+script = ExtResource("7_river_path_script")
+AutoRebuildInEditor = true
+SampleSpacing = 0.7
+CrossSectionStyle = 0
+WaterSurfaceYOffset = -0.28
+WaterWidth = 6.8
+SmoothBankRun = 1.8
+BedDepth = 1.2
+BedWidthExtra = 0.9
+GenerateBoatPath = false
+EnableBoatPreview = false
+GenerateObstacleAnchors = false
+WaterMaterial = ExtResource("8_river_water_mat")
+BedMaterial = ExtResource("10_river_bed_mat")
+TerrainMaterial = ExtResource("9_river_bank_mat")
+GorgeWallMaterial = ExtResource("11_river_wall_mat")
+
+[node name="UiHint" type="CanvasLayer" parent="."]
+
+[node name="Label" type="Label" parent="UiHint"]
+offset_left = 18.0
+offset_top = 12.0
+offset_right = 1390.0
+offset_bottom = 100.0
+theme_override_font_sizes/font_size = 20
+text = "Terrain Module Kit Sandbox: each piece is a standalone scene instance. Includes corner cliffs, bridge length variants, and curved bank sample.\nDuplicate/rotate modules and use SnapPoints to block out traversal and elevation before detail art."

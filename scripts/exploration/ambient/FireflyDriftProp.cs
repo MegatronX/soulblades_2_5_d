@@ -4,15 +4,20 @@ using Godot;
 /// Lightweight ambient movement for firefly-style props.
 /// </summary>
 [GlobalClass]
-public partial class FireflyDriftProp : Node3D
+public partial class FireflyDriftProp : Node3D, IAmbientPropFadeReceiver
 {
-    [Export(PropertyHint.Range, "0.05,5,0.01")]
+    [ExportCategory("Firefly Drift Prop (override or profile-driven)")]
+    [Export]
+    public FireflyVisualProfile VisualProfile { get; private set; }
+
+    [ExportGroup("Movement")]
+    [Export(PropertyHint.Range, "0.05,5,0.01,suffix:hz")]
     public float DriftSpeed { get; private set; } = 0.7f;
 
-    [Export(PropertyHint.Range, "0.01,3,0.01")]
+    [Export(PropertyHint.Range, "0.01,3,0.01,suffix:m")]
     public float DriftRadius { get; private set; } = 0.35f;
 
-    [Export(PropertyHint.Range, "0.01,3,0.01")]
+    [Export(PropertyHint.Range, "0.01,3,0.01,suffix:m")]
     public float BobAmplitude { get; private set; } = 0.2f;
 
     [ExportGroup("Visual")]
@@ -22,7 +27,7 @@ public partial class FireflyDriftProp : Node3D
     [Export]
     public Texture2D SpriteTexture { get; private set; }
 
-    [Export(PropertyHint.Range, "0.0005,0.2,0.0005")]
+    [Export(PropertyHint.Range, "0.0005,0.2,0.0005,suffix:px")]
     public float SpritePixelSize { get; private set; } = 0.012f;
 
     [Export]
@@ -40,14 +45,14 @@ public partial class FireflyDriftProp : Node3D
     [Export]
     public NodePath GlowLightPath { get; private set; } = "GlowLight";
 
-    [Export(PropertyHint.Range, "0,10,0.01")]
+    [Export(PropertyHint.Range, "0,10,0.01,suffix:energy")]
     public float GlowLightEnergy { get; private set; } = 0.6f;
 
     [ExportGroup("Glow Pulse")]
     [Export]
     public bool EnableGlowPulse { get; private set; } = true;
 
-    [Export(PropertyHint.Range, "0.01,2,0.01")]
+    [Export(PropertyHint.Range, "0.01,2,0.01,suffix:hz")]
     public float GlowPulseCyclesPerSecond { get; private set; } = 0.22f;
 
     [Export(PropertyHint.Range, "0,1,0.01")]
@@ -63,8 +68,17 @@ public partial class FireflyDriftProp : Node3D
     [Export]
     public bool AnimateSpriteFrames { get; private set; } = true;
 
-    [Export(PropertyHint.Range, "0.1,12,0.1")]
+    [Export]
+    public bool ForceSingleFrameWhenAnimationDisabled { get; private set; } = true;
+
+    [Export(PropertyHint.Range, "0.1,12,0.1,suffix:fps")]
     public float SpriteFrameFps { get; private set; } = 1.4f;
+
+    [Export(PropertyHint.Range, "0,512,1")]
+    public int AnimatedFrameStartIndex { get; private set; } = 0;
+
+    [Export(PropertyHint.Range, "0,256,1")]
+    public int AnimatedFrameCountLimit { get; private set; } = 0;
 
     [Export]
     public bool RandomizeStartFrame { get; private set; } = true;
@@ -78,9 +92,12 @@ public partial class FireflyDriftProp : Node3D
     private Color _baseSpriteModulate = Colors.White;
     private float _baseLightEnergy;
     private int _frameCount = 1;
+    private int _animatedFrameStart = 0;
+    private float _ambientFadeMultiplier = 1f;
 
     public override void _Ready()
     {
+        ApplyProfileOverrides();
         _origin = Position;
         _phase = GD.Randf() * Mathf.Tau;
         _glowPhase = GD.Randf() * Mathf.Tau;
@@ -115,11 +132,40 @@ public partial class FireflyDriftProp : Node3D
             _sprite.Billboard = SpriteBillboardEnabled
                 ? BaseMaterial3D.BillboardModeEnum.Enabled
                 : BaseMaterial3D.BillboardModeEnum.Disabled;
+
             _baseSpriteModulate = _sprite.Modulate;
-            _frameCount = Mathf.Max(1, _sprite.Hframes * _sprite.Vframes);
-            if (RandomizeStartFrame && _frameCount > 1)
+            int totalFrames = Mathf.Max(1, _sprite.Hframes * _sprite.Vframes);
+            _animatedFrameStart = Mathf.Clamp(AnimatedFrameStartIndex, 0, totalFrames - 1);
+            int availableFrames = Mathf.Max(1, totalFrames - _animatedFrameStart);
+            int animationFrameCount = availableFrames;
+            if (AnimatedFrameCountLimit > 0)
             {
-                _sprite.Frame = (int)(GD.Randi() % (uint)_frameCount);
+                animationFrameCount = Mathf.Clamp(AnimatedFrameCountLimit, 1, availableFrames);
+            }
+
+            if (!AnimateSpriteFrames)
+            {
+                // Keep atlas layout intact when animation is off; forcing H/V to 1x1
+                // breaks frame-subset sprite sheets and causes visual popping.
+                _frameCount = 1;
+                if (ForceSingleFrameWhenAnimationDisabled)
+                {
+                    _sprite.Frame = _animatedFrameStart;
+                }
+            }
+            else
+            {
+                _frameCount = animationFrameCount;
+                int maxFrame = _animatedFrameStart + _frameCount - 1;
+                if (_sprite.Frame < _animatedFrameStart || _sprite.Frame > maxFrame)
+                {
+                    _sprite.Frame = _animatedFrameStart;
+                }
+
+                if (RandomizeStartFrame && _frameCount > 1)
+                {
+                    _sprite.Frame = _animatedFrameStart + (int)(GD.Randi() % (uint)_frameCount);
+                }
             }
         }
         else
@@ -140,9 +186,11 @@ public partial class FireflyDriftProp : Node3D
         if (_light != null)
         {
             _baseLightEnergy = Mathf.Max(0f, GlowLightEnergy);
-            _light.LightEnergy = _baseLightEnergy;
+            _light.LightEnergy = _baseLightEnergy * _ambientFadeMultiplier;
             _light.LightColor = new Color(SpriteModulate.R, SpriteModulate.G, SpriteModulate.B);
         }
+
+        ApplyAmbientFadeNow();
     }
 
     private void UpdateGlowPulse(float dt)
@@ -151,10 +199,12 @@ public partial class FireflyDriftProp : Node3D
 
         if (!EnableGlowPulse)
         {
-            _light.LightEnergy = _baseLightEnergy;
+            _light.LightEnergy = _baseLightEnergy * _ambientFadeMultiplier;
             if (_sprite != null && GodotObject.IsInstanceValid(_sprite))
             {
-                _sprite.Modulate = _baseSpriteModulate;
+                var modulate = _baseSpriteModulate;
+                modulate.A *= _ambientFadeMultiplier;
+                _sprite.Modulate = modulate;
             }
             return;
         }
@@ -165,14 +215,14 @@ public partial class FireflyDriftProp : Node3D
         float wave = 0.5f + (0.5f * Mathf.Sin(_glowPhase));
         float minFactor = Mathf.Clamp(GlowPulseMinFactor, 0f, 1f);
         float glowFactor = Mathf.Lerp(minFactor, 1f, wave);
-        _light.LightEnergy = Mathf.Max(0f, _baseLightEnergy * glowFactor);
+        _light.LightEnergy = Mathf.Max(0f, _baseLightEnergy * glowFactor * _ambientFadeMultiplier);
 
         if (PulseSpriteAlpha && _sprite != null && GodotObject.IsInstanceValid(_sprite))
         {
             float alphaMin = Mathf.Clamp(SpritePulseMinAlphaFactor, 0f, 1f);
             float alphaFactor = Mathf.Lerp(alphaMin, 1f, wave);
             var modulate = _baseSpriteModulate;
-            modulate.A *= alphaFactor;
+            modulate.A *= alphaFactor * _ambientFadeMultiplier;
             _sprite.Modulate = modulate;
         }
     }
@@ -186,8 +236,64 @@ public partial class FireflyDriftProp : Node3D
         _frameAccumulator += dt * Mathf.Max(0.1f, SpriteFrameFps);
         while (_frameAccumulator >= 1f)
         {
-            _sprite.Frame = (_sprite.Frame + 1) % _frameCount;
+            int localFrame = _sprite.Frame - _animatedFrameStart;
+            if (localFrame < 0 || localFrame >= _frameCount)
+            {
+                localFrame = 0;
+            }
+
+            localFrame = (localFrame + 1) % _frameCount;
+            _sprite.Frame = _animatedFrameStart + localFrame;
             _frameAccumulator -= 1f;
         }
+    }
+
+    public void SetAmbientFadeMultiplier(float alphaMultiplier)
+    {
+        _ambientFadeMultiplier = Mathf.Clamp(alphaMultiplier, 0f, 1f);
+        ApplyAmbientFadeNow();
+    }
+
+    private void ApplyAmbientFadeNow()
+    {
+        if (_sprite != null && GodotObject.IsInstanceValid(_sprite))
+        {
+            var modulate = _baseSpriteModulate;
+            modulate.A *= _ambientFadeMultiplier;
+            _sprite.Modulate = modulate;
+        }
+
+        if (_light != null && GodotObject.IsInstanceValid(_light))
+        {
+            _light.LightEnergy = _baseLightEnergy * _ambientFadeMultiplier;
+        }
+    }
+
+    private void ApplyProfileOverrides()
+    {
+        if (VisualProfile == null) return;
+
+        DriftSpeed = VisualProfile.DriftSpeed;
+        DriftRadius = VisualProfile.DriftRadius;
+        BobAmplitude = VisualProfile.BobAmplitude;
+        if (VisualProfile.SpriteTexture != null)
+        {
+            SpriteTexture = VisualProfile.SpriteTexture;
+        }
+
+        SpritePixelSize = VisualProfile.SpritePixelSize;
+        SpriteModulate = VisualProfile.SpriteModulate;
+        GlowLightEnergy = VisualProfile.GlowLightEnergy;
+        EnableGlowPulse = VisualProfile.EnableGlowPulse;
+        GlowPulseCyclesPerSecond = VisualProfile.GlowPulseCyclesPerSecond;
+        GlowPulseMinFactor = VisualProfile.GlowPulseMinFactor;
+        PulseSpriteAlpha = VisualProfile.PulseSpriteAlpha;
+        SpritePulseMinAlphaFactor = VisualProfile.SpritePulseMinAlphaFactor;
+        AnimateSpriteFrames = VisualProfile.AnimateSpriteFrames;
+        ForceSingleFrameWhenAnimationDisabled = VisualProfile.ForceSingleFrameWhenAnimationDisabled;
+        SpriteFrameFps = VisualProfile.SpriteFrameFps;
+        AnimatedFrameStartIndex = VisualProfile.AnimatedFrameStartIndex;
+        AnimatedFrameCountLimit = VisualProfile.AnimatedFrameCountLimit;
+        RandomizeStartFrame = VisualProfile.RandomizeStartFrame;
     }
 }
